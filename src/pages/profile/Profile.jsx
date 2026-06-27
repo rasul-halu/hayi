@@ -6,6 +6,11 @@ from "../../context/UserContext";
 
 export default function Profile() {
     const { user } = useUser();
+    const completedLessonCount =
+        Array.isArray(user.completedLessonIds)
+            ? user.completedLessonIds.length
+            : 0;
+
     return (
         <div
         style={{
@@ -62,6 +67,12 @@ export default function Profile() {
             />
 
             <StatItem
+            icon="❤️"
+            value={user.hearts}
+            label="Сердец"
+            />
+
+            <StatItem
             icon="🔥"
             value={user.streak}
             label="Дней подряд"
@@ -69,7 +80,7 @@ export default function Profile() {
 
             <StatItem
             icon="📚"
-            value={user.completedLessons}
+            value={completedLessonCount}
             label="Уроков завершено"
             />
         </div>
@@ -114,9 +125,6 @@ export default function Profile() {
         >
             Выйти
         </button>
-
-
-
 
         <BottomNav />
         </div>

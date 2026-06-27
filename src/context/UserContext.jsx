@@ -21,9 +21,26 @@ const DEFAULT_USER = {
 };
 
 function toNumber(value, fallback) {
-  return Number.isFinite(Number(value))
-    ? Number(value)
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue)
+    ? numericValue
     : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(
+    Math.max(value, min),
+    max
+  );
+}
+
+function normalizeHearts(value) {
+  return clamp(
+    toNumber(value, DEFAULT_USER.hearts),
+    0,
+    DEFAULT_USER.hearts
+  );
 }
 
 function createSequentialIds(count) {
@@ -33,12 +50,12 @@ function createSequentialIds(count) {
   );
 }
 
-function normalizeIdList(value, fallback) {
-  if (!Array.isArray(value)) {
-    return fallback;
-  }
+function normalizeIdList(value, fallback = []) {
+  const source = Array.isArray(value)
+    ? value
+    : fallback;
 
-  const ids = value
+  const ids = source
     .map(id => Number(id))
     .filter(id =>
       Number.isInteger(id) &&
@@ -48,64 +65,49 @@ function normalizeIdList(value, fallback) {
   return [...new Set(ids)];
 }
 
-function normalizeUser(savedUser) {
+function normalizeUser(savedUser = {}) {
   const initialUser = {
     ...DEFAULT_USER,
     ...savedUser
   };
 
-  const completedLessons =
-    toNumber(
-      initialUser.completedLessons,
-      DEFAULT_USER.completedLessons
-    );
+  const completedLessons = toNumber(
+    initialUser.completedLessons,
+    DEFAULT_USER.completedLessons
+  );
 
-  const unlockedLessons =
-    toNumber(
-      initialUser.unlockedLessons,
-      DEFAULT_USER.unlockedLessons
-    );
-
-  const hasCompletedLessonIds =
-    Array.isArray(savedUser?.completedLessonIds);
-
-  const hasUnlockedLessonIds =
-    Array.isArray(savedUser?.unlockedLessonIds);
+  const unlockedLessons = toNumber(
+    initialUser.unlockedLessons,
+    DEFAULT_USER.unlockedLessons
+  );
 
   const completedLessonIds = normalizeIdList(
-    hasCompletedLessonIds
-      ? savedUser.completedLessonIds
-      : undefined,
+    savedUser.completedLessonIds,
     createSequentialIds(completedLessons)
   );
 
   const unlockedLessonIds = normalizeIdList(
-    hasUnlockedLessonIds
-      ? savedUser.unlockedLessonIds
-      : undefined,
+    savedUser.unlockedLessonIds,
     createSequentialIds(unlockedLessons)
   );
+
+  const safeUnlockedLessonIds =
+    unlockedLessonIds.length > 0
+      ? unlockedLessonIds
+      : DEFAULT_USER.unlockedLessonIds;
 
   return {
     ...initialUser,
     xp: toNumber(initialUser.xp, DEFAULT_USER.xp),
+    hearts: normalizeHearts(initialUser.hearts),
     streak: toNumber(
       initialUser.streak,
       DEFAULT_USER.streak
     ),
-    completedLessons:
-      completedLessonIds.length,
-    unlockedLessons:
-      unlockedLessonIds.length,
     completedLessonIds,
-    unlockedLessonIds:
-      unlockedLessonIds.length > 0
-        ? unlockedLessonIds
-        : DEFAULT_USER.unlockedLessonIds,
-    hearts: toNumber(
-      initialUser.hearts,
-      DEFAULT_USER.hearts
-    )
+    unlockedLessonIds: safeUnlockedLessonIds,
+    completedLessons: completedLessonIds.length,
+    unlockedLessons: safeUnlockedLessonIds.length
   };
 }
 
@@ -117,13 +119,13 @@ export function UserProvider({ children }) {
       localStorage.getItem("haiyi-user");
 
     if (!savedUser) {
-      return DEFAULT_USER;
+      return normalizeUser();
     }
 
     try {
       return normalizeUser(JSON.parse(savedUser));
     } catch {
-      return DEFAULT_USER;
+      return normalizeUser();
     }
   });
 
@@ -139,7 +141,9 @@ export function UserProvider({ children }) {
 
     setUser(prev => ({
       ...prev,
-      xp: toNumber(prev.xp, DEFAULT_USER.xp) + amount
+      xp:
+        toNumber(prev.xp, DEFAULT_USER.xp) +
+        toNumber(amount, 0)
     }));
   };
 
@@ -158,19 +162,27 @@ export function UserProvider({ children }) {
 
     setUser(prev => {
       const completedLessonIds = normalizeIdList(
-        prev.completedLessonIds,
-        []
+        prev.completedLessonIds
+      );
+
+      const unlockedLessonIds = normalizeIdList(
+        prev.unlockedLessonIds,
+        DEFAULT_USER.unlockedLessonIds
       );
 
       if (completedLessonIds.includes(numericLessonId)) {
         return {
           ...prev,
+          xp: toNumber(prev.xp, DEFAULT_USER.xp),
+          hearts: normalizeHearts(prev.hearts),
+          streak: toNumber(
+            prev.streak,
+            DEFAULT_USER.streak
+          ),
           completedLessonIds,
+          unlockedLessonIds,
           completedLessons: completedLessonIds.length,
-          unlockedLessonIds: normalizeIdList(
-            prev.unlockedLessonIds,
-            DEFAULT_USER.unlockedLessonIds
-          )
+          unlockedLessons: unlockedLessonIds.length
         };
       }
 
@@ -181,11 +193,6 @@ export function UserProvider({ children }) {
         ...completedLessonIds,
         numericLessonId
       ];
-
-      const unlockedLessonIds = normalizeIdList(
-        prev.unlockedLessonIds,
-        DEFAULT_USER.unlockedLessonIds
-      );
 
       const nextUnlockedLessonIds =
         nextLessonId
@@ -201,13 +208,18 @@ export function UserProvider({ children }) {
         ...prev,
         xp:
           toNumber(prev.xp, DEFAULT_USER.xp) +
-          xpReward,
+          toNumber(xpReward, 0),
+        hearts: normalizeHearts(prev.hearts),
+        streak: toNumber(
+          prev.streak,
+          DEFAULT_USER.streak
+        ),
         completedLessonIds:
           nextCompletedLessonIds,
-        completedLessons:
-          nextCompletedLessonIds.length,
         unlockedLessonIds:
           nextUnlockedLessonIds,
+        completedLessons:
+          nextCompletedLessonIds.length,
         unlockedLessons:
           nextUnlockedLessonIds.length
       };
@@ -231,12 +243,6 @@ export function UserProvider({ children }) {
     setUser(prev => ({
       ...prev,
 
-      completedLessons:
-        toNumber(
-          prev.completedLessons,
-          DEFAULT_USER.completedLessons
-        ) + 1,
-
       unlockedLessons:
         toNumber(
           prev.unlockedLessons,
@@ -248,30 +254,36 @@ export function UserProvider({ children }) {
   const loseHeart = () => {
 
     setUser(prev => ({
-
-        ...prev,
-
-        hearts:
-        Math.max(
-            toNumber(
-              prev.hearts,
-              DEFAULT_USER.hearts
-            ) - 1,
-            0
+      ...prev,
+      hearts:
+        clamp(
+          normalizeHearts(prev.hearts) - 1,
+          0,
+          DEFAULT_USER.hearts
         )
-
     }));
-    };
-    const resetHearts = () => {
+  };
 
-        setUser(prev => ({
+  const resetHearts = () => {
 
-            ...prev,
+    setUser(prev => ({
+      ...prev,
+      hearts: DEFAULT_USER.hearts
+    }));
+  };
 
-            hearts: 5
+  const restoreOneHeart = () => {
 
-        }));
-    };
+    setUser(prev => ({
+      ...prev,
+      hearts:
+        clamp(
+          normalizeHearts(prev.hearts) + 1,
+          0,
+          DEFAULT_USER.hearts
+        )
+    }));
+  };
 
   useEffect(() => {
 
@@ -293,14 +305,13 @@ export function UserProvider({ children }) {
         completeLessonById,
         unlockNextLesson,
         loseHeart,
-        resetHearts
+        resetHearts,
+        restoreOneHeart
       }}
     >
       {children}
     </UserContext.Provider>
   );
-
-
 }
 
 export function useUser() {

@@ -12,6 +12,14 @@ from "../../context/UserContext";
 export default function Home() {
   const { user } = useUser();
   const chapters = getCourseChapters();
+  const unlockedLessonIds =
+    Array.isArray(user.unlockedLessonIds)
+      ? user.unlockedLessonIds
+      : [];
+  const completedLessonIds =
+    Array.isArray(user.completedLessonIds)
+      ? user.completedLessonIds
+      : [];
 
   return (
     <div
@@ -33,6 +41,11 @@ export default function Home() {
         <StatCard
           icon="🔥"
           value={user.streak}
+        />
+
+        <StatCard
+          icon="❤️"
+          value={user.hearts}
         />
 
         <StatCard
@@ -89,10 +102,10 @@ export default function Home() {
             {chapter.lessons.map((lesson) => {
 
               const unlocked =
-                user.unlockedLessonIds.includes(lesson.id);
+                unlockedLessonIds.includes(lesson.id);
 
               const completed =
-                user.completedLessonIds.includes(lesson.id);
+                completedLessonIds.includes(lesson.id);
 
               return (
                 <LessonNode

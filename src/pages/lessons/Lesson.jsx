@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLessonById } from "../../data/courseHelpers";
 import ProgressBar from "../../components/ui/ProgressBar";
@@ -31,9 +31,11 @@ export default function Lesson() {
 
   const { user, loseHeart } = useUser();
 
-  if (user.hearts === 0) {
-    navigate("/hearts-empty");
-  }
+  useEffect(() => {
+    if (user.hearts === 0) {
+      navigate("/hearts-empty");
+    }
+  }, [navigate, user.hearts]);
 
   if (!lesson) {
     return (

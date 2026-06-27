@@ -32,7 +32,7 @@ export default function LessonComplete() {
         getLessonById(lessonId);
 
     const xpReward =
-        lesson?.xpReward ||
+        lesson?.xpReward ??
         DEFAULT_XP_REWARD;
 
     useEffect(() => {
