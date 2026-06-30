@@ -9,15 +9,33 @@ import { getNextLessonId } from "../data/courseHelpers";
 
 const UserContext = createContext();
 
+const MAX_HEARTS = 5;
+const HEART_REWARD_STREAK = 3;
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getDateOffsetKey(daysOffset) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  return date.toISOString().slice(0, 10);
+}
+
 const DEFAULT_USER = {
   username: "Гость",
   xp: 120,
-  streak: 7,
+  streak: 0,
+  longestStreak: 0,
+  lastLessonCompletedDate: null,
+  todayLessonCompleted: false,
   completedLessons: 0,
   unlockedLessons: 1,
   completedLessonIds: [],
   unlockedLessonIds: [1],
-  hearts: 5
+  hearts: MAX_HEARTS,
+  lastHeartRefillDate: getTodayKey(),
+  correctAnswerStreak: 0
 };
 
 function toNumber(value, fallback) {
@@ -39,7 +57,7 @@ function normalizeHearts(value) {
   return clamp(
     toNumber(value, DEFAULT_USER.hearts),
     0,
-    DEFAULT_USER.hearts
+    MAX_HEARTS
   );
 }
 
@@ -63,6 +81,12 @@ function normalizeIdList(value, fallback = []) {
     );
 
   return [...new Set(ids)];
+}
+
+function normalizeDate(value) {
+  return typeof value === "string" && value.length > 0
+    ? value
+    : null;
 }
 
 function normalizeUser(savedUser = {}) {
@@ -96,18 +120,42 @@ function normalizeUser(savedUser = {}) {
       ? unlockedLessonIds
       : DEFAULT_USER.unlockedLessonIds;
 
+  const today = getTodayKey();
+  const lastLessonCompletedDate =
+    normalizeDate(initialUser.lastLessonCompletedDate);
+  const shouldRefillHearts =
+    initialUser.lastHeartRefillDate !== today;
+
+  const streak = toNumber(
+    initialUser.streak,
+    DEFAULT_USER.streak
+  );
+
+  const longestStreak = toNumber(
+    initialUser.longestStreak,
+    Math.max(DEFAULT_USER.longestStreak, streak)
+  );
+
   return {
     ...initialUser,
     xp: toNumber(initialUser.xp, DEFAULT_USER.xp),
-    hearts: normalizeHearts(initialUser.hearts),
-    streak: toNumber(
-      initialUser.streak,
-      DEFAULT_USER.streak
-    ),
+    hearts: shouldRefillHearts
+      ? MAX_HEARTS
+      : normalizeHearts(initialUser.hearts),
+    streak,
+    longestStreak: Math.max(longestStreak, streak),
+    lastLessonCompletedDate,
+    todayLessonCompleted:
+      lastLessonCompletedDate === today,
     completedLessonIds,
     unlockedLessonIds: safeUnlockedLessonIds,
     completedLessons: completedLessonIds.length,
-    unlockedLessons: safeUnlockedLessonIds.length
+    unlockedLessons: safeUnlockedLessonIds.length,
+    lastHeartRefillDate: today,
+    correctAnswerStreak: toNumber(
+      initialUser.correctAnswerStreak,
+      DEFAULT_USER.correctAnswerStreak
+    )
   };
 }
 
@@ -179,6 +227,10 @@ export function UserProvider({ children }) {
             prev.streak,
             DEFAULT_USER.streak
           ),
+          longestStreak: toNumber(
+            prev.longestStreak,
+            DEFAULT_USER.longestStreak
+          ),
           completedLessonIds,
           unlockedLessonIds,
           completedLessons: completedLessonIds.length,
@@ -214,6 +266,10 @@ export function UserProvider({ children }) {
           prev.streak,
           DEFAULT_USER.streak
         ),
+        longestStreak: toNumber(
+          prev.longestStreak,
+          DEFAULT_USER.longestStreak
+        ),
         completedLessonIds:
           nextCompletedLessonIds,
         unlockedLessonIds:
@@ -222,6 +278,47 @@ export function UserProvider({ children }) {
           nextCompletedLessonIds.length,
         unlockedLessons:
           nextUnlockedLessonIds.length
+      };
+    });
+  }, []);
+
+  const markLessonCompletedToday = useCallback(() => {
+    setUser(prev => {
+      const today = getTodayKey();
+      const yesterday = getDateOffsetKey(-1);
+      const lastLessonCompletedDate =
+        normalizeDate(prev.lastLessonCompletedDate);
+      const currentStreak = toNumber(
+        prev.streak,
+        DEFAULT_USER.streak
+      );
+      const currentLongestStreak = toNumber(
+        prev.longestStreak,
+        DEFAULT_USER.longestStreak
+      );
+
+      if (lastLessonCompletedDate === today) {
+        return {
+          ...prev,
+          streak: currentStreak,
+          longestStreak:
+            Math.max(currentLongestStreak, currentStreak),
+          todayLessonCompleted: true
+        };
+      }
+
+      const nextStreak =
+        lastLessonCompletedDate === yesterday
+          ? currentStreak + 1
+          : 1;
+
+      return {
+        ...prev,
+        streak: nextStreak,
+        longestStreak:
+          Math.max(currentLongestStreak, nextStreak),
+        todayLessonCompleted: true,
+        lastLessonCompletedDate: today
       };
     });
   }, []);
@@ -259,7 +356,7 @@ export function UserProvider({ children }) {
         clamp(
           normalizeHearts(prev.hearts) - 1,
           0,
-          DEFAULT_USER.hearts
+          MAX_HEARTS
         )
     }));
   };
@@ -268,7 +365,8 @@ export function UserProvider({ children }) {
 
     setUser(prev => ({
       ...prev,
-      hearts: DEFAULT_USER.hearts
+      hearts: MAX_HEARTS,
+      lastHeartRefillDate: getTodayKey()
     }));
   };
 
@@ -280,8 +378,44 @@ export function UserProvider({ children }) {
         clamp(
           normalizeHearts(prev.hearts) + 1,
           0,
-          DEFAULT_USER.hearts
+          MAX_HEARTS
         )
+    }));
+  };
+
+  const registerCorrectAnswer = () => {
+
+    setUser(prev => {
+      const nextCorrectAnswerStreak =
+        toNumber(prev.correctAnswerStreak, 0) + 1;
+
+      if (nextCorrectAnswerStreak < HEART_REWARD_STREAK) {
+        return {
+          ...prev,
+          correctAnswerStreak:
+            nextCorrectAnswerStreak,
+          hearts: normalizeHearts(prev.hearts)
+        };
+      }
+
+      return {
+        ...prev,
+        correctAnswerStreak: 0,
+        hearts:
+          clamp(
+            normalizeHearts(prev.hearts) + 1,
+            0,
+            MAX_HEARTS
+          )
+      };
+    });
+  };
+
+  const resetCorrectAnswerStreak = () => {
+
+    setUser(prev => ({
+      ...prev,
+      correctAnswerStreak: 0
     }));
   };
 
@@ -303,10 +437,14 @@ export function UserProvider({ children }) {
         addXP,
         completeLesson,
         completeLessonById,
+        markLessonCompletedToday,
         unlockNextLesson,
         loseHeart,
         resetHearts,
-        restoreOneHeart
+        restoreOneHeart,
+        registerCorrectAnswer,
+        resetCorrectAnswerStreak,
+        maxHearts: MAX_HEARTS
       }}
     >
       {children}

@@ -1,8 +1,17 @@
+import {
+  BookOpen,
+  HelpCircle,
+  Layers,
+  Plus,
+  Shield,
+  WholeWord
+} from "lucide-react";
 import { course } from "../../data/courseData";
 import {
   getAllLessons,
   getVocabulary
 } from "../../data/courseHelpers";
+import AppIcon from "../../components/ui/AppIcon";
 
 export default function AdminDashboard() {
   const lessons = getAllLessons();
@@ -17,19 +26,23 @@ export default function AdminDashboard() {
   const stats = [
     {
       label: "Глав",
-      value: course.chapters.length
+      value: course.chapters.length,
+      icon: Layers
     },
     {
       label: "Уроков",
-      value: lessons.length
+      value: lessons.length,
+      icon: BookOpen
     },
     {
       label: "Слов",
-      value: vocabulary.length
+      value: vocabulary.length,
+      icon: WholeWord
     },
     {
       label: "Вопросов",
-      value: questionCount
+      value: questionCount,
+      icon: HelpCircle
     }
   ];
 
@@ -48,7 +61,16 @@ export default function AdminDashboard() {
           marginTop: 8
         }}
       >
-        Локальная заготовка управления курсом
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8
+          }}
+        >
+          <AppIcon icon={Shield} size={18} color="#58CC02" />
+          Локальная заготовка управления курсом
+        </span>
       </p>
 
       <div
@@ -72,9 +94,13 @@ export default function AdminDashboard() {
             <div
               style={{
                 color: "#D9D9D9",
-                fontSize: 14
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 8
               }}
             >
+              <AppIcon icon={stat.icon} size={18} color="#BDBDBD" />
               {stat.label}
             </div>
 
@@ -106,7 +132,17 @@ export default function AdminDashboard() {
           fontWeight: "bold"
         }}
       >
-        Добавить урок
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8
+          }}
+        >
+          <AppIcon icon={Plus} size={20} />
+          Добавить урок
+        </span>
       </button>
     </div>
   );

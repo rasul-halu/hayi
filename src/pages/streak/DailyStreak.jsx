@@ -1,105 +1,180 @@
+import { useState } from "react";
+import {
+  Check,
+  Circle,
+  Flame
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import streakMascot from "../../assets/masсot/streak.png";
+import AppButton from "../../components/ui/AppButton";
+import AppCard from "../../components/ui/AppCard";
+import AppIcon from "../../components/ui/AppIcon";
+import PageContainer from "../../components/ui/PageContainer";
+import SectionTitle from "../../components/ui/SectionTitle";
+import streakMascot from "../../assets/mascot/streak.png";
+import { useUser } from "../../context/UserContext";
+
+function getWeekDays(todayLessonCompleted) {
+  return Array.from({ length: 7 }, (_, index) => {
+    if (index < 6) {
+      return {
+        label: index + 1,
+        icon: Check,
+        color: "#58CC02"
+      };
+    }
+
+    return {
+      label: 7,
+      icon: todayLessonCompleted
+        ? Flame
+        : Circle,
+      color: todayLessonCompleted
+        ? "#FF9600"
+        : "#BDBDBD"
+    };
+  });
+}
 
 export default function DailyStreak() {
-
   const navigate = useNavigate();
+  const { user } = useUser();
+  const [mascotFailed, setMascotFailed] = useState(false);
+
+  const weekDays =
+    getWeekDays(user.todayLessonCompleted);
 
   return (
-    <div
+    <PageContainer
       style={{
-        minHeight: "100vh",
-
         display: "flex",
-
         flexDirection: "column",
-
-        justifyContent: "center",
-
-        alignItems: "center",
-
-        padding: 24,
-
-        textAlign: "center"
+        justifyContent: "center"
       }}
     >
-      <div
+      <AppCard
         style={{
-          fontSize: 70
+          textAlign: "center",
+          padding: 26
         }}
       >
-        🔥
-      </div>
+        <div
+          style={{
+            width: 190,
+            height: 190,
+            margin: "0 auto 18px",
+            borderRadius: "50%",
+            background: "#FFFFFF",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            boxShadow: "0 8px 0 #D9D9D9"
+          }}
+        >
+          {!mascotFailed ? (
+            <img
+              src={streakMascot}
+              alt="Маскот серии"
+              onError={() => setMascotFailed(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain"
+              }}
+            />
+          ) : (
+            <AppIcon icon={Flame} size={78} color="#FF9600" />
+          )}
+        </div>
 
-      <h1
+        <h1
+          style={{
+            margin: 0,
+            color: "#58CC02",
+            fontSize: 34,
+            fontWeight: "900"
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10
+            }}
+          >
+            <AppIcon icon={Flame} size={34} color="#FF9600" />
+            {user.streak} дней подряд
+          </span>
+        </h1>
+
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "#D9D9D9",
+            fontWeight: "800"
+          }}
+        >
+          Лучшая серия: {user.longestStreak}
+        </p>
+      </AppCard>
+
+      <AppCard
         style={{
-          color: "#58CC02",
-          marginTop: 10
+          marginTop: 18
         }}
       >
-        7 ДНЕЙ
-      </h1>
+        <SectionTitle
+          title="Сегодня"
+          subtitle={
+            user.todayLessonCompleted
+              ? "Сегодняшний урок выполнен"
+              : "Пройди урок сегодня, чтобы сохранить серию"
+          }
+        />
 
-      <p
-        style={{
-          marginTop: 10,
-          color: "#D9D9D9"
-        }}
-      >
-        Ты занимаешься уже
-        7 дней подряд!
-      </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            gap: 8,
+            marginTop: 18
+          }}
+        >
+          {weekDays.map(day => (
+            <div
+              key={day.label}
+              style={{
+                minHeight: 52,
+                borderRadius: 14,
+                background: "#FFFFFF",
+                color: "#4B4B4B",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 20,
+                fontWeight: "900",
+                boxShadow: "0 4px 0 #D9D9D9"
+              }}
+            >
+              <AppIcon
+                icon={day.icon}
+                size={22}
+                color={day.color}
+              />
+            </div>
+          ))}
+        </div>
+      </AppCard>
 
-      <img
-        src={streakMascot}
-        alt="Streak Mascot"
-        style={{
-          width: 240,
-          marginTop: 30,
-          objectFit: "contain"
-        }}
-      />
-
-      <p
-        style={{
-          marginTop: 20,
-          maxWidth: 300,
-          color: "#D9D9D9"
-        }}
-      >
-        Не прерывай серию.
-        Вернись завтра и получи
-        дополнительный опыт.
-      </p>
-
-      <button
+      <AppButton
         onClick={() => navigate("/home")}
         style={{
-          marginTop: 30,
-
-          width: "100%",
-
-          maxWidth: 300,
-
-          padding: 16,
-
-          border: "none",
-
-          borderRadius: 18,
-
-          background: "#58CC02",
-
-          color: "#fff",
-
-          fontWeight: "bold",
-
-          fontSize: 16
+          marginTop: 24
         }}
       >
         Продолжить
-      </button>
- 
-    </div>
-    
+      </AppButton>
+    </PageContainer>
   );
 }

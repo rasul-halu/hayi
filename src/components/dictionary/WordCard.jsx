@@ -1,7 +1,14 @@
 export default function WordCard({
+  word,
   lezgi,
-  russian
+  russian,
+  translation,
+  notes
 }) {
+  const title = word?.russian || word?.word || russian || "";
+  const meaning = word?.lezgi || word?.translation || lezgi || translation || "";
+  const extraNotes = word?.notes || notes;
+
   return (
     <div
       style={{
@@ -11,7 +18,13 @@ export default function WordCard({
         marginBottom: 12
       }}
     >
-      <h3>{lezgi}</h3>
+      <h3
+        style={{
+          margin: 0
+        }}
+      >
+        {title}
+      </h3>
 
       <p
         style={{
@@ -19,8 +32,20 @@ export default function WordCard({
           marginTop: 5
         }}
       >
-        {russian}
+        {meaning}
       </p>
+
+      {extraNotes && (
+        <p
+          style={{
+            color: "#BDBDBD",
+            marginTop: 8,
+            fontSize: 14
+          }}
+        >
+          {extraNotes}
+        </p>
+      )}
     </div>
   );
 }

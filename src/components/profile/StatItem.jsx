@@ -12,8 +12,16 @@ export default function StatItem({
         marginBottom: 12
       }}
     >
-      <h3>
-        {icon} {value}
+      <h3
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          margin: 0
+        }}
+      >
+        {icon}
+        <span>{value}</span>
       </h3>
 
       <p

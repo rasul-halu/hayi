@@ -23,6 +23,10 @@ export const course = {
               type: "translate",
               prompt: "Что означает:",
               question: "Салам",
+              image: {
+                src: "/images/lessons/карлик.png",
+                alt: "Пример изображения к вопросу"
+              },
               answers: [
                 "Спасибо",
                 "Привет",
@@ -74,6 +78,23 @@ export const course = {
                 "Хайыр"
               ],
               correct: "Салам"
+            },
+
+            {
+              id: 4,
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово",
+              sentence: "Мен ____.",
+              image: {
+                src: "/images/lessons/example.png",
+                alt: "Иллюстрация к предложению"
+              },
+              answers: [
+                "вун",
+                "заз",
+                "чун"
+              ],
+              correct: "заз"
             }
           ]
         },
@@ -86,7 +107,7 @@ export const course = {
 
           questions: [
             {
-              id: 4,
+              id: 5,
               type: "translate",
               prompt: "Что означает:",
               question: "Сагърай",
@@ -96,6 +117,19 @@ export const course = {
                 "Пока"
               ],
               correct: "Спасибо"
+            },
+
+            {
+              id: 6,
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово",
+              sentence: "____, Салам!",
+              answers: [
+                "Рахмат",
+                "Хайыр",
+                "Сагърай"
+              ],
+              correct: "Рахмат"
             }
           ]
         }

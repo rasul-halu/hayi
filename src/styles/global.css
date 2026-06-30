@@ -25,3 +25,63 @@ button {
 a {
   text-decoration: none;
 }
+
+@keyframes lesson-shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(4px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes lesson-correct-pulse {
+  0% {
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+  }
+
+  50% {
+    box-shadow: 0 6px 0 #46A400, 0 0 0 4px rgba(88, 204, 2, 0.32);
+  }
+
+  100% {
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+  }
+}
+
+.lesson-feedback-card--wrong {
+  animation: lesson-shake 420ms ease-in-out;
+}
+
+.lesson-feedback-card--correct {
+  animation: lesson-correct-pulse 480ms ease-in-out;
+}
+
+.lesson-feedback-message {
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.lesson-feedback-message--correct,
+.lesson-feedback-message--wrong {
+  transform: translateY(-1px);
+}

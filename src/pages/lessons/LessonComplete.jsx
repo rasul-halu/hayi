@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react";
 import {
+    ArrowRight,
+    CheckCircle2
+} from "lucide-react";
+import {
     useLocation,
     useNavigate
 } from "react-router-dom";
@@ -10,6 +14,11 @@ from "../../data/courseHelpers";
 import { useUser }
 from "../../context/UserContext";
 
+import AppButton from "../../components/ui/AppButton";
+import AppCard from "../../components/ui/AppCard";
+import AppIcon from "../../components/ui/AppIcon";
+import PageContainer from "../../components/ui/PageContainer";
+
 const DEFAULT_XP_REWARD = 10;
 
 export default function LessonComplete() {
@@ -18,7 +27,10 @@ export default function LessonComplete() {
     const location = useLocation();
     const didComplete = useRef(false);
 
-    const { completeLessonById } = useUser();
+    const {
+        completeLessonById,
+        markLessonCompletedToday
+    } = useUser();
 
     const queryLessonId =
         new URLSearchParams(location.search)
@@ -42,69 +54,112 @@ export default function LessonComplete() {
 
         didComplete.current = true;
         completeLessonById(lessonId, xpReward);
-    }, [completeLessonById, lessonId, xpReward]);
+        markLessonCompletedToday();
+    }, [
+        completeLessonById,
+        lessonId,
+        markLessonCompletedToday,
+        xpReward
+    ]);
 
     const handleContinue = () => {
         navigate("/home");
     };
     
     return (
-        <div
+        <PageContainer
         style={{
-            minHeight: "100vh",
-
             display: "flex",
-
             flexDirection: "column",
-
             justifyContent: "center",
-
-            alignItems: "center",
-
             textAlign: "center"
         }}
         >
-
-        {/* mascot complete */}
-
-        <div
+        <AppCard
             style={{
-            width: 250,
-            height: 250
+            padding: 26
             }}
         >
-            lesson-complete.png
-        </div>
-
-        <h1
+            <div
             style={{
-            color: "#58CC02"
+                width: 180,
+                height: 180,
+                margin: "0 auto 20px",
+                borderRadius: "50%",
+                background: "#FFFFFF",
+                color: "#4B4B4B",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 64,
+                boxShadow: "0 8px 0 #D9D9D9"
             }}
-        >
+            >
+            <AppIcon
+                icon={CheckCircle2}
+                size={82}
+                color="#58CC02"
+                strokeWidth={2.2}
+            />
+            </div>
+
+            <h1
+            style={{
+                margin: 0,
+                color: "#FFFFFF",
+                fontSize: 34,
+                fontWeight: "900"
+            }}
+            >
             Урок завершён!
-        </h1>
+            </h1>
 
-        <p>
+            <div
+            style={{
+                marginTop: 18,
+                padding: "14px 18px",
+                borderRadius: 18,
+                background: "#FFD43B",
+                color: "#4B4B4B",
+                fontSize: 24,
+                fontWeight: "900",
+                boxShadow: "0 5px 0 #E0B900"
+            }}
+            >
             +{xpReward} XP
-        </p>
+            </div>
 
-        <button
+            <p
+            style={{
+                margin: "18px 0 0",
+                color: "#D9D9D9",
+                lineHeight: 1.4
+            }}
+            >
+            Отличная работа. Здесь позже появится
+            картинка маскота.
+            </p>
+        </AppCard>
+
+        <AppButton
             onClick={handleContinue}
             style={{
-            marginTop: 20,
-            padding: 18,
-            width: 250,
-
-            background: "#58CC02",
-
-            border: "none",
-
-            borderRadius: 18
+            marginTop: 24
             }}
         >
+            <span
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8
+            }}
+            >
             Продолжить
-        </button>
+            <AppIcon icon={ArrowRight} size={20} />
+            </span>
+        </AppButton>
 
-        </div>
+        </PageContainer>
     );
 }

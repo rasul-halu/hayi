@@ -14,6 +14,8 @@ import Profile from "../pages/profile/Profile";
 import DailyStreak from "../pages/streak/DailyStreak";
 import Vocabulary from "../pages/dictionary/Vocabulary";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import Leaderboard from "../pages/leaderboard/Leaderboard";
+import Achievements from "../pages/achievements/Achievements";
 
 import Lesson from "../pages/lessons/Lesson";
 import LessonComplete from "../pages/lessons/LessonComplete";
@@ -74,6 +76,16 @@ export default function AppRoutes() {
         <Route
           path="/dictionary"
           element={<Vocabulary />}
+        />
+
+        <Route
+          path="/leaderboard"
+          element={<Leaderboard />}
+        />
+
+        <Route
+          path="/achievements"
+          element={<Achievements />}
         />
 
         <Route

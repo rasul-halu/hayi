@@ -1,35 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Heart,
+  XCircle
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getLessonById } from "../../data/courseHelpers";
+import MatchQuestion from "../../components/lesson/MatchQuestion";
+import FillBlankQuestion from "../../components/lesson/FillBlankQuestion";
+import ListeningQuestion from "../../components/lesson/ListeningQuestion";
+import QuestionImage from "../../components/lesson/QuestionImage";
+import TranslateQuestion from "../../components/lesson/TranslateQuestion";
+import AppButton from "../../components/ui/AppButton";
+import AppCard from "../../components/ui/AppCard";
+import AppIcon from "../../components/ui/AppIcon";
+import PageContainer from "../../components/ui/PageContainer";
 import ProgressBar from "../../components/ui/ProgressBar";
-import TranslateQuestion
-from "../../components/lesson/TranslateQuestion";
-
-import MatchQuestion
-from "../../components/lesson/MatchQuestion";
-
-import ListeningQuestion
-from "../../components/lesson/ListeningQuestion";
-
-import { useUser }
-from "../../context/UserContext";
+import { useUser } from "../../context/UserContext";
+import { getLessonById } from "../../data/courseHelpers";
 
 const QUESTION_COMPONENTS = {
   translate: TranslateQuestion,
   match: MatchQuestion,
-  listening: ListeningQuestion
+  listening: ListeningQuestion,
+  fillBlank: FillBlankQuestion
 };
+
+const CORRECT_FEEDBACK_DELAY = 520;
+const WRONG_FEEDBACK_DELAY = 820;
+
+function isEmptyAnswer(value) {
+  return value === null ||
+    value === undefined ||
+    value === "";
+}
 
 export default function Lesson() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
-
   const lesson = getLessonById(lessonId);
+  const feedbackTimerRef = useRef(null);
 
   const [selected, setSelected] = useState(null);
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const [questionQueue, setQuestionQueue] = useState(
+    () => lesson?.questions || []
+  );
+  const [completedCorrect, setCompletedCorrect] = useState(0);
+  const [hint, setHint] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState("idle");
 
-  const { user, loseHeart } = useUser();
+  const {
+    user,
+    loseHeart,
+    registerCorrectAnswer,
+    resetCorrectAnswerStreak
+  } = useUser();
+
+  useEffect(() => {
+    setQuestionQueue(lesson?.questions || []);
+    setCompletedCorrect(0);
+    setSelected(null);
+    setHint("");
+    setFeedbackStatus("idle");
+
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+  }, [lesson?.id, lesson?.questions]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (user.hearts === 0) {
@@ -39,14 +85,11 @@ export default function Lesson() {
 
   if (!lesson) {
     return (
-      <div
+      <PageContainer
         style={{
-          minHeight: "100vh",
-          padding: 24,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          alignItems: "center",
           textAlign: "center"
         }}
       >
@@ -58,39 +101,40 @@ export default function Lesson() {
             color: "#D9D9D9"
           }}
         >
-          Такого урока не существует
-          или он ещё недоступен.
+          Такого урока не существует или он ещё недоступен.
         </p>
 
-        <button
+        <AppButton
           onClick={() => navigate("/home")}
           style={{
-            marginTop: 24,
-            padding: 18,
-            width: 250,
-            background: "#58CC02",
-            border: "none",
-            borderRadius: 18,
-            color: "#fff",
-            fontWeight: "bold"
+            marginTop: 24
           }}
         >
           На главную
-        </button>
-      </div>
+        </AppButton>
+      </PageContainer>
     );
   }
 
-  if (lesson.questions.length === 0) {
+  const originalQuestionsCount = lesson.questions.length;
+  const question = questionQueue[0];
+  const QuestionComponent =
+    question ? QUESTION_COMPONENTS[question.type] : null;
+  const progress =
+    originalQuestionsCount > 0
+      ? (completedCorrect / originalQuestionsCount) * 100
+      : 0;
+  const feedbackLocked = feedbackStatus !== "idle";
+  const checkDisabled =
+    feedbackLocked || isEmptyAnswer(selected);
+
+  if (originalQuestionsCount === 0) {
     return (
-      <div
+      <PageContainer
         style={{
-          minHeight: "100vh",
-          padding: 24,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          alignItems: "center",
           textAlign: "center"
         }}
       >
@@ -105,126 +149,285 @@ export default function Lesson() {
           В этом уроке пока нет заданий.
         </p>
 
-        <button
+        <AppButton
           onClick={() => navigate("/home")}
           style={{
-            marginTop: 24,
-            padding: 18,
-            width: 250,
-            background: "#58CC02",
-            border: "none",
-            borderRadius: 18,
-            color: "#fff",
-            fontWeight: "bold"
+            marginTop: 24
           }}
         >
           На главную
-        </button>
-      </div>
+        </AppButton>
+      </PageContainer>
     );
   }
 
-  const question =
-    lesson.questions[questionIndex];
+  if (!question) {
+    return (
+      <PageContainer
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center"
+        }}
+      >
+        <h1>Завершаем урок...</h1>
+      </PageContainer>
+    );
+  }
 
-  const QuestionComponent =
-    QUESTION_COMPONENTS[question.type];
+  const moveToNextQuestion = () => {
+    const isLastQuestion = questionQueue.length <= 1;
 
-  const progress =
-    lesson.questions.length > 0
-      ? ((questionIndex + 1) /
-          lesson.questions.length) * 100
-      : 0;
+    setCompletedCorrect(prev =>
+      Math.min(prev + 1, originalQuestionsCount)
+    );
 
-  const checkAnswer = () => {
-
-    if (selected === question.correct) {
-
-      if (
-            questionIndex <
-            lesson.questions.length - 1
-          ) {
-
-            setQuestionIndex(
-              prev => prev + 1
-            );
-
-        setSelected(null);
-
-      } else {
-
-        navigate(
-          "/lesson-complete",
-          {
-            state: {
-              lessonId: lesson.id
-            }
+    if (isLastQuestion) {
+      navigate(
+        "/lesson-complete",
+        {
+          state: {
+            lessonId: lesson.id
           }
-        );
+        }
+      );
+      return;
+    }
+
+    setQuestionQueue(prev => prev.slice(1));
+    setSelected(null);
+    setHint("");
+    setFeedbackStatus("idle");
+  };
+
+  const repeatQuestionLater = () => {
+    setQuestionQueue(prev => {
+      if (prev.length <= 1) {
+        return prev;
       }
 
-    } else {
+      const [currentQuestion, ...rest] = prev;
+      return [...rest, currentQuestion];
+    });
+    setSelected(null);
+    setHint("");
+    setFeedbackStatus("idle");
+  };
 
-      loseHeart();
-
-      alert(
-        "Неверный ответ"
-      );
-
+  const checkAnswer = () => {
+    if (feedbackLocked) {
+      return;
     }
+
+    if (isEmptyAnswer(selected)) {
+      setHint(
+        question.type === "match"
+          ? "Завершите сопоставление"
+          : "Выберите ответ"
+      );
+      return;
+    }
+
+    if (selected === question.correct) {
+      registerCorrectAnswer();
+      setFeedbackStatus("correct");
+      setHint("Верно!");
+
+      feedbackTimerRef.current = setTimeout(
+        moveToNextQuestion,
+        CORRECT_FEEDBACK_DELAY
+      );
+      return;
+    }
+
+    resetCorrectAnswerStreak();
+    loseHeart();
+    setFeedbackStatus("wrong");
+    setHint("Почти! Повторим позже");
+
+    feedbackTimerRef.current = setTimeout(
+      repeatQuestionLater,
+      WRONG_FEEDBACK_DELAY
+    );
   };
 
   return (
-    <div
+    <PageContainer
       style={{
-        padding: 24
+        maxWidth: 480,
+        padding: "14px 16px 28px",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       <div
         style={{
-          fontSize: 28,
-          marginBottom: 15
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 18,
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          padding: "8px 0 12px",
+          background: "#4B4B4B"
         }}
       >
-        {"❤️".repeat(user.hearts)}
-      </div>
-
-      <ProgressBar progress={progress} />
-
-      {QuestionComponent ? (
-        <QuestionComponent
-        question={question}
-        selected={selected}
-        setSelected={setSelected}
-        />
-      ) : (
-        <p
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          disabled={feedbackLocked}
+          aria-label="Назад"
           style={{
-            marginTop: 30,
-            textAlign: "center"
+            width: 42,
+            height: 42,
+            borderRadius: 14,
+            border: "2px solid rgba(255,255,255,0.12)",
+            background: "#5A5A5A",
+            color: "#FFFFFF",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 0 rgba(0,0,0,0.18)",
+            opacity: feedbackLocked ? 0.65 : 1,
+            cursor: feedbackLocked ? "default" : "pointer"
           }}
         >
-          Неизвестный тип задания
-        </p>
+          <AppIcon icon={ArrowLeft} size={22} />
+        </button>
+
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0
+          }}
+        >
+          <ProgressBar progress={progress} />
+        </div>
+
+        <div
+          style={{
+            minWidth: 62,
+            minHeight: 42,
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: "#FFFFFF",
+            color: "#4B4B4B",
+            fontWeight: "900",
+            textAlign: "center",
+            boxShadow: "0 4px 0 #D9D9D9"
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6
+            }}
+          >
+            <AppIcon icon={Heart} size={18} color="#FF4D4D" />
+            {user.hearts}
+          </span>
+        </div>
+      </div>
+
+      <AppCard
+        className={`lesson-feedback-card lesson-feedback-card--${feedbackStatus}`}
+        style={{
+          padding: "22px 18px",
+          background: "#F7F7F7",
+          border: "2px solid #E6E6E6",
+          borderRadius: 24,
+          color: "#4B4B4B",
+          boxShadow: feedbackStatus === "correct"
+            ? "0 7px 0 #46A400"
+            : feedbackStatus === "wrong"
+              ? "0 7px 0 #C83737"
+              : "0 7px 0 #D9D9D9"
+        }}
+      >
+        <QuestionImage image={question.image} />
+
+        {QuestionComponent ? (
+          <QuestionComponent
+            question={question}
+            selected={selected}
+            disabled={feedbackLocked}
+            feedbackStatus={feedbackStatus}
+            setSelected={(value) => {
+              if (feedbackLocked) {
+                return;
+              }
+
+              setSelected(value);
+              setHint("");
+            }}
+          />
+        ) : (
+          <p
+            style={{
+              marginTop: 30,
+              textAlign: "center"
+            }}
+          >
+            Неизвестный тип задания
+          </p>
+        )}
+      </AppCard>
+
+      {hint && (
+        <div
+          className={`lesson-feedback-message lesson-feedback-message--${feedbackStatus}`}
+          style={{
+            marginTop: 14,
+            minHeight: 54,
+            padding: "13px 15px",
+            borderRadius: 18,
+            background: feedbackStatus === "wrong"
+              ? "#FFD6D6"
+              : feedbackStatus === "correct"
+                ? "#D7FFB8"
+                : "#FFD43B",
+            color: "#4B4B4B",
+            fontWeight: "900",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            textAlign: "center",
+            boxShadow: feedbackStatus === "wrong"
+              ? "0 4px 0 #C83737"
+              : feedbackStatus === "correct"
+                ? "0 4px 0 #46A400"
+                : "0 4px 0 #E0B900"
+          }}
+        >
+          {feedbackStatus === "correct" && (
+            <AppIcon icon={CheckCircle2} size={22} color="#46A400" />
+          )}
+
+          {feedbackStatus === "wrong" && (
+            <AppIcon icon={XCircle} size={22} color="#C83737" />
+          )}
+
+          {hint}
+        </div>
       )}
 
-      <button
+      <AppButton
         onClick={checkAnswer}
+        disabled={checkDisabled}
         style={{
-          marginTop: 20,
-          width: "100%",
-          padding: 18,
-
-          background: "#58CC02",
-
-          border: "none",
-
-          borderRadius: 18
+          marginTop: 22,
+          minHeight: 60,
+          borderRadius: 18,
+          fontSize: 18
         }}
       >
         Проверить
-      </button>
-
-    </div>
+      </AppButton>
+    </PageContainer>
   );
 }
