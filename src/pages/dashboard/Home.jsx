@@ -1,8 +1,8 @@
 import {
-  BookText,
   Flame,
   Headphones,
   Heart,
+  Languages,
   Star,
   Trophy
 } from "lucide-react";
@@ -182,8 +182,9 @@ export default function Home() {
         />
 
         <PracticeCard
-          icon={<AppIcon icon={BookText} size={25} />}
-          title="Vocabulary"
+          icon={<AppIcon icon={Languages} size={25} />}
+          title="Алфавит"
+          onClick={() => navigate("/alphabet")}
         />
 
         <PracticeCard

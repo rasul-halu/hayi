@@ -1,15 +1,16 @@
 import AnswerButton from "./AnswerButton";
+import { highlightNewWords } from "../../utils/highlightNewWords";
 
-function renderSentence(sentence) {
+function renderSentence(sentence, question) {
   const parts = sentence.split("____");
 
   if (parts.length === 1) {
-    return sentence;
+    return highlightNewWords(sentence, question);
   }
 
   return parts.map((part, index) => (
     <span key={`${part}-${index}`}>
-      {part}
+      {highlightNewWords(part, question)}
       {index < parts.length - 1 && (
         <span
           style={{
@@ -51,7 +52,7 @@ export default function FillBlankQuestion({
           textTransform: "uppercase"
         }}
       >
-        {question.prompt}
+        {highlightNewWords(question.prompt, question)}
       </h2>
 
       <div
@@ -69,7 +70,7 @@ export default function FillBlankQuestion({
           marginBottom: 24
         }}
       >
-        {renderSentence(question.sentence)}
+        {renderSentence(question.sentence, question)}
       </div>
 
       {question.answers.map(answer => (
@@ -79,6 +80,7 @@ export default function FillBlankQuestion({
           selected={selected === answer}
           disabled={disabled}
           feedbackStatus={feedbackStatus}
+          newWords={question}
           onClick={() =>
             setSelected(answer)
           }

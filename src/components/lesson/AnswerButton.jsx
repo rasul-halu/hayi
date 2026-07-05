@@ -1,9 +1,12 @@
+import { highlightNewWords } from "../../utils/highlightNewWords";
+
 export default function AnswerButton({
   text,
   selected,
   onClick,
   disabled = false,
-  feedbackStatus = "idle"
+  feedbackStatus = "idle",
+  newWords
 }) {
   const isWrong =
     selected && feedbackStatus === "wrong";
@@ -51,7 +54,7 @@ export default function AnswerButton({
           : 1
       }}
     >
-      {text}
+      {highlightNewWords(text, newWords)}
     </button>
   );
 }

@@ -24,6 +24,7 @@ function getDateOffsetKey(daysOffset) {
 
 const DEFAULT_USER = {
   username: "Гость",
+  avatarUrl: "",
   xp: 120,
   streak: 0,
   longestStreak: 0,
@@ -35,7 +36,8 @@ const DEFAULT_USER = {
   unlockedLessonIds: [1],
   hearts: MAX_HEARTS,
   lastHeartRefillDate: getTodayKey(),
-  correctAnswerStreak: 0
+  correctAnswerStreak: 0,
+  soundEnabled: true
 };
 
 function toNumber(value, fallback) {
@@ -155,7 +157,11 @@ function normalizeUser(savedUser = {}) {
     correctAnswerStreak: toNumber(
       initialUser.correctAnswerStreak,
       DEFAULT_USER.correctAnswerStreak
-    )
+    ),
+    soundEnabled:
+      typeof initialUser.soundEnabled === "boolean"
+        ? initialUser.soundEnabled
+        : DEFAULT_USER.soundEnabled
   };
 }
 
@@ -177,12 +183,22 @@ export function UserProvider({ children }) {
     }
   });
 
-  const login = (username) => {
+  const login = (username, avatarUrl = "") => {
 
     setUser(prev => ({
       ...prev,
-      username
+      username: username || DEFAULT_USER.username,
+      avatarUrl: avatarUrl || prev.avatarUrl || ""
     }));
+  };
+
+  const loginWithTelegramUser = (telegramUser) => {
+    const username =
+      telegramUser?.first_name ||
+      telegramUser?.username ||
+      DEFAULT_USER.username;
+
+    login(username, telegramUser?.photo_url || "");
   };
 
   const addXP = (amount) => {
@@ -419,6 +435,17 @@ export function UserProvider({ children }) {
     }));
   };
 
+  const toggleSound = () => {
+
+    setUser(prev => ({
+      ...prev,
+      soundEnabled:
+        typeof prev.soundEnabled === "boolean"
+          ? !prev.soundEnabled
+          : false
+    }));
+  };
+
   useEffect(() => {
 
     localStorage.setItem(
@@ -434,6 +461,7 @@ export function UserProvider({ children }) {
         user,
         setUser,
         login,
+        loginWithTelegramUser,
         addXP,
         completeLesson,
         completeLessonById,
@@ -444,6 +472,7 @@ export function UserProvider({ children }) {
         restoreOneHeart,
         registerCorrectAnswer,
         resetCorrectAnswerStreak,
+        toggleSound,
         maxHearts: MAX_HEARTS
       }}
     >

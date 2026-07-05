@@ -13,6 +13,7 @@ import Onboarding3 from "../pages/onboarding/Onboarding3";
 import Profile from "../pages/profile/Profile";
 import DailyStreak from "../pages/streak/DailyStreak";
 import Vocabulary from "../pages/dictionary/Vocabulary";
+import Alphabet from "../pages/alphabet/Alphabet";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import Leaderboard from "../pages/leaderboard/Leaderboard";
 import Achievements from "../pages/achievements/Achievements";
@@ -76,6 +77,11 @@ export default function AppRoutes() {
         <Route
           path="/dictionary"
           element={<Vocabulary />}
+        />
+
+        <Route
+          path="/alphabet"
+          element={<Alphabet />}
         />
 
         <Route

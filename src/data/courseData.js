@@ -95,6 +95,56 @@ export const course = {
                 "чун"
               ],
               correct: "заз"
+            },
+
+            {
+              id: "lesson-1-q-build-1",
+              type: "buildSentence",
+              prompt: "Соберите предложение",
+              question: "Я ученик",
+              targetSentence: "Зун ученик я",
+              words: [
+                "ученик",
+                "я",
+                "Зун"
+              ],
+              correct: "Зун ученик я",
+              newWord: {
+                text: "ученик",
+                translation: "ученик"
+              },
+              characterImage: {
+                src: "/images/characters/mascot-hello.png",
+                alt: "Маскот"
+              }
+            },
+
+            {
+              id: "lesson-1-q-build-2",
+              type: "buildSentence",
+              prompt: "Соберите предложение",
+              question: "У меня есть слово",
+              targetSentence: "Заз гафар ава",
+              words: [
+                "ава",
+                "Заз",
+                "гафар"
+              ],
+              correct: "Заз гафар ава",
+              newWords: [
+                {
+                  text: "Заз",
+                  translation: "мне / у меня"
+                },
+                {
+                  text: "гафар",
+                  translation: "слово"
+                }
+              ],
+              characterImage: {
+                src: "/images/characters/mascot-hello.png",
+                alt: "Маскот"
+              }
             }
           ]
         },

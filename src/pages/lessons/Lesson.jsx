@@ -6,6 +6,8 @@ import {
   XCircle
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import BuildSentenceQuestion from "../../components/lesson/BuildSentenceQuestion";
+import CharacterImage from "../../components/lesson/CharacterImage";
 import MatchQuestion from "../../components/lesson/MatchQuestion";
 import FillBlankQuestion from "../../components/lesson/FillBlankQuestion";
 import ListeningQuestion from "../../components/lesson/ListeningQuestion";
@@ -18,21 +20,45 @@ import PageContainer from "../../components/ui/PageContainer";
 import ProgressBar from "../../components/ui/ProgressBar";
 import { useUser } from "../../context/UserContext";
 import { getLessonById } from "../../data/courseHelpers";
+import {
+  playCorrectSound,
+  playWrongSound
+} from "../../utils/soundEffects";
+import { normalizeNewWords } from "../../utils/highlightNewWords";
 
 const QUESTION_COMPONENTS = {
   translate: TranslateQuestion,
   match: MatchQuestion,
   listening: ListeningQuestion,
-  fillBlank: FillBlankQuestion
+  fillBlank: FillBlankQuestion,
+  buildSentence: BuildSentenceQuestion
 };
 
 const CORRECT_FEEDBACK_DELAY = 520;
-const WRONG_FEEDBACK_DELAY = 820;
 
 function isEmptyAnswer(value) {
   return value === null ||
     value === undefined ||
     value === "";
+}
+
+function getCorrectAnswerText(question) {
+  if (!question) {
+    return "Правильный ответ будет показан в повторении";
+  }
+
+  if (question.type === "match" && Array.isArray(question.pairs)) {
+    return question.pairs
+      .map(pair => `${pair.word || pair.left} — ${pair.translation || pair.right}`)
+      .join("\n");
+  }
+
+  if (question.type === "buildSentence") {
+    return question.targetSentence || question.correct;
+  }
+
+  return question.correct ||
+    "Правильный ответ будет показан в повторении";
 }
 
 export default function Lesson() {
@@ -48,6 +74,8 @@ export default function Lesson() {
   const [completedCorrect, setCompletedCorrect] = useState(0);
   const [hint, setHint] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState("idle");
+  const [isWaitingForContinue, setIsWaitingForContinue] = useState(false);
+  const [lastWrongAnswer, setLastWrongAnswer] = useState(null);
 
   const {
     user,
@@ -62,6 +90,8 @@ export default function Lesson() {
     setSelected(null);
     setHint("");
     setFeedbackStatus("idle");
+    setIsWaitingForContinue(false);
+    setLastWrongAnswer(null);
 
     if (feedbackTimerRef.current) {
       clearTimeout(feedbackTimerRef.current);
@@ -127,6 +157,9 @@ export default function Lesson() {
   const feedbackLocked = feedbackStatus !== "idle";
   const checkDisabled =
     feedbackLocked || isEmptyAnswer(selected);
+  const newWords = normalizeNewWords(question);
+  const correctAnswerText =
+    getCorrectAnswerText(question);
 
   if (originalQuestionsCount === 0) {
     return (
@@ -213,6 +246,12 @@ export default function Lesson() {
     setSelected(null);
     setHint("");
     setFeedbackStatus("idle");
+    setIsWaitingForContinue(false);
+    setLastWrongAnswer(null);
+  };
+
+  const handleContinueAfterWrong = () => {
+    repeatQuestionLater();
   };
 
   const checkAnswer = () => {
@@ -233,6 +272,7 @@ export default function Lesson() {
       registerCorrectAnswer();
       setFeedbackStatus("correct");
       setHint("Верно!");
+      playCorrectSound(user.soundEnabled);
 
       feedbackTimerRef.current = setTimeout(
         moveToNextQuestion,
@@ -245,11 +285,9 @@ export default function Lesson() {
     loseHeart();
     setFeedbackStatus("wrong");
     setHint("Почти! Повторим позже");
-
-    feedbackTimerRef.current = setTimeout(
-      repeatQuestionLater,
-      WRONG_FEEDBACK_DELAY
-    );
+    setIsWaitingForContinue(true);
+    setLastWrongAnswer(selected);
+    playWrongSound(user.soundEnabled);
   };
 
   return (
@@ -348,7 +386,62 @@ export default function Lesson() {
               : "0 7px 0 #D9D9D9"
         }}
       >
+        {newWords.length > 0 && (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "12px 14px",
+              borderRadius: 18,
+              background: "#F3E8FF",
+              border: "2px solid #DDD6FE",
+              color: "#4B4B4B",
+              boxShadow: "0 4px 0 #C4B5FD"
+            }}
+          >
+            <div
+              style={{
+                color: "#7C3AED",
+                fontSize: 12,
+                fontWeight: "900",
+                textTransform: "uppercase",
+                marginBottom: 6
+              }}
+            >
+              Новое слово
+            </div>
+
+            {newWords.map(word => (
+              <div
+                key={`${word.text}-${word.translation}`}
+                style={{
+                  fontSize: 17,
+                  fontWeight: "900",
+                  lineHeight: 1.35
+                }}
+              >
+                <span
+                  style={{
+                    color: "#8B5CF6"
+                  }}
+                >
+                  {word.text}
+                </span>
+                {word.translation && (
+                  <>
+                    {" — "}
+                    <span>
+                      {word.translation}
+                    </span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <QuestionImage image={question.image} />
+
+        <CharacterImage image={question.characterImage} />
 
         {QuestionComponent ? (
           <QuestionComponent
@@ -393,6 +486,7 @@ export default function Lesson() {
             color: "#4B4B4B",
             fontWeight: "900",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
@@ -404,18 +498,94 @@ export default function Lesson() {
                 : "0 4px 0 #E0B900"
           }}
         >
-          {feedbackStatus === "correct" && (
-            <AppIcon icon={CheckCircle2} size={22} color="#46A400" />
-          )}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8
+            }}
+          >
+            {feedbackStatus === "correct" && (
+              <AppIcon icon={CheckCircle2} size={22} color="#46A400" />
+            )}
 
-          {feedbackStatus === "wrong" && (
-            <AppIcon icon={XCircle} size={22} color="#C83737" />
-          )}
+            {feedbackStatus === "wrong" && (
+              <AppIcon icon={XCircle} size={22} color="#C83737" />
+            )}
 
-          {hint}
+            <span>{hint}</span>
+          </div>
+
+          {isWaitingForContinue && (
+            <div
+              style={{
+                width: "100%",
+                marginTop: 4,
+                paddingTop: 10,
+                borderTop: "1px solid rgba(75,75,75,0.14)",
+                display: "grid",
+                gap: 8,
+                textAlign: "left"
+              }}
+            >
+              {lastWrongAnswer && question.type !== "match" && (
+                <div
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 1.35
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#777"
+                    }}
+                  >
+                    Ваш ответ:{" "}
+                  </span>
+                  <strong>{lastWrongAnswer}</strong>
+                </div>
+              )}
+
+              <div
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.35
+                }}
+              >
+                <span
+                  style={{
+                    color: "#777"
+                  }}
+                >
+                  Правильный ответ:{" "}
+                </span>
+                <strong
+                  style={{
+                    whiteSpace: "pre-line"
+                  }}
+                >
+                  {correctAnswerText}
+                </strong>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {isWaitingForContinue ? (
+        <AppButton
+          onClick={handleContinueAfterWrong}
+          style={{
+            marginTop: 22,
+            minHeight: 60,
+            borderRadius: 18,
+            fontSize: 18
+          }}
+        >
+          Продолжить
+        </AppButton>
+      ) : (
       <AppButton
         onClick={checkAnswer}
         disabled={checkDisabled}
@@ -428,6 +598,7 @@ export default function Lesson() {
       >
         Проверить
       </AppButton>
+      )}
     </PageContainer>
   );
 }

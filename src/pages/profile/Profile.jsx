@@ -3,6 +3,8 @@ import {
   Flame,
   Heart,
   Medal,
+  Volume2,
+  VolumeX,
   Star,
   Trophy
 } from "lucide-react";
@@ -14,7 +16,7 @@ import AppIcon from "../../components/ui/AppIcon";
 import { useUser } from "../../context/UserContext";
 
 export default function Profile() {
-  const { user } = useUser();
+  const { user, toggleSound } = useUser();
   const navigate = useNavigate();
   const completedLessonCount =
     Array.isArray(user.completedLessonIds)
@@ -93,6 +95,67 @@ export default function Profile() {
           label="Уроков завершено"
         />
       </div>
+
+      <h2
+        style={{
+          marginTop: 30
+        }}
+      >
+        Настройки
+      </h2>
+
+      <button
+        type="button"
+        onClick={toggleSound}
+        style={{
+          width: "100%",
+          marginTop: 12,
+          padding: 16,
+          borderRadius: 18,
+          border: "2px solid rgba(255,255,255,0.08)",
+          background: "#5A5A5A",
+          color: "#FFFFFF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          boxShadow: "0 5px 0 rgba(0,0,0,0.18)",
+          fontWeight: "900"
+        }}
+      >
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10
+          }}
+        >
+          <AppIcon
+            icon={user.soundEnabled ? Volume2 : VolumeX}
+            size={22}
+            color={user.soundEnabled ? "#58CC02" : "#BDBDBD"}
+          />
+          Звуки
+        </span>
+
+        <span
+          style={{
+            minWidth: 76,
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: user.soundEnabled
+              ? "#E9F8DD"
+              : "#777",
+            color: user.soundEnabled
+              ? "#46A400"
+              : "#FFFFFF",
+            fontSize: 13,
+            textAlign: "center"
+          }}
+        >
+          {user.soundEnabled ? "Вкл" : "Выкл"}
+        </span>
+      </button>
 
       <h2
         style={{

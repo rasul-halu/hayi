@@ -18,6 +18,7 @@ import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
+import { playLessonCompleteSound } from "../../utils/soundEffects";
 
 const DEFAULT_XP_REWARD = 10;
 
@@ -28,6 +29,7 @@ export default function LessonComplete() {
     const didComplete = useRef(false);
 
     const {
+        user,
         completeLessonById,
         markLessonCompletedToday
     } = useUser();
@@ -55,10 +57,12 @@ export default function LessonComplete() {
         didComplete.current = true;
         completeLessonById(lessonId, xpReward);
         markLessonCompletedToday();
+        playLessonCompleteSound(user.soundEnabled);
     }, [
         completeLessonById,
         lessonId,
         markLessonCompletedToday,
+        user.soundEnabled,
         xpReward
     ]);
 

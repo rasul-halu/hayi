@@ -10,7 +10,7 @@ import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import SectionTitle from "../../components/ui/SectionTitle";
-import streakMascot from "../../assets/mascot/streak.png";
+import streakMascot from "../../assets/mascot/streak-mascot.png";
 import { useUser } from "../../context/UserContext";
 
 function getWeekDays(todayLessonCompleted) {

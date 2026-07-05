@@ -1,6 +1,7 @@
 import { Volume2 } from "lucide-react";
 import AppIcon from "../ui/AppIcon";
 import AnswerButton from "./AnswerButton";
+import { highlightNewWords } from "../../utils/highlightNewWords";
 
 export default function ListeningQuestion({
   question,
@@ -21,7 +22,7 @@ export default function ListeningQuestion({
           textTransform: "uppercase"
         }}
       >
-        {question.prompt}
+        {highlightNewWords(question.prompt, question)}
       </h2>
 
       <div
@@ -75,6 +76,7 @@ export default function ListeningQuestion({
           selected={selected === answer}
           disabled={disabled}
           feedbackStatus={feedbackStatus}
+          newWords={question}
           onClick={() =>
             setSelected(answer)
           }

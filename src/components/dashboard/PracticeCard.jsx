@@ -1,6 +1,7 @@
 export default function PracticeCard({
   icon,
   title,
+  description,
   onClick
 }) {
   const interactive = Boolean(onClick);
@@ -49,6 +50,19 @@ export default function PracticeCard({
       >
         {title}
       </div>
+
+      {description && (
+        <div
+          style={{
+            marginTop: 3,
+            color: "#777",
+            fontSize: 11,
+            fontWeight: "800"
+          }}
+        >
+          {description}
+        </div>
+      )}
     </button>
   );
 }

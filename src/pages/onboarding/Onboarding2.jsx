@@ -1,49 +1,91 @@
-import { useNavigate } from "react-router-dom";
+import {
+  Blocks,
+  Headphones,
+  Languages,
+  MessageSquareText
+} from "lucide-react";
+import OnboardingShell from "../../components/onboarding/OnboardingShell";
+import AppIcon from "../../components/ui/AppIcon";
 
-export default function Onboarding2() {
+const items = [
+  {
+    icon: Headphones,
+    title: "Слушай",
+    color: "#58CC02"
+  },
+  {
+    icon: Languages,
+    title: "Слова",
+    color: "#8B5CF6"
+  },
+  {
+    icon: Blocks,
+    title: "Пары",
+    color: "#FFD43B"
+  },
+  {
+    icon: MessageSquareText,
+    title: "Фразы",
+    color: "#FF9600"
+  }
+];
 
-  const navigate = useNavigate();
-
+function PracticePreview() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between"
+        width: "100%",
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: 14
       }}
     >
-      <div />
-
-      <div>
-
+      {items.map(item => (
         <div
+          key={item.title}
           style={{
-            height: 220
+            minHeight: 104,
+            borderRadius: 22,
+            background: "#F7F7F7",
+            border: "2px solid #E6E6E6",
+            boxShadow: "0 5px 0 #D9D9D9",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            fontWeight: "900"
           }}
         >
-          onboarding-2.png
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              background: "#E9F8DD",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <AppIcon icon={item.icon} size={27} color={item.color} />
+          </div>
+          {item.title}
         </div>
-
-        <h1>
-          Учитесь играя
-        </h1>
-
-        <p>
-          Получайте опыт,
-          открывайте новые уроки
-          и поддерживайте стрик.
-        </p>
-
-      </div>
-
-      <button
-        onClick={() => navigate("/onboarding-3")}
-      >
-        Далее
-      </button>
-
+      ))}
     </div>
+  );
+}
+
+export default function Onboarding2() {
+  return (
+    <OnboardingShell
+      activeIndex={1}
+      title="Тренируй слова, звуки и предложения"
+      text="Слушай произношение, собирай фразы, сопоставляй слова и повторяй ошибки."
+      visual={<PracticePreview />}
+      nextPath="/onboarding-3"
+      primaryLabel="Далее"
+    />
   );
 }

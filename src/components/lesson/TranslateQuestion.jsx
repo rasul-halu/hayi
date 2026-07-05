@@ -1,4 +1,5 @@
 import AnswerButton from "./AnswerButton";
+import { highlightNewWords } from "../../utils/highlightNewWords";
 
 export default function TranslateQuestion({
   question,
@@ -19,7 +20,7 @@ export default function TranslateQuestion({
           textTransform: "uppercase"
         }}
       >
-        {question.prompt}
+        {highlightNewWords(question.prompt, question)}
       </h2>
 
       <div
@@ -41,7 +42,7 @@ export default function TranslateQuestion({
             fontWeight: "900"
           }}
         >
-          {question.question}
+          {highlightNewWords(question.question, question)}
         </h1>
       </div>
 
@@ -53,6 +54,7 @@ export default function TranslateQuestion({
         selected={selected === answer}
         disabled={disabled}
         feedbackStatus={feedbackStatus}
+        newWords={question}
         onClick={() =>
             setSelected(answer)
         }
