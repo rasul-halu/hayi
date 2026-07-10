@@ -17,11 +17,17 @@ export default function AchievementCard({
 
   const showImage =
     achievement.image && !imageFailed;
+  const target =
+    achievement.target ||
+    achievement.maxProgress ||
+    0;
+  const progress =
+    achievement.progress || 0;
 
   const progressPercent =
-    achievement.maxProgress > 0
+    target > 0
       ? Math.min(
-          (achievement.progress / achievement.maxProgress) * 100,
+          (progress / target) * 100,
           100
         )
       : 0;
@@ -136,6 +142,19 @@ export default function AchievementCard({
             {achievement.description}
           </p>
 
+          {achievement.xpReward ? (
+            <div
+              style={{
+                marginTop: 8,
+                color: "#58CC02",
+                fontSize: 13,
+                fontWeight: "900"
+              }}
+            >
+              +{achievement.xpReward} XP
+            </div>
+          ) : null}
+
           <div
             style={{
               marginTop: 10
@@ -152,7 +171,7 @@ export default function AchievementCard({
             >
               <span>Прогресс</span>
               <span>
-                {achievement.progress}/{achievement.maxProgress}
+                {progress}/{target}
               </span>
             </div>
 
@@ -177,6 +196,19 @@ export default function AchievementCard({
               />
             </div>
           </div>
+
+          {achievement.unlocked && achievement.unlockedAt ? (
+            <div
+              style={{
+                marginTop: 8,
+                color: "#777",
+                fontSize: 12,
+                fontWeight: "800"
+              }}
+            >
+              {new Date(achievement.unlockedAt).toLocaleDateString()}
+            </div>
+          ) : null}
         </div>
       </div>
     </AppCard>

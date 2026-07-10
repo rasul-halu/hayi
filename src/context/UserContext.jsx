@@ -5,6 +5,13 @@ import {
   useEffect,
   useCallback
 } from "react";
+import {
+  completeLessonOnServer,
+  getUserStats,
+  hasTelegramAuthData,
+  recordCorrectAnswer,
+  recordWrongAnswer
+} from "../api/apiClient";
 import { getNextLessonId } from "../data/courseHelpers";
 
 const UserContext = createContext();
@@ -24,10 +31,14 @@ function getDateOffsetKey(daysOffset) {
 
 const DEFAULT_USER = {
   username: "Гость",
+  backendUserId: null,
+  telegramId: null,
   avatarUrl: "",
   xp: 120,
   streak: 0,
   longestStreak: 0,
+  totalCorrectAnswers: 0,
+  totalWrongAnswers: 0,
   lastLessonCompletedDate: null,
   todayLessonCompleted: false,
   completedLessons: 0,
@@ -146,6 +157,14 @@ function normalizeUser(savedUser = {}) {
       : normalizeHearts(initialUser.hearts),
     streak,
     longestStreak: Math.max(longestStreak, streak),
+    totalCorrectAnswers: toNumber(
+      initialUser.totalCorrectAnswers,
+      DEFAULT_USER.totalCorrectAnswers
+    ),
+    totalWrongAnswers: toNumber(
+      initialUser.totalWrongAnswers,
+      DEFAULT_USER.totalWrongAnswers
+    ),
     lastLessonCompletedDate,
     todayLessonCompleted:
       lastLessonCompletedDate === today,
@@ -192,13 +211,79 @@ export function UserProvider({ children }) {
     }));
   };
 
+  const syncStatsFromServer = useCallback((stats) => {
+    if (!stats) {
+      return;
+    }
+
+    setUser(prev => ({
+      ...prev,
+      xp: toNumber(stats.xp, prev.xp),
+      hearts: clamp(
+        toNumber(stats.hearts, prev.hearts),
+        0,
+        toNumber(stats.maxHearts, MAX_HEARTS)
+      ),
+      streak: toNumber(stats.streak, prev.streak),
+      longestStreak: toNumber(
+        stats.longestStreak,
+        prev.longestStreak
+      ),
+      totalCorrectAnswers: toNumber(
+        stats.totalCorrectAnswers,
+        prev.totalCorrectAnswers || 0
+      ),
+      totalWrongAnswers: toNumber(
+        stats.totalWrongAnswers,
+        prev.totalWrongAnswers || 0
+      ),
+      lastLessonCompletedDate:
+        typeof stats.lastLessonCompletedDate === "string"
+          ? stats.lastLessonCompletedDate
+          : prev.lastLessonCompletedDate,
+      lastHeartRefillDate: getTodayKey()
+    }));
+  }, []);
+
+  const loadStatsFromServer = useCallback(async () => {
+    if (!hasTelegramAuthData()) {
+      return null;
+    }
+
+    const data = await getUserStats();
+    syncStatsFromServer(data.stats);
+
+    return data.stats;
+  }, [syncStatsFromServer]);
+
   const loginWithTelegramUser = (telegramUser) => {
     const username =
+      telegramUser?.firstName ||
       telegramUser?.first_name ||
       telegramUser?.username ||
       DEFAULT_USER.username;
 
-    login(username, telegramUser?.photo_url || "");
+    setUser(prev => ({
+      ...prev,
+      username,
+      backendUserId:
+        telegramUser?.id !== undefined && telegramUser?.id !== null
+          ? String(telegramUser.id)
+          : prev.backendUserId || null,
+      telegramId:
+        telegramUser?.telegramId !== undefined && telegramUser?.telegramId !== null
+          ? String(telegramUser.telegramId)
+          : telegramUser?.id !== undefined && telegramUser?.id !== null
+          ? String(telegramUser.id)
+          : prev.telegramId || null,
+      avatarUrl:
+        telegramUser?.avatarUrl ||
+        telegramUser?.photo_url ||
+        prev.avatarUrl ||
+        ""
+    }));
+
+    syncStatsFromServer(telegramUser);
   };
 
   const addXP = (amount) => {
@@ -294,6 +379,61 @@ export function UserProvider({ children }) {
           nextCompletedLessonIds.length,
         unlockedLessons:
           nextUnlockedLessonIds.length
+      };
+    });
+  }, []);
+
+  const cacheCompletedLessonById = useCallback((lessonId) => {
+    const numericLessonId = Number(lessonId);
+
+    if (
+      !Number.isInteger(numericLessonId) ||
+      numericLessonId <= 0
+    ) {
+      return;
+    }
+
+    setUser(prev => {
+      const completedLessonIds = normalizeIdList(
+        prev.completedLessonIds
+      );
+      const unlockedLessonIds = normalizeIdList(
+        prev.unlockedLessonIds,
+        DEFAULT_USER.unlockedLessonIds
+      );
+
+      if (completedLessonIds.includes(numericLessonId)) {
+        return {
+          ...prev,
+          completedLessonIds,
+          unlockedLessonIds,
+          completedLessons: completedLessonIds.length,
+          unlockedLessons: unlockedLessonIds.length
+        };
+      }
+
+      const nextLessonId =
+        getNextLessonId(numericLessonId);
+      const nextCompletedLessonIds = [
+        ...completedLessonIds,
+        numericLessonId
+      ];
+      const nextUnlockedLessonIds =
+        nextLessonId
+          ? [
+              ...new Set([
+                ...unlockedLessonIds,
+                nextLessonId
+              ])
+            ]
+          : unlockedLessonIds;
+
+      return {
+        ...prev,
+        completedLessonIds: nextCompletedLessonIds,
+        unlockedLessonIds: nextUnlockedLessonIds,
+        completedLessons: nextCompletedLessonIds.length,
+        unlockedLessons: nextUnlockedLessonIds.length
       };
     });
   }, []);
@@ -427,6 +567,25 @@ export function UserProvider({ children }) {
     });
   };
 
+  const handleCorrectAnswer = useCallback(async () => {
+    if (!hasTelegramAuthData()) {
+      registerCorrectAnswer();
+      return;
+    }
+
+    try {
+      const data = await recordCorrectAnswer();
+      syncStatsFromServer(data.stats);
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Server correct answer save failed:",
+          error.message
+        );
+      }
+    }
+  }, [syncStatsFromServer]);
+
   const resetCorrectAnswerStreak = () => {
 
     setUser(prev => ({
@@ -434,6 +593,72 @@ export function UserProvider({ children }) {
       correctAnswerStreak: 0
     }));
   };
+
+  const handleWrongAnswer = useCallback(async () => {
+    if (!hasTelegramAuthData()) {
+      resetCorrectAnswerStreak();
+      loseHeart();
+      return;
+    }
+
+    setUser(prev => ({
+      ...prev,
+      correctAnswerStreak: 0
+    }));
+
+    try {
+      const data = await recordWrongAnswer();
+      syncStatsFromServer(data.stats);
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Server wrong answer save failed:",
+          error.message
+        );
+      }
+
+      loseHeart();
+    }
+  }, [syncStatsFromServer]);
+
+  const completeLessonWithSync = useCallback(async (
+    lessonId,
+    xpReward = 10
+  ) => {
+    if (!hasTelegramAuthData()) {
+      completeLessonById(lessonId, xpReward);
+      markLessonCompletedToday();
+      return null;
+    }
+
+    try {
+      const data = await completeLessonOnServer({
+        lessonId: String(lessonId)
+      });
+
+      cacheCompletedLessonById(lessonId);
+      syncStatsFromServer(data.stats);
+
+      return data;
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Server lesson complete failed:",
+          error.message
+        );
+      }
+
+      completeLessonById(lessonId, xpReward);
+      markLessonCompletedToday();
+
+      return null;
+    }
+  }, [
+    cacheCompletedLessonById,
+    completeLessonById,
+    markLessonCompletedToday,
+    syncStatsFromServer
+  ]);
 
   const toggleSound = () => {
 
@@ -462,15 +687,20 @@ export function UserProvider({ children }) {
         setUser,
         login,
         loginWithTelegramUser,
+        syncStatsFromServer,
+        loadStatsFromServer,
         addXP,
         completeLesson,
         completeLessonById,
+        completeLessonWithSync,
         markLessonCompletedToday,
         unlockNextLesson,
         loseHeart,
         resetHearts,
         restoreOneHeart,
         registerCorrectAnswer,
+        handleCorrectAnswer,
+        handleWrongAnswer,
         resetCorrectAnswerStreak,
         toggleSound,
         maxHearts: MAX_HEARTS

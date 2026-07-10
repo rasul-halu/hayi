@@ -72,6 +72,7 @@ export default function Lesson() {
     () => lesson?.questions || []
   );
   const [completedCorrect, setCompletedCorrect] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState(0);
   const [hint, setHint] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState("idle");
   const [isWaitingForContinue, setIsWaitingForContinue] = useState(false);
@@ -79,14 +80,14 @@ export default function Lesson() {
 
   const {
     user,
-    loseHeart,
-    registerCorrectAnswer,
-    resetCorrectAnswerStreak
+    handleCorrectAnswer,
+    handleWrongAnswer
   } = useUser();
 
   useEffect(() => {
     setQuestionQueue(lesson?.questions || []);
     setCompletedCorrect(0);
+    setWrongAnswers(0);
     setSelected(null);
     setHint("");
     setFeedbackStatus("idle");
@@ -221,7 +222,9 @@ export default function Lesson() {
         "/lesson-complete",
         {
           state: {
-            lessonId: lesson.id
+            lessonId: lesson.id,
+            correctAnswers: originalQuestionsCount,
+            wrongAnswers
           }
         }
       );
@@ -269,7 +272,7 @@ export default function Lesson() {
     }
 
     if (selected === question.correct) {
-      registerCorrectAnswer();
+      void handleCorrectAnswer();
       setFeedbackStatus("correct");
       setHint("Верно!");
       playCorrectSound(user.soundEnabled);
@@ -281,8 +284,8 @@ export default function Lesson() {
       return;
     }
 
-    resetCorrectAnswerStreak();
-    loseHeart();
+    void handleWrongAnswer();
+    setWrongAnswers(prev => prev + 1);
     setFeedbackStatus("wrong");
     setHint("Почти! Повторим позже");
     setIsWaitingForContinue(true);

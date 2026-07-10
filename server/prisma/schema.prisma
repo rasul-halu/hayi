@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  telegramId   String   @unique
+  firstName    String
+  lastName     String?
+  username     String?
+  avatarUrl    String?
+  languageCode String?
+  isPremium    Boolean  @default(false)
+  xp                       Int       @default(0)
+  hearts                   Int       @default(5)
+  maxHearts                Int       @default(5)
+  streak                   Int       @default(0)
+  longestStreak            Int       @default(0)
+  totalCorrectAnswers      Int       @default(0)
+  totalWrongAnswers        Int       @default(0)
+  lastHeartRefillAt        DateTime  @default(now())
+  lastLessonCompletedDate  DateTime?
+
+  lessonProgress LessonProgress[]
+  xpEvents XpEvent[]
+  achievements UserAchievement[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([xp])
+}
+
+model LessonProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  lessonId       String
+  completed      Boolean   @default(false)
+  attempts       Int       @default(0)
+  correctAnswers Int       @default(0)
+  wrongAnswers   Int       @default(0)
+  completedAt    DateTime?
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  source    String
+  lessonId  String?
+  uniqueKey String?  @unique
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model UserAchievement {
+  id             String   @id @default(cuid())
+  userId         String
+  achievementKey String
+  unlockedAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementKey])
+  @@index([userId])
+}

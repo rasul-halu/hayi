@@ -30,8 +30,7 @@ export default function LessonComplete() {
 
     const {
         user,
-        completeLessonById,
-        markLessonCompletedToday
+        completeLessonWithSync
     } = useUser();
 
     const queryLessonId =
@@ -55,13 +54,11 @@ export default function LessonComplete() {
         }
 
         didComplete.current = true;
-        completeLessonById(lessonId, xpReward);
-        markLessonCompletedToday();
+        void completeLessonWithSync(lessonId, xpReward);
         playLessonCompleteSound(user.soundEnabled);
     }, [
-        completeLessonById,
+        completeLessonWithSync,
         lessonId,
-        markLessonCompletedToday,
         user.soundEnabled,
         xpReward
     ]);

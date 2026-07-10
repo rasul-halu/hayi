@@ -1,13 +1,21 @@
-import { Medal } from "lucide-react";
+import { Medal, RefreshCw, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AchievementCard from "../../components/achievements/AchievementCard";
 import BottomNav from "../../components/layout/BottomNav";
+import AppButton from "../../components/ui/AppButton";
+import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import SectionTitle from "../../components/ui/SectionTitle";
-import { achievements } from "../../data/mockAchievements";
+import {
+  getAchievements,
+  hasTelegramAuthData
+} from "../../api/apiClient";
+import { achievements as mockAchievements } from "../../data/mockAchievements";
 import { useUser } from "../../context/UserContext";
+import { playAchievementSound } from "../../utils/soundEffects";
 
-function hydrateAchievement(achievement, user) {
+function hydrateDemoAchievement(achievement, user) {
   const completedLessonCount =
     Array.isArray(user.completedLessonIds)
       ? user.completedLessonIds.length
@@ -49,12 +57,82 @@ function hydrateAchievement(achievement, user) {
 }
 
 export default function Achievements() {
-  const { user } = useUser();
+  const {
+    syncStatsFromServer,
+    user
+  } = useUser();
+  const isTelegramMode = hasTelegramAuthData();
+  const [achievements, setAchievements] = useState([]);
+  const [newlyUnlocked, setNewlyUnlocked] = useState([]);
+  const [isLoading, setIsLoading] = useState(isTelegramMode);
+  const [error, setError] = useState("");
+  const demoUser = useMemo(() => ({
+    completedLessonIds: user.completedLessonIds,
+    streak: user.streak,
+    xp: user.xp
+  }), [
+    user.completedLessonIds,
+    user.streak,
+    user.xp
+  ]);
 
-  const hydratedAchievements =
-    achievements.map(achievement =>
-      hydrateAchievement(achievement, user)
+  const loadAchievements = useCallback(async () => {
+    if (!isTelegramMode) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const data = await getAchievements();
+      setAchievements(data.achievements || []);
+      setNewlyUnlocked(data.newlyUnlocked || []);
+      syncStatsFromServer(data.stats);
+
+      if (data.newlyUnlocked?.length > 0) {
+        playAchievementSound(user.soundEnabled);
+      }
+    } catch (loadError) {
+      setError("Не удалось загрузить достижения");
+
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Achievements loading failed:",
+          loadError.message
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    isTelegramMode,
+    syncStatsFromServer,
+    user.soundEnabled
+  ]);
+
+  useEffect(() => {
+    void loadAchievements();
+  }, [loadAchievements]);
+
+  useEffect(() => {
+    if (isTelegramMode) {
+      return;
+    }
+
+    setAchievements(
+      mockAchievements.map(achievement =>
+        hydrateDemoAchievement(achievement, demoUser)
+      )
     );
+  }, [
+    demoUser,
+    isTelegramMode,
+  ]);
+
+  const firstUnlocked = newlyUnlocked[0];
+  const extraUnlockedCount =
+    Math.max(newlyUnlocked.length - 1, 0);
 
   return (
     <PageContainer>
@@ -77,17 +155,144 @@ export default function Achievements() {
 
       <SectionTitle
         title="Достижения"
-        subtitle="Награды за прогресс, серию и активность"
+        subtitle={
+          isTelegramMode
+            ? "Награды за прогресс, серию и активность"
+            : "Демо-достижения для гостевого режима"
+        }
       />
+
+      {!isTelegramMode ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            background: "#FFD43B",
+            color: "#4B4B4B",
+            boxShadow: "0 6px 0 #E0B900",
+            fontWeight: "900"
+          }}
+        >
+          Демо-достижения
+        </AppCard>
+      ) : null}
+
+      {firstUnlocked ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            background: "#E9F8DD",
+            color: "#4B4B4B",
+            borderColor: "#58CC02",
+            boxShadow: "0 6px 0 #46A400"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center"
+            }}
+          >
+            <AppIcon icon={Sparkles} size={24} color="#58CC02" />
+            <div>
+              <div
+                style={{
+                  fontWeight: "900"
+                }}
+              >
+                Новое достижение!
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 14,
+                  fontWeight: "800",
+                  color: "#555"
+                }}
+              >
+                {firstUnlocked.title}
+                {firstUnlocked.xpReward
+                  ? ` · +${firstUnlocked.xpReward} XP`
+                  : ""}
+                {extraUnlockedCount > 0
+                  ? ` · и ещё ${extraUnlockedCount}`
+                  : ""}
+              </div>
+            </div>
+          </div>
+        </AppCard>
+      ) : null}
+
+      {isLoading ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            color: "#4B4B4B",
+            textAlign: "center",
+            fontWeight: "900"
+          }}
+        >
+          Загружаем достижения...
+        </AppCard>
+      ) : null}
+
+      {error ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            color: "#4B4B4B",
+            textAlign: "center"
+          }}
+        >
+          <div
+            style={{
+              fontWeight: "900",
+              marginBottom: 12
+            }}
+          >
+            {error}
+          </div>
+
+          <AppButton
+            onClick={loadAchievements}
+            variant="secondary"
+          >
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8
+              }}
+            >
+              <AppIcon icon={RefreshCw} size={18} />
+              Повторить
+            </span>
+          </AppButton>
+        </AppCard>
+      ) : null}
+
+      {!isLoading && !error && achievements.length === 0 ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            color: "#4B4B4B",
+            textAlign: "center",
+            fontWeight: "900"
+          }}
+        >
+          Достижения пока недоступны
+        </AppCard>
+      ) : null}
 
       <div
         style={{
           marginTop: 18
         }}
       >
-        {hydratedAchievements.map(achievement => (
+        {achievements.map(achievement => (
           <AchievementCard
-            key={achievement.id}
+            key={achievement.key || achievement.id}
             achievement={achievement}
           />
         ))}

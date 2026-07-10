@@ -3,20 +3,35 @@ import {
   Sparkles,
   UserRound
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { authenticateWithTelegram } from "../../api/apiClient";
 import AppButton from "../../components/ui/AppButton";
 import AppIcon from "../../components/ui/AppIcon";
 import { useUser } from "../../context/UserContext";
 import mascot from "../../assets/mascot/main-mascot.png";
-import { getTelegramUser } from "../../utils/telegram";
+import {
+  getTelegramInitData,
+  getTelegramUser
+} from "../../utils/telegram";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loginWithTelegramUser } = useUser();
+  const {
+    loadStatsFromServer,
+    login,
+    loginWithTelegramUser
+  } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const telegramUser = useMemo(
     () => getTelegramUser(),
+    []
+  );
+
+  const telegramInitData = useMemo(
+    () => getTelegramInitData(),
     []
   );
 
@@ -25,14 +40,35 @@ export default function Login() {
     telegramUser?.username ||
     "Гость";
 
-  const handleContinue = () => {
-    if (telegramUser) {
-      loginWithTelegramUser(telegramUser);
-    } else {
+  const handleGuestContinue = () => {
+    login("Гость");
+    navigate("/home");
+  };
+
+  const handleContinue = async () => {
+    setAuthError("");
+
+    if (!telegramInitData) {
       login("Гость");
+      navigate("/home");
+      return;
     }
 
-    navigate("/home");
+    setIsLoading(true);
+
+    try {
+      const data = await authenticateWithTelegram(telegramInitData);
+      loginWithTelegramUser(data.user);
+      await loadStatsFromServer();
+      navigate("/home");
+    } catch (error) {
+      setAuthError(
+        error.message ||
+          "Не удалось подтвердить Telegram. Попробуй ещё раз."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -203,8 +239,27 @@ export default function Login() {
           }}
         >
           <AppIcon icon={ShieldCheck} size={17} color="#58CC02" />
-          Авторизация через Telegram будет проверяться на сервере позже
+          Авторизация через Telegram проверяется на сервере
         </div>
+
+        {authError ? (
+          <div
+            role="alert"
+            style={{
+              padding: "13px 14px",
+              borderRadius: 16,
+              background: "#FFF4F4",
+              color: "#B3261E",
+              border: "2px solid #FFDAD6",
+              fontSize: 14,
+              lineHeight: 1.35,
+              fontWeight: "800",
+              textAlign: "left"
+            }}
+          >
+            {authError}
+          </div>
+        ) : null}
       </div>
 
       <div
@@ -215,16 +270,29 @@ export default function Login() {
       >
         <AppButton
           onClick={handleContinue}
+          disabled={isLoading}
           style={{
             minHeight: 62,
             borderRadius: 22,
             fontSize: 18
           }}
         >
-          {telegramUser
+          {isLoading
+            ? "Подключаем Telegram..."
+            : telegramUser
             ? `Продолжить как ${displayName}`
             : "Продолжить как гость"}
         </AppButton>
+
+        {authError && process.env.NODE_ENV === "development" ? (
+          <AppButton
+            variant="secondary"
+            onClick={handleGuestContinue}
+            disabled={isLoading}
+          >
+            Продолжить как гость
+          </AppButton>
+        ) : null}
 
         <div
           style={{
