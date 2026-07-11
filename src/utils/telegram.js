@@ -5,7 +5,30 @@ export function getTelegramWebApp() {
 }
 
 export function getTelegramInitData() {
-  return getTelegramWebApp()?.initData || "";
+  const webAppInitData = getTelegramWebApp()?.initData || "";
+
+  return webAppInitData || getTelegramInitDataFromHash();
+}
+
+export function getTelegramInitDataFromHash() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const hash = window.location.hash || "";
+  const normalizedHash = hash.startsWith("#")
+    ? hash.slice(1)
+    : hash;
+
+  if (!normalizedHash) {
+    return "";
+  }
+
+  const params = new URLSearchParams(normalizedHash);
+
+  // URLSearchParams decodes the tgWebAppData wrapper once. Do not decode it
+  // again: the inner Telegram initData query string must keep its own escaping.
+  return params.get("tgWebAppData") || "";
 }
 
 export function isTelegramWebApp() {

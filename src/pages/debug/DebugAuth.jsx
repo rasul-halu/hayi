@@ -67,6 +67,7 @@ export default function DebugAuth() {
     const initData = getTelegramInitData();
     const hasTelegramObject = Boolean(getTelegramWebApp());
     const hasInitData = initData.length > 0;
+    const hash = window.location.hash || "";
 
     return {
       isTelegramWebApp: isTelegramWebApp(),
@@ -82,7 +83,11 @@ export default function DebugAuth() {
       backendUserIdExists: Boolean(user.backendUserId),
       telegramIdExists: Boolean(user.telegramId),
       apiUrl: API_URL,
-      locationHref: window.location.href,
+      locationOrigin: window.location.origin,
+      locationPathname: window.location.pathname,
+      locationSearch: window.location.search,
+      hasHash: hash.length > 0,
+      hashContainsTgWebAppData: hash.includes("tgWebAppData="),
       hasHayiGuestUser: getStorageFlag("hayi-guest-user"),
       hasHayiTelegramUser: getStorageFlag("hayi-telegram-user"),
       hasOldHaiyiUser: getStorageFlag("haiyi-user"),
@@ -195,7 +200,11 @@ export default function DebugAuth() {
         <DebugRow label="backendUserId exists" value={diagnostics.backendUserIdExists} />
         <DebugRow label="telegramId exists" value={diagnostics.telegramIdExists} />
         <DebugRow label="REACT_APP_API_URL" value={diagnostics.apiUrl} />
-        <DebugRow label="location.href" value={diagnostics.locationHref} />
+        <DebugRow label="location.origin" value={diagnostics.locationOrigin} />
+        <DebugRow label="location.pathname" value={diagnostics.locationPathname} />
+        <DebugRow label="location.search" value={diagnostics.locationSearch} />
+        <DebugRow label="hasHash" value={diagnostics.hasHash} />
+        <DebugRow label="hashContainsTgWebAppData" value={diagnostics.hashContainsTgWebAppData} />
         <DebugRow label="has hayi-guest-user" value={diagnostics.hasHayiGuestUser} />
         <DebugRow label="has hayi-telegram-user" value={diagnostics.hasHayiTelegramUser} />
         <DebugRow label="has old haiyi-user" value={diagnostics.hasOldHaiyiUser} />
