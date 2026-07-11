@@ -1,14 +1,30 @@
-export function getTelegramUser() {
-  return window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+export function getTelegramWebApp() {
+  return typeof window === "undefined"
+    ? null
+    : window.Telegram?.WebApp || null;
 }
 
 export function getTelegramInitData() {
-  return window.Telegram?.WebApp?.initData || "";
+  return getTelegramWebApp()?.initData || "";
+}
+
+export function isTelegramWebApp() {
+  return getTelegramInitData().trim().length > 0;
+}
+
+export function getTelegramUserUnsafe() {
+  return getTelegramWebApp()?.initDataUnsafe?.user || null;
+}
+
+export function getTelegramUser() {
+  return getTelegramUserUnsafe();
 }
 
 export function prepareTelegramWebApp() {
-  window.Telegram?.WebApp?.ready?.();
-  window.Telegram?.WebApp?.expand?.();
+  const webApp = getTelegramWebApp();
+
+  webApp?.ready?.();
+  webApp?.expand?.();
 }
 
 // initDataUnsafe user is only for temporary display.

@@ -3,21 +3,29 @@ import {
   useContext,
   useState,
   useEffect,
-  useCallback
+  useCallback,
+  useRef
 } from "react";
 import {
+  authenticateWithTelegram,
   completeLessonOnServer,
+  getProgress,
   getUserStats,
   hasTelegramAuthData,
   recordCorrectAnswer,
   recordWrongAnswer
 } from "../api/apiClient";
 import { getNextLessonId } from "../data/courseHelpers";
+import { getTelegramInitData } from "../utils/telegram";
+import { mapBackendUserToAppUser } from "../utils/userMapping";
 
 const UserContext = createContext();
 
 const MAX_HEARTS = 5;
 const HEART_REWARD_STREAK = 3;
+const LEGACY_USER_KEY = "haiyi-user";
+const GUEST_USER_KEY = "hayi-guest-user";
+const TELEGRAM_USER_KEY = "hayi-telegram-user";
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -31,9 +39,15 @@ function getDateOffsetKey(daysOffset) {
 
 const DEFAULT_USER = {
   username: "Гость",
+  displayName: "Гость",
+  firstName: "",
+  lastName: null,
+  telegramUsername: null,
   backendUserId: null,
   telegramId: null,
   avatarUrl: "",
+  isGuest: true,
+  authProvider: "guest",
   xp: 120,
   streak: 0,
   longestStreak: 0,
@@ -102,6 +116,62 @@ function normalizeDate(value) {
     : null;
 }
 
+function readStoredUser(key) {
+  const savedUser = localStorage.getItem(key);
+
+  if (!savedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(savedUser);
+  } catch {
+    return null;
+  }
+}
+
+function getInitialUser() {
+  if (hasTelegramAuthData()) {
+    const telegramUser =
+      readStoredUser(TELEGRAM_USER_KEY);
+
+    const legacyUser =
+      readStoredUser(LEGACY_USER_KEY);
+
+    const cachedTelegramUser =
+      telegramUser ||
+      (
+        legacyUser?.authProvider === "telegram"
+          ? legacyUser
+          : null
+      );
+
+    return normalizeUser({
+      ...(cachedTelegramUser || {}),
+      username:
+        cachedTelegramUser?.username ||
+        cachedTelegramUser?.displayName ||
+        "Ученик",
+      displayName:
+        cachedTelegramUser?.displayName ||
+        cachedTelegramUser?.username ||
+        "Ученик",
+      isGuest: false,
+      authProvider: "telegram"
+    });
+  }
+
+  const guestUser =
+    readStoredUser(GUEST_USER_KEY) ||
+    readStoredUser(LEGACY_USER_KEY);
+
+  return normalizeUser({
+    ...(guestUser || {}),
+    isGuest: true,
+    authProvider: "guest"
+  });
+}
+
 function normalizeUser(savedUser = {}) {
   const initialUser = {
     ...DEFAULT_USER,
@@ -151,6 +221,48 @@ function normalizeUser(savedUser = {}) {
 
   return {
     ...initialUser,
+    username:
+      initialUser.username ||
+      initialUser.displayName ||
+      DEFAULT_USER.username,
+    displayName:
+      initialUser.displayName ||
+      initialUser.username ||
+      DEFAULT_USER.displayName,
+    firstName:
+      typeof initialUser.firstName === "string"
+        ? initialUser.firstName
+        : DEFAULT_USER.firstName,
+    lastName:
+      typeof initialUser.lastName === "string"
+        ? initialUser.lastName
+        : null,
+    telegramUsername:
+      typeof initialUser.telegramUsername === "string"
+        ? initialUser.telegramUsername
+        : null,
+    backendUserId:
+      initialUser.backendUserId !== undefined &&
+      initialUser.backendUserId !== null
+        ? String(initialUser.backendUserId)
+        : null,
+    telegramId:
+      initialUser.telegramId !== undefined &&
+      initialUser.telegramId !== null
+        ? String(initialUser.telegramId)
+        : null,
+    avatarUrl:
+      typeof initialUser.avatarUrl === "string"
+        ? initialUser.avatarUrl
+        : "",
+    isGuest:
+      typeof initialUser.isGuest === "boolean"
+        ? initialUser.isGuest
+        : initialUser.authProvider !== "telegram",
+    authProvider:
+      initialUser.authProvider === "telegram"
+        ? "telegram"
+        : "guest",
     xp: toNumber(initialUser.xp, DEFAULT_USER.xp),
     hearts: shouldRefillHearts
       ? MAX_HEARTS
@@ -186,29 +298,27 @@ function normalizeUser(savedUser = {}) {
 
 export function UserProvider({ children }) {
 
-  const [user, setUser] = useState(() => {
-
-    const savedUser =
-      localStorage.getItem("haiyi-user");
-
-    if (!savedUser) {
-      return normalizeUser();
-    }
-
-    try {
-      return normalizeUser(JSON.parse(savedUser));
-    } catch {
-      return normalizeUser();
-    }
-  });
+  const telegramAuthAttemptedRef = useRef(false);
+  const [authStatus, setAuthStatus] = useState(
+    () => hasTelegramAuthData()
+      ? "loading"
+      : "guest"
+  );
+  const [authError, setAuthError] = useState("");
+  const [user, setUser] = useState(getInitialUser);
 
   const login = (username, avatarUrl = "") => {
 
     setUser(prev => ({
       ...prev,
       username: username || DEFAULT_USER.username,
-      avatarUrl: avatarUrl || prev.avatarUrl || ""
+      displayName: username || DEFAULT_USER.displayName,
+      avatarUrl: avatarUrl || prev.avatarUrl || "",
+      isGuest: true,
+      authProvider: "guest"
     }));
+    setAuthStatus("guest");
+    setAuthError("");
   };
 
   const syncStatsFromServer = useCallback((stats) => {
@@ -256,35 +366,118 @@ export function UserProvider({ children }) {
     return data.stats;
   }, [syncStatsFromServer]);
 
-  const loginWithTelegramUser = (telegramUser) => {
-    const username =
-      telegramUser?.firstName ||
-      telegramUser?.first_name ||
-      telegramUser?.username ||
-      DEFAULT_USER.username;
+  const loadProgressFromServer = useCallback(async () => {
+    if (!hasTelegramAuthData()) {
+      return null;
+    }
+
+    const data = await getProgress();
+    const completedLessonIds = (data.progress || [])
+      .filter(item => item.completed)
+      .map(item => Number(item.lessonId))
+      .filter(item =>
+        Number.isInteger(item) &&
+        item > 0
+      );
+
+    if (completedLessonIds.length > 0) {
+      setUser(prev => {
+        const nextCompletedLessonIds = [
+          ...new Set([
+            ...normalizeIdList(prev.completedLessonIds),
+            ...completedLessonIds
+          ])
+        ];
+
+        return {
+          ...prev,
+          completedLessonIds: nextCompletedLessonIds,
+          completedLessons: nextCompletedLessonIds.length
+        };
+      });
+    }
+
+    return data.progress;
+  }, []);
+
+  const loginWithTelegramUser = useCallback((telegramUser) => {
+    const appUser =
+      mapBackendUserToAppUser(telegramUser);
 
     setUser(prev => ({
       ...prev,
-      username,
-      backendUserId:
-        telegramUser?.id !== undefined && telegramUser?.id !== null
-          ? String(telegramUser.id)
-          : prev.backendUserId || null,
-      telegramId:
-        telegramUser?.telegramId !== undefined && telegramUser?.telegramId !== null
-          ? String(telegramUser.telegramId)
-          : telegramUser?.id !== undefined && telegramUser?.id !== null
-          ? String(telegramUser.id)
-          : prev.telegramId || null,
-      avatarUrl:
-        telegramUser?.avatarUrl ||
-        telegramUser?.photo_url ||
-        prev.avatarUrl ||
-        ""
+      ...appUser,
+      avatarUrl: appUser.avatarUrl || prev.avatarUrl || ""
     }));
+    setAuthStatus("authenticated");
+    setAuthError("");
 
     syncStatsFromServer(telegramUser);
-  };
+  }, [syncStatsFromServer]);
+
+  const authenticateTelegramUser = useCallback(async () => {
+    const initData = getTelegramInitData();
+
+    if (!initData) {
+      setAuthStatus("guest");
+      return null;
+    }
+
+    setAuthStatus("loading");
+    setAuthError("");
+
+    try {
+      const data = await authenticateWithTelegram(initData);
+
+      if (!data.authenticated || !data.user) {
+        throw new Error("Telegram authentication failed");
+      }
+
+      loginWithTelegramUser(data.user);
+
+      try {
+        await Promise.all([
+          loadStatsFromServer(),
+          loadProgressFromServer()
+        ]);
+      } catch (syncError) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "Telegram user sync failed:",
+            syncError.message
+          );
+        }
+      }
+
+      setAuthStatus("authenticated");
+      return data.user;
+    } catch (error) {
+      setAuthStatus("error");
+      setAuthError(
+        error.message ||
+        "Telegram authentication failed"
+      );
+      throw error;
+    }
+  }, [
+    loadProgressFromServer,
+    loadStatsFromServer,
+    loginWithTelegramUser
+  ]);
+
+  useEffect(() => {
+    if (!hasTelegramAuthData()) {
+      setAuthStatus("guest");
+      return;
+    }
+
+    if (telegramAuthAttemptedRef.current) {
+      return;
+    }
+
+    telegramAuthAttemptedRef.current = true;
+    void authenticateTelegramUser().catch(() => {});
+  }, [authenticateTelegramUser]);
 
   const addXP = (amount) => {
 
@@ -672,12 +865,15 @@ export function UserProvider({ children }) {
   };
 
   useEffect(() => {
+    const storageKey =
+      user.authProvider === "telegram"
+        ? TELEGRAM_USER_KEY
+        : GUEST_USER_KEY;
 
     localStorage.setItem(
-      "haiyi-user",
+      storageKey,
       JSON.stringify(user)
     );
-
   }, [user]);
 
   return (
@@ -685,10 +881,14 @@ export function UserProvider({ children }) {
       value={{
         user,
         setUser,
+        authStatus,
+        authError,
         login,
         loginWithTelegramUser,
+        authenticateTelegramUser,
         syncStatsFromServer,
         loadStatsFromServer,
+        loadProgressFromServer,
         addXP,
         completeLesson,
         completeLessonById,

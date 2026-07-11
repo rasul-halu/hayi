@@ -254,7 +254,7 @@ export default function Leaderboard() {
   const demoLeaderboard = useMemo(() => {
     const currentEntry = {
       id: "current-user",
-      displayName: user.username || "Вы",
+      displayName: user.displayName || user.username || "Вы",
       username: null,
       avatarUrl: user.avatarUrl,
       xp: Number(user.xp) || 0,
@@ -273,6 +273,7 @@ export default function Leaderboard() {
       }));
   }, [
     user.avatarUrl,
+    user.displayName,
     user.streak,
     user.username,
     user.xp

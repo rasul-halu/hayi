@@ -14,13 +14,18 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const CLIENT_URL = process.env.CLIENT_URL;
 const isProduction = process.env.NODE_ENV === "production";
+
+function normalizeOrigin(origin) {
+  return origin?.replace(/\/$/, "");
+}
+
 const allowedOrigins = new Set(
   isProduction
     ? [
-        CLIENT_URL,
+        normalizeOrigin(CLIENT_URL),
       ].filter(Boolean)
     : [
-        CLIENT_URL || "http://localhost:3000",
+        normalizeOrigin(CLIENT_URL || "http://localhost:3000"),
         "http://localhost:3000",
       ]
 );
@@ -31,7 +36,7 @@ function corsOrigin(origin, callback) {
     return;
   }
 
-  callback(null, allowedOrigins.has(origin));
+  callback(null, allowedOrigins.has(normalizeOrigin(origin)));
 }
 
 app.use(express.json());

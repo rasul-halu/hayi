@@ -1,7 +1,12 @@
+import {
+  getTelegramInitData,
+  isTelegramWebApp
+} from "../utils/telegram";
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000/api";
 
 function getTelegramAuthHeaders() {
-  const initData = window.Telegram?.WebApp?.initData || "";
+  const initData = getTelegramInitData();
 
   return initData
     ? {
@@ -11,7 +16,7 @@ function getTelegramAuthHeaders() {
 }
 
 export function hasTelegramAuthData() {
-  return Boolean(window.Telegram?.WebApp?.initData);
+  return isTelegramWebApp();
 }
 
 function requireTelegramAuthHeaders() {

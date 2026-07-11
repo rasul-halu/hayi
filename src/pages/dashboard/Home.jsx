@@ -4,7 +4,8 @@ import {
   Heart,
   Languages,
   Star,
-  Trophy
+  Trophy,
+  UserRound
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PracticeCard from "../../components/dashboard/PracticeCard";
@@ -17,6 +18,7 @@ import SectionTitle from "../../components/ui/SectionTitle";
 import StatPill from "../../components/ui/StatPill";
 import { useUser } from "../../context/UserContext";
 import { getCourseChapters } from "../../data/courseHelpers";
+import { getUserInitials } from "../../utils/userAvatar";
 
 export default function Home() {
   const { user } = useUser();
@@ -30,6 +32,7 @@ export default function Home() {
     Array.isArray(user.completedLessonIds)
       ? user.completedLessonIds
       : [];
+  const initials = getUserInitials(user);
 
   return (
     <PageContainer>
@@ -74,10 +77,26 @@ export default function Home() {
             alignItems: "center",
             justifyContent: "center",
             fontWeight: "900",
+            fontSize: 34,
             boxShadow: "0 6px 0 #D9D9D9"
           }}
         >
-          avatar
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.displayName || user.username}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "50%"
+              }}
+            />
+          ) : initials ? (
+            initials
+          ) : (
+            <AppIcon icon={UserRound} size={34} />
+          )}
         </div>
       </div>
 

@@ -6,7 +6,8 @@ import {
   Volume2,
   VolumeX,
   Star,
-  Trophy
+  Trophy,
+  UserRound
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../../components/layout/BottomNav";
@@ -14,6 +15,7 @@ import StatItem from "../../components/profile/StatItem";
 import AppButton from "../../components/ui/AppButton";
 import AppIcon from "../../components/ui/AppIcon";
 import { useUser } from "../../context/UserContext";
+import { getUserInitials } from "../../utils/userAvatar";
 
 export default function Profile() {
   const { user, toggleSound } = useUser();
@@ -22,6 +24,7 @@ export default function Profile() {
     Array.isArray(user.completedLessonIds)
       ? user.completedLessonIds.length
       : 0;
+  const initials = getUserInitials(user);
 
   return (
     <div
@@ -44,10 +47,28 @@ export default function Profile() {
             background: "#666",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            overflow: "hidden",
+            color: "#FFFFFF",
+            fontSize: 42,
+            fontWeight: "900"
           }}
         >
-          avatar
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.displayName || user.username}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover"
+              }}
+            />
+          ) : initials ? (
+            initials
+          ) : (
+            <AppIcon icon={UserRound} size={44} />
+          )}
         </div>
       </div>
 
@@ -57,7 +78,7 @@ export default function Profile() {
           marginTop: 20
         }}
       >
-        {user.username}
+        {user.displayName || user.username}
       </h2>
 
       <div

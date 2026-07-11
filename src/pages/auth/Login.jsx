@@ -3,30 +3,32 @@ import {
   Sparkles,
   UserRound
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authenticateWithTelegram } from "../../api/apiClient";
 import AppButton from "../../components/ui/AppButton";
 import AppIcon from "../../components/ui/AppIcon";
 import { useUser } from "../../context/UserContext";
 import mascot from "../../assets/mascot/main-mascot.png";
 import {
   getTelegramInitData,
-  getTelegramUser
+  getTelegramUserUnsafe,
+  isTelegramWebApp
 } from "../../utils/telegram";
 
 export default function Login() {
   const navigate = useNavigate();
   const {
-    loadStatsFromServer,
+    authError: contextAuthError,
+    authStatus,
+    authenticateTelegramUser,
     login,
-    loginWithTelegramUser
+    user
   } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState("");
 
   const telegramUser = useMemo(
-    () => getTelegramUser(),
+    () => getTelegramUserUnsafe(),
     []
   );
 
@@ -35,7 +37,21 @@ export default function Login() {
     []
   );
 
+  const isTelegramMode = useMemo(
+    () => isTelegramWebApp(),
+    []
+  );
+
+  useEffect(() => {
+    if (authStatus === "authenticated") {
+      navigate("/home");
+    }
+  }, [authStatus, navigate]);
+
   const displayName =
+    user.authProvider === "telegram"
+      ? user.displayName || user.username || "Ученик"
+      :
     telegramUser?.first_name ||
     telegramUser?.username ||
     "Гость";
@@ -57,9 +73,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const data = await authenticateWithTelegram(telegramInitData);
-      loginWithTelegramUser(data.user);
-      await loadStatsFromServer();
+      await authenticateTelegramUser();
       navigate("/home");
     } catch (error) {
       setAuthError(
@@ -177,7 +191,17 @@ export default function Login() {
               flexShrink: 0
             }}
           >
-            {telegramUser?.photo_url ? (
+            {user.authProvider === "telegram" && user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={displayName}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
+            ) : telegramUser?.photo_url ? (
               <img
                 src={telegramUser.photo_url}
                 alt={displayName}
@@ -206,7 +230,7 @@ export default function Login() {
                 whiteSpace: "nowrap"
               }}
             >
-              {telegramUser
+              {isTelegramMode
                 ? `Привет, ${displayName}!`
                 : "Продолжить как гость"}
             </div>
@@ -220,7 +244,7 @@ export default function Login() {
                 fontWeight: "800"
               }}
             >
-              {telegramUser
+              {isTelegramMode
                 ? "Профиль Telegram найден"
                 : "Telegram-профиль недоступен в браузере"}
             </div>
@@ -242,7 +266,7 @@ export default function Login() {
           Авторизация через Telegram проверяется на сервере
         </div>
 
-        {authError ? (
+        {authError || contextAuthError ? (
           <div
             role="alert"
             style={{
@@ -257,7 +281,7 @@ export default function Login() {
               textAlign: "left"
             }}
           >
-            {authError}
+            {authError || contextAuthError}
           </div>
         ) : null}
       </div>
@@ -270,7 +294,7 @@ export default function Login() {
       >
         <AppButton
           onClick={handleContinue}
-          disabled={isLoading}
+          disabled={isLoading || authStatus === "loading"}
           style={{
             minHeight: 62,
             borderRadius: 22,
@@ -278,13 +302,16 @@ export default function Login() {
           }}
         >
           {isLoading
+            || authStatus === "loading"
             ? "Подключаем Telegram..."
-            : telegramUser
+            : isTelegramMode && (authError || contextAuthError)
+            ? "Повторить"
+            : isTelegramMode
             ? `Продолжить как ${displayName}`
             : "Продолжить как гость"}
         </AppButton>
 
-        {authError && process.env.NODE_ENV === "development" ? (
+        {authError && !isTelegramMode && process.env.NODE_ENV === "development" ? (
           <AppButton
             variant="secondary"
             onClick={handleGuestContinue}
