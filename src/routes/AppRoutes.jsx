@@ -22,6 +22,7 @@ import Lesson from "../pages/lessons/Lesson";
 import LessonComplete from "../pages/lessons/LessonComplete";
 
 import HeartsEmpty from "../pages/hearts/HeartsEmpty";
+import DebugAuth from "../pages/debug/DebugAuth";
 
 export default function AppRoutes() {
   return (
@@ -112,6 +113,11 @@ export default function AppRoutes() {
         <Route
           path="/admin"
           element={<AdminDashboard />}
+        />
+
+        <Route
+          path="/debug-auth"
+          element={<DebugAuth />}
         />
 
       </Routes>
