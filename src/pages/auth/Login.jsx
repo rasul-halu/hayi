@@ -54,7 +54,7 @@ export default function Login() {
       :
     telegramUser?.first_name ||
     telegramUser?.username ||
-    "Гость";
+    "Демо";
 
   const handleGuestContinue = () => {
     login("Гость");
@@ -232,7 +232,7 @@ export default function Login() {
             >
               {isTelegramMode
                 ? `Привет, ${displayName}!`
-                : "Продолжить как гость"}
+                : "Демо-режим"}
             </div>
 
             <div
@@ -246,7 +246,7 @@ export default function Login() {
             >
               {isTelegramMode
                 ? "Профиль Telegram найден"
-                : "Telegram-профиль недоступен в браузере"}
+                : "Можно посмотреть приложение в демо-режиме."}
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function Login() {
             ? "Повторить"
             : isTelegramMode
             ? `Продолжить как ${displayName}`
-            : "Продолжить как гость"}
+            : "Продолжить"}
         </AppButton>
 
         {authError && !isTelegramMode && process.env.NODE_ENV === "development" ? (
@@ -317,7 +317,7 @@ export default function Login() {
             onClick={handleGuestContinue}
             disabled={isLoading}
           >
-            Продолжить как гость
+            Продолжить
           </AppButton>
         ) : null}
 

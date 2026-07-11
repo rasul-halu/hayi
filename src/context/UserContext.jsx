@@ -116,6 +116,17 @@ function normalizeDate(value) {
     : null;
 }
 
+function isGuestDisplayName(value) {
+  return value === "Гость" ||
+    value === "Р“РѕСЃС‚СЊ";
+}
+
+function getTelegramSafeName(value) {
+  return value && !isGuestDisplayName(value)
+    ? value
+    : "Ученик";
+}
+
 function readStoredUser(key) {
   const savedUser = localStorage.getItem(key);
 
@@ -149,13 +160,15 @@ function getInitialUser() {
     return normalizeUser({
       ...(cachedTelegramUser || {}),
       username:
-        cachedTelegramUser?.username ||
-        cachedTelegramUser?.displayName ||
-        "Ученик",
+        getTelegramSafeName(
+          cachedTelegramUser?.username ||
+          cachedTelegramUser?.displayName
+        ),
       displayName:
-        cachedTelegramUser?.displayName ||
-        cachedTelegramUser?.username ||
-        "Ученик",
+        getTelegramSafeName(
+          cachedTelegramUser?.displayName ||
+          cachedTelegramUser?.username
+        ),
       isGuest: false,
       authProvider: "telegram"
     });
@@ -222,13 +235,23 @@ function normalizeUser(savedUser = {}) {
   return {
     ...initialUser,
     username:
-      initialUser.username ||
-      initialUser.displayName ||
-      DEFAULT_USER.username,
+      initialUser.authProvider === "telegram"
+        ? getTelegramSafeName(
+            initialUser.username ||
+            initialUser.displayName
+          )
+        : initialUser.username ||
+          initialUser.displayName ||
+          DEFAULT_USER.username,
     displayName:
-      initialUser.displayName ||
-      initialUser.username ||
-      DEFAULT_USER.displayName,
+      initialUser.authProvider === "telegram"
+        ? getTelegramSafeName(
+            initialUser.displayName ||
+            initialUser.username
+          )
+        : initialUser.displayName ||
+          initialUser.username ||
+          DEFAULT_USER.displayName,
     firstName:
       typeof initialUser.firstName === "string"
         ? initialUser.firstName

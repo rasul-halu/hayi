@@ -3,10 +3,13 @@ import {
   Heart,
   Star
 } from "lucide-react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../../components/ui/AppButton";
 import AppIcon from "../../components/ui/AppIcon";
+import { useUser } from "../../context/UserContext";
 import mascot from "../../assets/mascot/main-mascot.png";
+import { isTelegramWebApp } from "../../utils/telegram";
 
 function MiniStat({
   icon,
@@ -40,6 +43,110 @@ function MiniStat({
 
 export default function Splash() {
   const navigate = useNavigate();
+  const {
+    authError,
+    authStatus,
+    authenticateTelegramUser
+  } = useUser();
+  const isTelegramMode = isTelegramWebApp();
+
+  useEffect(() => {
+    if (!isTelegramMode) {
+      return;
+    }
+
+    if (authStatus === "authenticated") {
+      navigate("/home", { replace: true });
+    }
+  }, [
+    authStatus,
+    isTelegramMode,
+    navigate
+  ]);
+
+  if (isTelegramMode) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          width: "100%",
+          maxWidth: 480,
+          margin: "0 auto",
+          padding: "24px 18px 28px",
+          background: "#4B4B4B",
+          color: "#FFFFFF",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center"
+        }}
+      >
+        <img
+          src={mascot}
+          alt="Маскот Хайи"
+          style={{
+            width: 160,
+            height: 160,
+            objectFit: "contain",
+            marginBottom: 22
+          }}
+        />
+
+        <h1
+          style={{
+            margin: 0,
+            color: "#58CC02",
+            fontSize: 42,
+            fontWeight: "900"
+          }}
+        >
+          Хайи
+        </h1>
+
+        <p
+          style={{
+            margin: "14px 0 0",
+            color: "#D9D9D9",
+            fontSize: 17,
+            fontWeight: "800"
+          }}
+        >
+          {authStatus === "error"
+            ? "Не удалось войти через Telegram"
+            : "Входим через Telegram..."}
+        </p>
+
+        {authStatus === "error" ? (
+          <>
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFDAD6",
+                fontSize: 14,
+                lineHeight: 1.4,
+                fontWeight: "700"
+              }}
+            >
+              {authError}
+            </p>
+
+            <AppButton
+              onClick={() => {
+                void authenticateTelegramUser().catch(() => {});
+              }}
+              style={{
+                marginTop: 22
+              }}
+            >
+              Повторить
+            </AppButton>
+          </>
+        ) : null}
+      </main>
+    );
+  }
 
   return (
     <main

@@ -31,7 +31,7 @@ export function mapBackendUserToAppUser(backendUser = {}) {
         : null,
     firstName,
     lastName: lastName || null,
-    username: displayName,
+    username,
     telegramUsername: username || null,
     avatarUrl:
       backendUser.avatarUrl ||

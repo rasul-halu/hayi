@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../ui/AppButton";
 import PageDots from "./PageDots";
+import { useUser } from "../../context/UserContext";
+import { isTelegramWebApp } from "../../utils/telegram";
 
 export default function OnboardingShell({
   activeIndex,
@@ -12,6 +15,76 @@ export default function OnboardingShell({
   showSkip = true
 }) {
   const navigate = useNavigate();
+  const {
+    authStatus,
+    authenticateTelegramUser
+  } = useUser();
+  const isTelegramMode = isTelegramWebApp();
+
+  useEffect(() => {
+    if (!isTelegramMode) {
+      return;
+    }
+
+    if (authStatus === "authenticated") {
+      navigate("/home", { replace: true });
+      return;
+    }
+
+    if (authStatus === "error") {
+      navigate("/login", { replace: true });
+    }
+  }, [
+    authStatus,
+    isTelegramMode,
+    navigate
+  ]);
+
+  if (isTelegramMode) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          width: "100%",
+          maxWidth: 480,
+          margin: "0 auto",
+          padding: 24,
+          background: "#4B4B4B",
+          color: "#FFFFFF",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center"
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            color: "#58CC02",
+            fontSize: 34,
+            fontWeight: "900"
+          }}
+        >
+          Входим через Telegram...
+        </h1>
+
+        {authStatus === "error" ? (
+          <AppButton
+            onClick={() => {
+              void authenticateTelegramUser().catch(() => {});
+            }}
+            style={{
+              marginTop: 22
+            }}
+          >
+            Повторить
+          </AppButton>
+        ) : null}
+      </main>
+    );
+  }
 
   return (
     <main
