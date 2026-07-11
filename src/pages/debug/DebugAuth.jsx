@@ -184,6 +184,18 @@ export default function DebugAuth() {
 
       <AppCard
         style={{
+          marginBottom: 18,
+          background: "#FFD43B",
+          color: "#4B4B4B",
+          borderColor: "#E0B900",
+          fontWeight: "900"
+        }}
+      >
+        Техническая страница. Не для пользователей.
+      </AppCard>
+
+      <AppCard
+        style={{
           color: "#FFFFFF"
         }}
       >
