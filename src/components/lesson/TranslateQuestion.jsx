@@ -1,4 +1,7 @@
-import AnswerButton from "./AnswerButton";
+import AnswerButton, {
+  getOptionLabel,
+  getOptionValue
+} from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
 
 export default function TranslateQuestion({
@@ -46,21 +49,23 @@ export default function TranslateQuestion({
         </h1>
       </div>
 
-      {question.answers.map(answer => (
+      {question.answers.map(answer => {
+        const answerLabel = getOptionLabel(answer);
+        const answerValue = getOptionValue(answer);
 
+        return (
         <AnswerButton
-        key={answer}
-        text={answer}
-        selected={selected === answer}
-        disabled={disabled}
-        feedbackStatus={feedbackStatus}
-        newWords={question}
-        onClick={() =>
-            setSelected(answer)
-        }
+          key={answerValue || answerLabel}
+          label={answerLabel}
+          selected={selected === answerValue}
+          disabled={disabled}
+          feedbackStatus={feedbackStatus}
+          newWords={question}
+          onClick={() => setSelected(answerValue)}
         />
+        );
+      })}
 
-      ))}
     </>
   );
 }

@@ -51,10 +51,7 @@ export default function Login() {
   const displayName =
     user.authProvider === "telegram"
       ? user.displayName || user.username || "Ученик"
-      :
-    telegramUser?.first_name ||
-    telegramUser?.username ||
-    "Демо";
+      : telegramUser?.first_name || telegramUser?.username || "Хайи";
 
   const handleGuestContinue = () => {
     login("Гость");
@@ -93,8 +90,8 @@ export default function Login() {
         maxWidth: 480,
         margin: "0 auto",
         padding: "24px 18px 28px",
-        background: "#4B4B4B",
-        color: "#FFFFFF",
+        background: "#F4F7F2",
+        color: "#2D2D2D",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
@@ -143,7 +140,7 @@ export default function Login() {
               margin: 0,
               fontSize: 40,
               lineHeight: 1.08,
-              fontWeight: "900"
+              fontWeight: 900
             }}
           >
             Готов начать?
@@ -153,10 +150,10 @@ export default function Login() {
             style={{
               margin: "12px auto 0",
               maxWidth: 360,
-              color: "#D9D9D9",
+              color: "#6F746B",
               fontSize: 17,
               lineHeight: 1.45,
-              fontWeight: "700"
+              fontWeight: 700
             }}
           >
             Мы сохраним твой прогресс и подстроим обучение под тебя.
@@ -216,23 +213,17 @@ export default function Login() {
             )}
           </div>
 
-          <div
-            style={{
-              minWidth: 0
-            }}
-          >
+          <div style={{ minWidth: 0 }}>
             <div
               style={{
                 fontSize: 18,
-                fontWeight: "900",
+                fontWeight: 900,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap"
               }}
             >
-              {isTelegramMode
-                ? `Привет, ${displayName}!`
-                : "Демо-режим"}
+              {isTelegramMode ? `Привет, ${displayName}!` : "Можно начинать"}
             </div>
 
             <div
@@ -241,12 +232,12 @@ export default function Login() {
                 color: "#777",
                 fontSize: 13,
                 lineHeight: 1.35,
-                fontWeight: "800"
+                fontWeight: 800
               }}
             >
               {isTelegramMode
                 ? "Профиль Telegram найден"
-                : "Можно посмотреть приложение в демо-режиме."}
+                : "Открой приложение и продолжай обучение на этом устройстве."}
             </div>
           </div>
         </div>
@@ -257,9 +248,9 @@ export default function Login() {
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            color: "#D9D9D9",
+            color: "#6F746B",
             fontSize: 13,
-            fontWeight: "800"
+            fontWeight: 800
           }}
         >
           <AppIcon icon={ShieldCheck} size={17} color="#58CC02" />
@@ -277,7 +268,7 @@ export default function Login() {
               border: "2px solid #FFDAD6",
               fontSize: 14,
               lineHeight: 1.35,
-              fontWeight: "800",
+              fontWeight: 800,
               textAlign: "left"
             }}
           >
@@ -301,14 +292,13 @@ export default function Login() {
             fontSize: 18
           }}
         >
-          {isLoading
-            || authStatus === "loading"
+          {isLoading || authStatus === "loading"
             ? "Подключаем Telegram..."
             : isTelegramMode && (authError || contextAuthError)
-            ? "Повторить"
-            : isTelegramMode
-            ? `Продолжить как ${displayName}`
-            : "Продолжить"}
+              ? "Повторить"
+              : isTelegramMode
+                ? `Продолжить как ${displayName}`
+                : "Продолжить"}
         </AppButton>
 
         {authError && !isTelegramMode && process.env.NODE_ENV === "development" ? (
@@ -327,9 +317,9 @@ export default function Login() {
             justifyContent: "center",
             alignItems: "center",
             gap: 7,
-            color: "#D9D9D9",
+            color: "#6F746B",
             fontSize: 13,
-            fontWeight: "800"
+            fontWeight: 800
           }}
         >
           <AppIcon icon={Sparkles} size={16} color="#FFD43B" />

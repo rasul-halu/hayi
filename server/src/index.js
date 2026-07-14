@@ -3,9 +3,12 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import achievementRouter from "./routes/achievement.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
+import courseRouter from "./routes/course.routes.js";
 import healthRouter from "./routes/health.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
+import lessonRouter from "./routes/lesson.routes.js";
 import progressRouter from "./routes/progress.routes.js";
 import statsRouter from "./routes/stats.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
@@ -47,9 +50,12 @@ app.use(
 );
 
 app.use("/api", healthRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/achievements", achievementRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/courses", courseRouter);
 app.use("/api/leaderboard", leaderboardRouter);
+app.use("/api/lessons", lessonRouter);
 app.use("/api/progress", progressRouter);
 app.use("/api/stats", statsRouter);
 

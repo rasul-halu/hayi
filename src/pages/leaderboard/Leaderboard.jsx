@@ -82,13 +82,13 @@ function Avatar({ entry }) {
       style={{
         width: 44,
         height: 44,
-        borderRadius: "50%",
-        background: "#4B4B4B",
-        color: "#FFFFFF",
+        borderRadius: 16,
+        background: "#E9F8DD",
+        color: "#46A400",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontWeight: "900",
+        fontWeight: 900,
         overflow: "hidden",
         flexShrink: 0
       }}
@@ -123,31 +123,19 @@ function LeaderboardRow({ entry }) {
       style={{
         marginBottom: 12,
         padding: 14,
-        background: entry.isCurrentUser
-          ? "#E9F8DD"
-          : "#FFFFFF",
+        background: entry.isCurrentUser ? "#E9F8DD" : "#FFFFFF",
         color: "#4B4B4B",
-        boxShadow: entry.isCurrentUser
-          ? "0 5px 0 #46A400"
-          : "0 5px 0 #D9D9D9",
-        borderColor: entry.isCurrentUser
-          ? "#58CC02"
-          : "#E6E6E6"
+        boxShadow: entry.isCurrentUser ? "0 5px 0 #46A400" : "0 5px 0 #D9D9D9",
+        border: `2px solid ${entry.isCurrentUser ? "#58CC02" : "#E6E6E6"}`
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
             width: 34,
             textAlign: "center",
             fontSize: isTopThree ? 24 : 16,
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           {isTopThree ? (
@@ -165,23 +153,11 @@ function LeaderboardRow({ entry }) {
 
         <Avatar entry={entry} />
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              minWidth: 0
-            }}
-          >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
             <div
               style={{
-                fontWeight: "900",
+                fontWeight: 900,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap"
@@ -198,7 +174,7 @@ function LeaderboardRow({ entry }) {
                   background: "#58CC02",
                   color: "#FFFFFF",
                   fontSize: 11,
-                  fontWeight: "900",
+                  fontWeight: 900,
                   flexShrink: 0
                 }}
               >
@@ -212,20 +188,14 @@ function LeaderboardRow({ entry }) {
               marginTop: 3,
               color: "#777",
               fontSize: 13,
-              fontWeight: "800",
+              fontWeight: 800,
               display: "flex",
               alignItems: "center",
               gap: 10
             }}
           >
             <span>{entry.xp} XP</span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4
-              }}
-            >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
               <AppIcon icon={Flame} size={14} color="#FF9600" />
               {entry.streak || 0}
             </span>
@@ -299,10 +269,7 @@ export default function Leaderboard() {
       setError("Не удалось загрузить рейтинг");
 
       if (process.env.NODE_ENV === "development") {
-        console.warn(
-          "Leaderboard loading failed:",
-          loadError.message
-        );
+        console.warn("Leaderboard loading failed:", loadError.message);
       }
     } finally {
       setIsLoading(false);
@@ -329,23 +296,26 @@ export default function Leaderboard() {
 
   const shouldShowCurrentUserCard =
     visibleCurrentUser &&
-    !visibleLeaderboard.some(
-      entry => entry.id === visibleCurrentUser.id
-    );
+    !visibleLeaderboard.some(entry => entry.id === visibleCurrentUser.id);
 
   return (
-    <PageContainer>
+    <PageContainer
+      style={{
+        background: "#F4F7F2",
+        color: "#2D2D2D"
+      }}
+    >
       <div
         style={{
           width: 54,
           height: 54,
-          borderRadius: 16,
-          background: "#FFD43B",
-          color: "#4B4B4B",
+          borderRadius: 18,
+          background: "#FFF1D6",
+          color: "#D6A600",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 5px 0 #E0B900",
+          boxShadow: "0 5px 0 #E9D4A9",
           marginBottom: 14
         }}
       >
@@ -358,8 +328,8 @@ export default function Leaderboard() {
           isTelegramMode
             ? `${activePeriod.subtitle}${totalUsers ? ` · ${totalUsers} участников` : ""}`
             : isDevelopment
-              ? "Демо-рейтинг для разработки"
-              : "Рейтинг станет доступен после запуска через Telegram"
+              ? "Локальная таблица для проверки интерфейса"
+              : "Открой Хайи в Telegram, чтобы участвовать в рейтинге"
         }
       />
 
@@ -368,7 +338,8 @@ export default function Leaderboard() {
           display: "grid",
           gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
           gap: 8,
-          marginBottom: 18
+          marginBottom: 18,
+          marginTop: 16
         }}
       >
         {PERIOD_OPTIONS.map(option => {
@@ -387,11 +358,9 @@ export default function Leaderboard() {
                 border: `2px solid ${isActive ? "#46A400" : "#E6E6E6"}`,
                 background: isActive ? "#58CC02" : "#FFFFFF",
                 color: isActive ? "#FFFFFF" : "#4B4B4B",
-                boxShadow: isActive
-                  ? "0 4px 0 #46A400"
-                  : "0 4px 0 #D9D9D9",
+                boxShadow: isActive ? "0 4px 0 #46A400" : "0 4px 0 #D9D9D9",
                 fontSize: 13,
-                fontWeight: "900",
+                fontWeight: 900,
                 cursor: "pointer"
               }}
             >
@@ -405,9 +374,11 @@ export default function Leaderboard() {
         <AppCard
           style={{
             marginBottom: 18,
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center",
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           Загружаем рейтинг...
@@ -418,23 +389,17 @@ export default function Leaderboard() {
         <AppCard
           style={{
             marginBottom: 18,
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center"
           }}
         >
-          <div
-            style={{
-              fontWeight: "900",
-              marginBottom: 12
-            }}
-          >
+          <div style={{ fontWeight: 900, marginBottom: 12 }}>
             {error}
           </div>
 
-          <AppButton
-            onClick={loadLeaderboard}
-            variant="secondary"
-          >
+          <AppButton onClick={loadLeaderboard} variant="secondary">
             <span
               style={{
                 display: "inline-flex",
@@ -450,46 +415,30 @@ export default function Leaderboard() {
         </AppCard>
       ) : null}
 
-      {!isTelegramMode && isDevelopment ? (
-        <AppCard
-          style={{
-            marginBottom: 18,
-            background: "#FFD43B",
-            color: "#4B4B4B",
-            boxShadow: "0 6px 0 #E0B900",
-            fontWeight: "900"
-          }}
-        >
-          Демо-рейтинг
-        </AppCard>
-      ) : null}
-
       {!isLoading && !error && visibleLeaderboard.length === 0 ? (
         <AppCard
           style={{
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center",
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           {isTelegramMode
             ? "Пока в рейтинге никого нет"
-            : "Открой Хайи через Telegram, чтобы участвовать в рейтинге."}
+            : "Рейтинг станет доступен после запуска через Telegram."}
         </AppCard>
       ) : null}
 
       {shouldShowCurrentUserCard ? (
-        <div
-          style={{
-            marginBottom: 18
-          }}
-        >
+        <div style={{ marginBottom: 18 }}>
           <div
             style={{
               fontSize: 13,
-              fontWeight: "900",
+              fontWeight: 900,
               marginBottom: 10,
-              color: "#D9D9D9"
+              color: "#6F746B"
             }}
           >
             Ваша позиция

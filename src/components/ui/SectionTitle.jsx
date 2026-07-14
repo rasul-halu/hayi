@@ -13,7 +13,7 @@ export default function SectionTitle({
       <h2
         style={{
           margin: 0,
-          color: "#FFFFFF",
+          color: "inherit",
           fontSize: 22,
           fontWeight: "900",
           letterSpacing: 0
@@ -26,7 +26,8 @@ export default function SectionTitle({
         <p
           style={{
             margin: "6px 0 0",
-            color: "#D9D9D9",
+            color: "inherit",
+            opacity: 0.72,
             fontSize: 15,
             lineHeight: 1.35
           }}

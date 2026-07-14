@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma.js";
+import { isAdminTelegramId } from "../config/admin.js";
 
 function mapTelegramUserToDatabaseFields(telegramUser) {
   return {
@@ -14,6 +15,7 @@ function mapTelegramUserToDatabaseFields(telegramUser) {
 export function upsertTelegramUser(telegramUser) {
   const telegramId = String(telegramUser.id);
   const profileFields = mapTelegramUserToDatabaseFields(telegramUser);
+  const shouldBeAdmin = isAdminTelegramId(telegramId);
 
   return prisma.user.upsert({
     where: {
@@ -21,8 +23,12 @@ export function upsertTelegramUser(telegramUser) {
     },
     create: {
       telegramId,
+      role: shouldBeAdmin ? "ADMIN" : "USER",
       ...profileFields,
     },
-    update: profileFields,
+    update: {
+      ...profileFields,
+      ...(shouldBeAdmin ? { role: "ADMIN" } : {}),
+    },
   });
 }

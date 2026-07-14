@@ -54,7 +54,11 @@ export const ModelName = {
   User: 'User',
   LessonProgress: 'LessonProgress',
   XpEvent: 'XpEvent',
-  UserAchievement: 'UserAchievement'
+  UserAchievement: 'UserAchievement',
+  Course: 'Course',
+  Chapter: 'Chapter',
+  Lesson: 'Lesson',
+  Question: 'Question'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -82,6 +86,7 @@ export const UserScalarFieldEnum = {
   avatarUrl: 'avatarUrl',
   languageCode: 'languageCode',
   isPremium: 'isPremium',
+  role: 'role',
   xp: 'xp',
   hearts: 'hearts',
   maxHearts: 'maxHearts',
@@ -137,12 +142,88 @@ export const UserAchievementScalarFieldEnum = {
 export type UserAchievementScalarFieldEnum = (typeof UserAchievementScalarFieldEnum)[keyof typeof UserAchievementScalarFieldEnum]
 
 
+export const CourseScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  title: 'title',
+  description: 'description',
+  language: 'language',
+  isPublished: 'isPublished',
+  order: 'order',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CourseScalarFieldEnum = (typeof CourseScalarFieldEnum)[keyof typeof CourseScalarFieldEnum]
+
+
+export const ChapterScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  title: 'title',
+  description: 'description',
+  order: 'order',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChapterScalarFieldEnum = (typeof ChapterScalarFieldEnum)[keyof typeof ChapterScalarFieldEnum]
+
+
+export const LessonScalarFieldEnum = {
+  id: 'id',
+  legacyId: 'legacyId',
+  chapterId: 'chapterId',
+  title: 'title',
+  description: 'description',
+  order: 'order',
+  xpReward: 'xpReward',
+  isPublished: 'isPublished',
+  imageUrl: 'imageUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LessonScalarFieldEnum = (typeof LessonScalarFieldEnum)[keyof typeof LessonScalarFieldEnum]
+
+
+export const QuestionScalarFieldEnum = {
+  id: 'id',
+  lessonId: 'lessonId',
+  type: 'type',
+  order: 'order',
+  prompt: 'prompt',
+  translation: 'translation',
+  correctAnswer: 'correctAnswer',
+  audioUrl: 'audioUrl',
+  characterImage: 'characterImage',
+  explanation: 'explanation',
+  options: 'options',
+  pairs: 'pairs',
+  words: 'words',
+  newWords: 'newWords',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -159,4 +240,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

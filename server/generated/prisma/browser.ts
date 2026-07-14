@@ -37,3 +37,23 @@ export type XpEvent = Prisma.XpEventModel
  * 
  */
 export type UserAchievement = Prisma.UserAchievementModel
+/**
+ * Model Course
+ * 
+ */
+export type Course = Prisma.CourseModel
+/**
+ * Model Chapter
+ * 
+ */
+export type Chapter = Prisma.ChapterModel
+/**
+ * Model Lesson
+ * 
+ */
+export type Lesson = Prisma.LessonModel
+/**
+ * Model Question
+ * 
+ */
+export type Question = Prisma.QuestionModel

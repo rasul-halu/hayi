@@ -44,7 +44,7 @@ export default function BottomNav() {
         display: "flex",
         justifyContent: "center",
         zIndex: 1000,
-        boxShadow: "0 -6px 18px rgba(0,0,0,0.18)"
+        boxShadow: "0 -6px 18px rgba(0,0,0,0.12)"
       }}
     >
       <div
@@ -63,9 +63,7 @@ export default function BottomNav() {
             key={link.to}
             to={link.to}
             style={({ isActive }) => ({
-              color: isActive
-                ? "#58CC02"
-                : "#8A8A8A",
+              color: isActive ? "#58CC02" : "#8A8A8A",
               textDecoration: "none",
               display: "flex",
               flexDirection: "column",
@@ -74,21 +72,13 @@ export default function BottomNav() {
               gap: 4,
               minHeight: 58,
               borderRadius: 14,
-              background: isActive
-                ? "#E9F8DD"
-                : "transparent",
+              background: isActive ? "#E9F8DD" : "transparent",
               fontSize: 11,
-              fontWeight: "900"
+              fontWeight: 900
             })}
           >
-            <AppIcon
-              icon={link.icon}
-              size={24}
-            />
-
-            <span>
-              {link.label}
-            </span>
+            <AppIcon icon={link.icon} size={24} />
+            <span>{link.label}</span>
           </NavLink>
         ))}
       </div>

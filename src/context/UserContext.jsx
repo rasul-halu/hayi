@@ -46,6 +46,7 @@ const DEFAULT_USER = {
   backendUserId: null,
   telegramId: null,
   avatarUrl: "",
+  role: "GUEST",
   isGuest: true,
   authProvider: "guest",
   xp: 120,
@@ -282,6 +283,12 @@ function normalizeUser(savedUser = {}) {
       typeof initialUser.isGuest === "boolean"
         ? initialUser.isGuest
         : initialUser.authProvider !== "telegram",
+    role:
+      typeof initialUser.role === "string"
+        ? initialUser.role
+        : initialUser.authProvider === "telegram"
+        ? "USER"
+        : "GUEST",
     authProvider:
       initialUser.authProvider === "telegram"
         ? "telegram"
@@ -337,6 +344,7 @@ export function UserProvider({ children }) {
       username: username || DEFAULT_USER.username,
       displayName: username || DEFAULT_USER.displayName,
       avatarUrl: avatarUrl || prev.avatarUrl || "",
+      role: "GUEST",
       isGuest: true,
       authProvider: "guest"
     }));

@@ -15,34 +15,22 @@ export default function AchievementCard({
     setImageFailed(false);
   }, [achievement.image]);
 
-  const showImage =
-    achievement.image && !imageFailed;
-  const target =
-    achievement.target ||
-    achievement.maxProgress ||
-    0;
-  const progress =
-    achievement.progress || 0;
-
+  const showImage = achievement.image && !imageFailed;
+  const target = achievement.target || achievement.maxProgress || 0;
+  const progress = achievement.progress || 0;
   const progressPercent =
     target > 0
-      ? Math.min(
-          (progress / target) * 100,
-          100
-        )
+      ? Math.min((progress / target) * 100, 100)
       : 0;
 
   return (
     <AppCard
       style={{
         marginBottom: 14,
-        background: achievement.unlocked
-          ? "#FFFFFF"
-          : "#F2F2F2",
+        background: achievement.unlocked ? "#FFFFFF" : "#F2F2F2",
         color: "#4B4B4B",
-        boxShadow: achievement.unlocked
-          ? "0 5px 0 #D9D9D9"
-          : "0 5px 0 #CFCFCF"
+        border: `2px solid ${achievement.unlocked ? "#E6E6E6" : "#DADADA"}`,
+        boxShadow: achievement.unlocked ? "0 5px 0 #D9D9D9" : "0 5px 0 #CFCFCF"
       }}
     >
       <div
@@ -58,16 +46,14 @@ export default function AchievementCard({
             height: 84,
             flexShrink: 0,
             borderRadius: 18,
-            background: achievement.unlocked
-              ? "#E9F8DD"
-              : "#E6E6E6",
+            background: achievement.unlocked ? "#E9F8DD" : "#E6E6E6",
             border: "2px solid #D9D9D9",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
             fontSize: 34,
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           {showImage ? (
@@ -92,12 +78,7 @@ export default function AchievementCard({
           )}
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0
-          }}
-        >
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               display: "flex",
@@ -110,7 +91,7 @@ export default function AchievementCard({
               style={{
                 margin: 0,
                 fontSize: 18,
-                fontWeight: "900"
+                fontWeight: 900
               }}
             >
               {achievement.title}
@@ -118,11 +99,9 @@ export default function AchievementCard({
 
             <span
               style={{
-                color: achievement.unlocked
-                  ? "#46A400"
-                  : "#777",
+                color: achievement.unlocked ? "#46A400" : "#777",
                 fontSize: 12,
-                fontWeight: "900",
+                fontWeight: 900,
                 whiteSpace: "nowrap"
               }}
             >
@@ -136,7 +115,7 @@ export default function AchievementCard({
               color: "#777",
               fontSize: 14,
               lineHeight: 1.35,
-              fontWeight: "700"
+              fontWeight: 700
             }}
           >
             {achievement.description}
@@ -148,31 +127,25 @@ export default function AchievementCard({
                 marginTop: 8,
                 color: "#58CC02",
                 fontSize: 13,
-                fontWeight: "900"
+                fontWeight: 900
               }}
             >
               +{achievement.xpReward} XP
             </div>
           ) : null}
 
-          <div
-            style={{
-              marginTop: 10
-            }}
-          >
+          <div style={{ marginTop: 10 }}>
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 color: "#4B4B4B",
                 fontSize: 12,
-                fontWeight: "900"
+                fontWeight: 900
               }}
             >
               <span>Прогресс</span>
-              <span>
-                {progress}/{target}
-              </span>
+              <span>{progress}/{target}</span>
             </div>
 
             <div
@@ -189,9 +162,7 @@ export default function AchievementCard({
                   width: `${progressPercent}%`,
                   height: "100%",
                   borderRadius: 999,
-                  background: achievement.unlocked
-                    ? "#58CC02"
-                    : "#FFD43B"
+                  background: achievement.unlocked ? "#58CC02" : "#FFD43B"
                 }}
               />
             </div>
@@ -203,7 +174,7 @@ export default function AchievementCard({
                 marginTop: 8,
                 color: "#777",
                 fontSize: 12,
-                fontWeight: "800"
+                fontWeight: 800
               }}
             >
               {new Date(achievement.unlockedAt).toLocaleDateString()}

@@ -1,5 +1,4 @@
 import {
-  DEFAULT_LESSON_XP,
   HEART_REFILL_INTERVAL_HOURS,
 } from "../config/game.constants.js";
 import prisma from "../lib/prisma.js";
@@ -7,6 +6,7 @@ import {
   isPreviousUtcDay,
   isSameUtcDay,
 } from "../utils/dateUtils.js";
+import { getPublishedLessonXpReward } from "./course.service.js";
 import { awardXp } from "./xp.service.js";
 
 const HEART_REFILL_INTERVAL_MS =
@@ -149,6 +149,14 @@ export async function completeLessonAndUpdateStats({
   lessonId,
 }) {
   return prisma.$transaction(async tx => {
+    const lesson = await getPublishedLessonXpReward(lessonId, tx);
+
+    if (!lesson) {
+      const error = new Error("Lesson not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
     const user = await tx.user.findUniqueOrThrow({
       where: {
         id: userId,
@@ -204,11 +212,11 @@ export async function completeLessonAndUpdateStats({
 
     const streakValues = getNextStreakValues(user, now);
     const uniqueKey = `lesson_complete:${userId}:${lessonId}`;
+    const xpReward = lesson.xpReward;
 
-    // Temporary: XP is fixed until Course/Lesson data moves to the database.
     const xpAward = await awardXp({
       userId,
-      amount: DEFAULT_LESSON_XP,
+      amount: xpReward,
       source: "lesson_complete",
       lessonId,
       uniqueKey,
@@ -229,7 +237,7 @@ export async function completeLessonAndUpdateStats({
     return {
       progress,
       stats: toStatsResponse(updatedUser),
-      xpAwarded: DEFAULT_LESSON_XP,
+      xpAwarded: xpReward,
       xpEvent: xpAward.event,
       alreadyCompleted: false,
     };

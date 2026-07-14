@@ -26,9 +26,7 @@ export default function MatchQuestion({
   );
 
   const translations = useMemo(
-    () =>
-      question?.translations ||
-      pairs.map(pair => pair.translation),
+    () => question?.translations || pairs.map(pair => pair.translation),
     [question?.translations, pairs]
   );
 
@@ -70,9 +68,7 @@ export default function MatchQuestion({
   useEffect(() => {
     const isComplete =
       pairs.length > 0 &&
-      pairs.every(pair =>
-        matches[pair.word] === pair.translation
-      );
+      pairs.every(pair => matches[pair.word] === pair.translation);
 
     if (!isComplete || recentlyMatchedPair) {
       setSelectedRef.current(null);
@@ -105,7 +101,7 @@ export default function MatchQuestion({
         style={{
           margin: 0,
           color: "#4B4B4B",
-          fontWeight: "800",
+          fontWeight: 800,
           textAlign: "center"
         }}
       >
@@ -115,11 +111,7 @@ export default function MatchQuestion({
   }
 
   const chooseWord = (word) => {
-    if (disabled) {
-      return;
-    }
-
-    if (matches[word]) {
+    if (disabled || matches[word]) {
       return;
     }
 
@@ -127,15 +119,7 @@ export default function MatchQuestion({
   };
 
   const chooseTranslation = (translation) => {
-    if (disabled) {
-      return;
-    }
-
-    if (!activeWord) {
-      return;
-    }
-
-    if (matchedTranslations.includes(translation)) {
+    if (disabled || !activeWord || matchedTranslations.includes(translation)) {
       return;
     }
 
@@ -170,15 +154,9 @@ export default function MatchQuestion({
     setActiveWord(null);
   };
 
-  const isWrongWord = (word) =>
-    wrongPair?.word === word;
-
-  const isWrongTranslation = (translation) =>
-    wrongPair?.translation === translation;
-
-  const isRecentlyMatchedWord = (word) =>
-    recentlyMatchedPair?.word === word;
-
+  const isWrongWord = (word) => wrongPair?.word === word;
+  const isWrongTranslation = (translation) => wrongPair?.translation === translation;
+  const isRecentlyMatchedWord = (word) => recentlyMatchedPair?.word === word;
   const isRecentlyMatchedTranslation = (translation) =>
     recentlyMatchedPair?.translation === translation;
 
@@ -190,7 +168,7 @@ export default function MatchQuestion({
           color: "#777",
           fontSize: 15,
           lineHeight: 1.35,
-          fontWeight: "900",
+          fontWeight: 900,
           textTransform: "uppercase"
         }}
       >
@@ -210,10 +188,8 @@ export default function MatchQuestion({
             const matched = Boolean(matches[pair.word]);
             const active = activeWord === pair.word;
             const wrong = isWrongWord(pair.word);
-            const correctFlash =
-              isRecentlyMatchedWord(pair.word);
-            const matchedDisabled =
-              matched && !correctFlash;
+            const correctFlash = isRecentlyMatchedWord(pair.word);
+            const matchedDisabled = matched && !correctFlash;
 
             return (
               <button
@@ -227,7 +203,7 @@ export default function MatchQuestion({
                   marginBottom: 10,
                   borderRadius: 16,
                   border: wrong
-                    ? "3px solid #FF4D4D"
+                    ? "3px solid #F06A6A"
                     : correctFlash
                       ? "3px solid #46A400"
                       : active
@@ -236,24 +212,18 @@ export default function MatchQuestion({
                           ? "2px solid #D9D9D9"
                           : "2px solid #E6E6E6",
                   background: wrong
-                    ? "#FFD6D6"
+                    ? "#FFF0F0"
                     : correctFlash
-                      ? "#D7FFB8"
+                      ? "#E9F8DD"
                       : matchedDisabled
                         ? "#EFEFEF"
                         : "#FFFFFF",
-                  color: matchedDisabled
-                    ? "#8A8A8A"
-                    : "#4B4B4B",
+                  color: matchedDisabled ? "#8A8A8A" : "#4B4B4B",
                   fontSize: 15,
-                  fontWeight: "900",
-                  cursor: matched
-                    ? "default"
-                    : disabled
-                      ? "default"
-                    : "pointer",
+                  fontWeight: 900,
+                  cursor: matched || disabled ? "default" : "pointer",
                   boxShadow: wrong
-                    ? "0 5px 0 #C83737"
+                    ? "0 5px 0 #E6A0A0"
                     : correctFlash
                       ? "0 5px 0 #46A400"
                       : active
@@ -261,9 +231,7 @@ export default function MatchQuestion({
                         : matchedDisabled
                           ? "0 5px 0 #CFCFCF"
                           : "0 5px 0 #D9D9D9",
-                  opacity: matchedDisabled
-                    ? 0.72
-                    : 1,
+                  opacity: matchedDisabled ? 0.72 : 1,
                   transition:
                     "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease"
                 }}
@@ -276,14 +244,10 @@ export default function MatchQuestion({
 
         <div>
           {translations.map(translation => {
-            const matched =
-              matchedTranslations.includes(translation);
-            const wrong =
-              isWrongTranslation(translation);
-            const correctFlash =
-              isRecentlyMatchedTranslation(translation);
-            const matchedDisabled =
-              matched && !correctFlash;
+            const matched = matchedTranslations.includes(translation);
+            const wrong = isWrongTranslation(translation);
+            const correctFlash = isRecentlyMatchedTranslation(translation);
+            const matchedDisabled = matched && !correctFlash;
 
             return (
               <button
@@ -297,38 +261,31 @@ export default function MatchQuestion({
                   marginBottom: 10,
                   borderRadius: 16,
                   border: wrong
-                    ? "3px solid #FF4D4D"
+                    ? "3px solid #F06A6A"
                     : correctFlash
                       ? "3px solid #46A400"
                       : matchedDisabled
                         ? "2px solid #D9D9D9"
                         : "2px solid #E6E6E6",
                   background: wrong
-                    ? "#FFD6D6"
+                    ? "#FFF0F0"
                     : correctFlash
-                      ? "#D7FFB8"
+                      ? "#E9F8DD"
                       : matchedDisabled
                         ? "#EFEFEF"
                         : "#FFFFFF",
-                  color: matchedDisabled
-                    ? "#8A8A8A"
-                    : "#4B4B4B",
+                  color: matchedDisabled ? "#8A8A8A" : "#4B4B4B",
                   fontSize: 15,
-                  fontWeight: "900",
-                  cursor: activeWord && !matched
-                    && !disabled
-                    ? "pointer"
-                    : "default",
+                  fontWeight: 900,
+                  cursor: activeWord && !matched && !disabled ? "pointer" : "default",
                   boxShadow: wrong
-                    ? "0 5px 0 #C83737"
+                    ? "0 5px 0 #E6A0A0"
                     : correctFlash
                       ? "0 5px 0 #46A400"
                       : matchedDisabled
                         ? "0 5px 0 #CFCFCF"
                         : "0 5px 0 #D9D9D9",
-                  opacity: matchedDisabled
-                    ? 0.72
-                    : 1,
+                  opacity: matchedDisabled ? 0.72 : 1,
                   transition:
                     "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease"
                 }}

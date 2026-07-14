@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
   Heart,
+  RefreshCw,
   XCircle
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -18,8 +19,10 @@ import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import ProgressBar from "../../components/ui/ProgressBar";
+import { getLesson as getApiLesson } from "../../api/apiClient";
 import { useUser } from "../../context/UserContext";
 import { getLessonById } from "../../data/courseHelpers";
+import { mapApiLessonToFrontendLesson } from "../../utils/courseApiAdapters";
 import {
   playCorrectSound,
   playWrongSound
@@ -28,6 +31,8 @@ import { normalizeNewWords } from "../../utils/highlightNewWords";
 
 const QUESTION_COMPONENTS = {
   translate: TranslateQuestion,
+  "multiple-choice": TranslateQuestion,
+  multipleChoice: TranslateQuestion,
   match: MatchQuestion,
   listening: ListeningQuestion,
   fillBlank: FillBlankQuestion,
@@ -57,20 +62,75 @@ function getCorrectAnswerText(question) {
     return question.targetSentence || question.correct;
   }
 
-  return question.correct ||
-    "Правильный ответ будет показан в повторении";
+  return question.correct || "Правильный ответ будет показан в повторении";
+}
+
+function LessonStateCard({
+  title,
+  text,
+  children
+}) {
+  return (
+    <PageContainer
+      style={{
+        background: "#F4F7F2",
+        color: "#2D2D2D",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center"
+      }}
+    >
+      <AppCard
+        style={{
+          width: "100%",
+          background: "#FFFFFF",
+          color: "#2D2D2D",
+          border: "2px solid #E6E6E6",
+          boxShadow: "0 7px 0 #D9D9D9",
+          padding: 22
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 28,
+            fontWeight: 900
+          }}
+        >
+          {title}
+        </h1>
+
+        {text ? (
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#6F746B",
+              fontWeight: 800,
+              lineHeight: 1.4
+            }}
+          >
+            {text}
+          </p>
+        ) : null}
+
+        {children}
+      </AppCard>
+    </PageContainer>
+  );
 }
 
 export default function Lesson() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
-  const lesson = getLessonById(lessonId);
   const feedbackTimerRef = useRef(null);
 
+  const [lesson, setLesson] = useState(null);
+  const [isLessonLoading, setIsLessonLoading] = useState(true);
+  const [lessonError, setLessonError] = useState("");
+  const [lessonNotFound, setLessonNotFound] = useState(false);
   const [selected, setSelected] = useState(null);
-  const [questionQueue, setQuestionQueue] = useState(
-    () => lesson?.questions || []
-  );
+  const [questionQueue, setQuestionQueue] = useState([]);
   const [completedCorrect, setCompletedCorrect] = useState(0);
   const [wrongAnswers, setWrongAnswers] = useState(0);
   const [hint, setHint] = useState("");
@@ -83,6 +143,41 @@ export default function Lesson() {
     handleCorrectAnswer,
     handleWrongAnswer
   } = useUser();
+
+  const loadLesson = useCallback(async () => {
+    setIsLessonLoading(true);
+    setLessonError("");
+    setLessonNotFound(false);
+
+    try {
+      const data = await getApiLesson(lessonId);
+      setLesson(mapApiLessonToFrontendLesson(data.lesson));
+    } catch (error) {
+      const fallbackLesson = getLessonById(lessonId);
+
+      if (process.env.NODE_ENV === "development" && fallbackLesson) {
+        console.warn(
+          "Lesson API loading failed, using local fallback:",
+          error.message
+        );
+        setLesson(fallbackLesson);
+      } else {
+        setLesson(null);
+        setLessonNotFound(error.status === 404);
+        setLessonError(
+          error.status === 404
+            ? "Урок не найден"
+            : "Не удалось загрузить урок"
+        );
+      }
+    } finally {
+      setIsLessonLoading(false);
+    }
+  }, [lessonId]);
+
+  useEffect(() => {
+    void loadLesson();
+  }, [loadLesson]);
 
   useEffect(() => {
     setQuestionQueue(lesson?.questions || []);
@@ -114,104 +209,111 @@ export default function Lesson() {
     }
   }, [navigate, user.hearts]);
 
-  if (!lesson) {
+  if (isLessonLoading) {
     return (
-      <PageContainer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          textAlign: "center"
-        }}
-      >
-        <h1>Урок не найден</h1>
+      <LessonStateCard
+        title="Загружаем урок..."
+        text="Подготавливаем задания и прогресс."
+      />
+    );
+  }
 
-        <p
-          style={{
-            marginTop: 12,
-            color: "#D9D9D9"
-          }}
-        >
-          Такого урока не существует или он ещё недоступен.
-        </p>
+  if (lessonError && !lesson) {
+    return (
+      <LessonStateCard
+        title={lessonError}
+        text={
+          lessonNotFound
+            ? "Такого урока не существует или он ещё не опубликован."
+            : "Проверьте подключение и попробуйте снова."
+        }
+      >
+        {!lessonNotFound ? (
+          <AppButton
+            onClick={loadLesson}
+            style={{ marginTop: 22 }}
+          >
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8
+              }}
+            >
+              <AppIcon icon={RefreshCw} size={18} />
+              Повторить
+            </span>
+          </AppButton>
+        ) : null}
 
         <AppButton
           onClick={() => navigate("/home")}
-          style={{
-            marginTop: 24
-          }}
+          variant="secondary"
+          style={{ marginTop: 12 }}
         >
           На главную
         </AppButton>
-      </PageContainer>
+      </LessonStateCard>
+    );
+  }
+
+  if (!lesson) {
+    return (
+      <LessonStateCard
+        title="Урок не найден"
+        text="Такого урока не существует или он ещё недоступен."
+      >
+        <AppButton
+          onClick={() => navigate("/home")}
+          style={{ marginTop: 22 }}
+        >
+          На главную
+        </AppButton>
+      </LessonStateCard>
     );
   }
 
   const originalQuestionsCount = lesson.questions.length;
   const question = questionQueue[0];
-  const QuestionComponent =
-    question ? QUESTION_COMPONENTS[question.type] : null;
+  const QuestionComponent = question ? QUESTION_COMPONENTS[question.type] : null;
   const progress =
     originalQuestionsCount > 0
       ? (completedCorrect / originalQuestionsCount) * 100
       : 0;
   const feedbackLocked = feedbackStatus !== "idle";
-  const checkDisabled =
-    feedbackLocked || isEmptyAnswer(selected);
+  const checkDisabled = feedbackLocked || isEmptyAnswer(selected);
   const newWords = normalizeNewWords(question);
-  const correctAnswerText =
-    getCorrectAnswerText(question);
+  const correctAnswerText = getCorrectAnswerText(question);
 
   if (originalQuestionsCount === 0) {
     return (
-      <PageContainer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          textAlign: "center"
-        }}
+      <LessonStateCard
+        title={lesson.title}
+        text="В этом уроке пока нет заданий."
       >
-        <h1>{lesson.title}</h1>
-
-        <p
-          style={{
-            marginTop: 12,
-            color: "#D9D9D9"
-          }}
-        >
-          В этом уроке пока нет заданий.
-        </p>
-
         <AppButton
           onClick={() => navigate("/home")}
-          style={{
-            marginTop: 24
-          }}
+          style={{ marginTop: 22 }}
         >
           На главную
         </AppButton>
-      </PageContainer>
+      </LessonStateCard>
     );
   }
 
   if (!question) {
     return (
-      <PageContainer
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center"
-        }}
-      >
-        <h1>Завершаем урок...</h1>
-      </PageContainer>
+      <LessonStateCard
+        title="Завершаем урок..."
+        text="Сохраняем прогресс."
+      />
     );
   }
 
   const moveToNextQuestion = () => {
     const isLastQuestion = questionQueue.length <= 1;
+    feedbackTimerRef.current = null;
 
     setCompletedCorrect(prev =>
       Math.min(prev + 1, originalQuestionsCount)
@@ -223,6 +325,7 @@ export default function Lesson() {
         {
           state: {
             lessonId: lesson.id,
+            xpReward: lesson.xpReward,
             correctAnswers: originalQuestionsCount,
             wrongAnswers
           }
@@ -287,7 +390,7 @@ export default function Lesson() {
     void handleWrongAnswer();
     setWrongAnswers(prev => prev + 1);
     setFeedbackStatus("wrong");
-    setHint("Почти! Повторим позже");
+    setHint("Почти!");
     setIsWaitingForContinue(true);
     setLastWrongAnswer(selected);
     playWrongSound(user.soundEnabled);
@@ -298,6 +401,8 @@ export default function Lesson() {
       style={{
         maxWidth: 480,
         padding: "14px 16px 28px",
+        background: "#F4F7F2",
+        color: "#2D2D2D",
         display: "flex",
         flexDirection: "column"
       }}
@@ -312,7 +417,7 @@ export default function Lesson() {
           top: 0,
           zIndex: 10,
           padding: "8px 0 12px",
-          background: "#4B4B4B"
+          background: "#F4F7F2"
         }}
       >
         <button
@@ -324,13 +429,13 @@ export default function Lesson() {
             width: 42,
             height: 42,
             borderRadius: 14,
-            border: "2px solid rgba(255,255,255,0.12)",
-            background: "#5A5A5A",
-            color: "#FFFFFF",
+            border: "2px solid #E3E6DF",
+            background: "#FFFFFF",
+            color: "#4B4B4B",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 0 rgba(0,0,0,0.18)",
+            boxShadow: "0 4px 0 #D9D9D9",
             opacity: feedbackLocked ? 0.65 : 1,
             cursor: feedbackLocked ? "default" : "pointer"
           }}
@@ -338,12 +443,7 @@ export default function Lesson() {
           <AppIcon icon={ArrowLeft} size={22} />
         </button>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0
-          }}
-        >
+        <div style={{ flex: 1, minWidth: 0 }}>
           <ProgressBar progress={progress} />
         </div>
 
@@ -355,7 +455,7 @@ export default function Lesson() {
             borderRadius: 999,
             background: "#FFFFFF",
             color: "#4B4B4B",
-            fontWeight: "900",
+            fontWeight: 900,
             textAlign: "center",
             boxShadow: "0 4px 0 #D9D9D9"
           }}
@@ -377,19 +477,20 @@ export default function Lesson() {
       <AppCard
         className={`lesson-feedback-card lesson-feedback-card--${feedbackStatus}`}
         style={{
-          padding: "22px 18px",
-          background: "#F7F7F7",
+          padding: "20px 18px",
+          background: "#FFFFFF",
           border: "2px solid #E6E6E6",
           borderRadius: 24,
           color: "#4B4B4B",
-          boxShadow: feedbackStatus === "correct"
-            ? "0 7px 0 #46A400"
-            : feedbackStatus === "wrong"
-              ? "0 7px 0 #C83737"
-              : "0 7px 0 #D9D9D9"
+          boxShadow:
+            feedbackStatus === "correct"
+              ? "0 7px 0 #46A400"
+              : feedbackStatus === "wrong"
+                ? "0 7px 0 #E6A0A0"
+                : "0 7px 0 #D9D9D9"
         }}
       >
-        {newWords.length > 0 && (
+        {newWords.length > 0 ? (
           <div
             style={{
               marginBottom: 18,
@@ -405,7 +506,7 @@ export default function Lesson() {
               style={{
                 color: "#7C3AED",
                 fontSize: 12,
-                fontWeight: "900",
+                fontWeight: 900,
                 textTransform: "uppercase",
                 marginBottom: 6
               }}
@@ -418,32 +519,23 @@ export default function Lesson() {
                 key={`${word.text}-${word.translation}`}
                 style={{
                   fontSize: 17,
-                  fontWeight: "900",
+                  fontWeight: 900,
                   lineHeight: 1.35
                 }}
               >
-                <span
-                  style={{
-                    color: "#8B5CF6"
-                  }}
-                >
-                  {word.text}
-                </span>
-                {word.translation && (
+                <span style={{ color: "#8B5CF6" }}>{word.text}</span>
+                {word.translation ? (
                   <>
                     {" — "}
-                    <span>
-                      {word.translation}
-                    </span>
+                    <span>{word.translation}</span>
                   </>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         <QuestionImage image={question.image} />
-
         <CharacterImage image={question.characterImage} />
 
         {QuestionComponent ? (
@@ -465,7 +557,8 @@ export default function Lesson() {
           <p
             style={{
               marginTop: 30,
-              textAlign: "center"
+              textAlign: "center",
+              fontWeight: 900
             }}
           >
             Неизвестный тип задания
@@ -473,32 +566,41 @@ export default function Lesson() {
         )}
       </AppCard>
 
-      {hint && (
+      {hint ? (
         <div
           className={`lesson-feedback-message lesson-feedback-message--${feedbackStatus}`}
           style={{
             marginTop: 14,
             minHeight: 54,
-            padding: "13px 15px",
-            borderRadius: 18,
-            background: feedbackStatus === "wrong"
-              ? "#FFD6D6"
-              : feedbackStatus === "correct"
-                ? "#D7FFB8"
-                : "#FFD43B",
+            padding: "14px 15px",
+            borderRadius: 20,
+            background:
+              feedbackStatus === "wrong"
+                ? "#FFF0F0"
+                : feedbackStatus === "correct"
+                  ? "#E9F8DD"
+                  : "#FFF7D6",
+            border: `2px solid ${
+              feedbackStatus === "wrong"
+                ? "#FFD0D0"
+                : feedbackStatus === "correct"
+                  ? "#BFE8A7"
+                  : "#FFE59A"
+            }`,
             color: "#4B4B4B",
-            fontWeight: "900",
+            fontWeight: 900,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
             textAlign: "center",
-            boxShadow: feedbackStatus === "wrong"
-              ? "0 4px 0 #C83737"
-              : feedbackStatus === "correct"
-                ? "0 4px 0 #46A400"
-                : "0 4px 0 #E0B900"
+            boxShadow:
+              feedbackStatus === "wrong"
+                ? "0 4px 0 #E6A0A0"
+                : feedbackStatus === "correct"
+                  ? "0 4px 0 #BFE8A7"
+                  : "0 4px 0 #E0B900"
           }}
         >
           <div
@@ -509,18 +611,18 @@ export default function Lesson() {
               gap: 8
             }}
           >
-            {feedbackStatus === "correct" && (
+            {feedbackStatus === "correct" ? (
               <AppIcon icon={CheckCircle2} size={22} color="#46A400" />
-            )}
+            ) : null}
 
-            {feedbackStatus === "wrong" && (
-              <AppIcon icon={XCircle} size={22} color="#C83737" />
-            )}
+            {feedbackStatus === "wrong" ? (
+              <AppIcon icon={XCircle} size={22} color="#D93B3B" />
+            ) : null}
 
             <span>{hint}</span>
           </div>
 
-          {isWaitingForContinue && (
+          {isWaitingForContinue ? (
             <div
               style={{
                 width: "100%",
@@ -532,49 +634,23 @@ export default function Lesson() {
                 textAlign: "left"
               }}
             >
-              {lastWrongAnswer && question.type !== "match" && (
-                <div
-                  style={{
-                    fontSize: 14,
-                    lineHeight: 1.35
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#777"
-                    }}
-                  >
-                    Ваш ответ:{" "}
-                  </span>
+              {lastWrongAnswer && question.type !== "match" ? (
+                <div style={{ fontSize: 14, lineHeight: 1.35 }}>
+                  <span style={{ color: "#777" }}>Ваш ответ: </span>
                   <strong>{lastWrongAnswer}</strong>
                 </div>
-              )}
+              ) : null}
 
-              <div
-                style={{
-                  fontSize: 14,
-                  lineHeight: 1.35
-                }}
-              >
-                <span
-                  style={{
-                    color: "#777"
-                  }}
-                >
-                  Правильный ответ:{" "}
-                </span>
-                <strong
-                  style={{
-                    whiteSpace: "pre-line"
-                  }}
-                >
+              <div style={{ fontSize: 14, lineHeight: 1.35 }}>
+                <span style={{ color: "#777" }}>Правильный ответ: </span>
+                <strong style={{ whiteSpace: "pre-line" }}>
                   {correctAnswerText}
                 </strong>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
       {isWaitingForContinue ? (
         <AppButton
@@ -589,18 +665,18 @@ export default function Lesson() {
           Продолжить
         </AppButton>
       ) : (
-      <AppButton
-        onClick={checkAnswer}
-        disabled={checkDisabled}
-        style={{
-          marginTop: 22,
-          minHeight: 60,
-          borderRadius: 18,
-          fontSize: 18
-        }}
-      >
-        Проверить
-      </AppButton>
+        <AppButton
+          onClick={checkAnswer}
+          disabled={checkDisabled}
+          style={{
+            marginTop: 22,
+            minHeight: 60,
+            borderRadius: 18,
+            fontSize: 18
+          }}
+        >
+          Проверить
+        </AppButton>
       )}
     </PageContainer>
   );

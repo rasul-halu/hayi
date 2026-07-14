@@ -1,6 +1,9 @@
 import { Volume2 } from "lucide-react";
 import AppIcon from "../ui/AppIcon";
-import AnswerButton from "./AnswerButton";
+import AnswerButton, {
+  getOptionLabel,
+  getOptionValue
+} from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
 
 export default function ListeningQuestion({
@@ -18,7 +21,7 @@ export default function ListeningQuestion({
           color: "#777",
           fontSize: 15,
           lineHeight: 1.35,
-          fontWeight: "900",
+          fontWeight: 900,
           textTransform: "uppercase"
         }}
       >
@@ -27,7 +30,7 @@ export default function ListeningQuestion({
 
       <div
         style={{
-          background: "#FFFFFF",
+          background: "#F8FAF6",
           border: "2px solid #E6E6E6",
           borderRadius: 22,
           padding: 24,
@@ -62,26 +65,29 @@ export default function ListeningQuestion({
           style={{
             margin: "18px 0 0",
             color: "#4B4B4B",
-            fontWeight: "800"
+            fontWeight: 900
           }}
         >
-          Здесь будет аудио
+          Прослушай и выбери ответ
         </p>
       </div>
 
-      {question.answers.map(answer => (
-        <AnswerButton
-          key={answer}
-          text={answer}
-          selected={selected === answer}
-          disabled={disabled}
-          feedbackStatus={feedbackStatus}
-          newWords={question}
-          onClick={() =>
-            setSelected(answer)
-          }
-        />
-      ))}
+      {question.answers.map(answer => {
+        const answerLabel = getOptionLabel(answer);
+        const answerValue = getOptionValue(answer);
+
+        return (
+          <AnswerButton
+            key={answerValue || answerLabel}
+            label={answerLabel}
+            selected={selected === answerValue}
+            disabled={disabled}
+            feedbackStatus={feedbackStatus}
+            newWords={question}
+            onClick={() => setSelected(answerValue)}
+          />
+        );
+      })}
     </>
   );
 }

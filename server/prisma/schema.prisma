@@ -16,6 +16,7 @@ model User {
   avatarUrl    String?
   languageCode String?
   isPremium    Boolean  @default(false)
+  role          String   @default("USER")
   xp                       Int       @default(0)
   hearts                   Int       @default(5)
   maxHearts                Int       @default(5)
@@ -81,4 +82,84 @@ model UserAchievement {
 
   @@unique([userId, achievementKey])
   @@index([userId])
+}
+
+model Course {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String?
+  language    String
+  isPublished Boolean   @default(false)
+  order       Int       @default(0)
+
+  chapters    Chapter[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([courseId, order])
+  @@index([courseId])
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  legacyId    String?  @unique
+  chapterId   String
+  title       String
+  description String?
+  order       Int
+  xpReward    Int      @default(10)
+  isPublished Boolean  @default(false)
+  imageUrl    String?
+
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions   Question[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([chapterId, order])
+  @@index([chapterId])
+}
+
+model Question {
+  id             String   @id @default(cuid())
+  lessonId       String
+  type           String
+  order          Int
+  prompt         String?
+  translation    String?
+  correctAnswer  String?
+  audioUrl       String?
+  characterImage String?
+  explanation    String?
+
+  options        Json?
+  pairs          Json?
+  words          Json?
+  newWords       Json?
+  metadata       Json?
+
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([lessonId, order])
+  @@index([lessonId])
 }

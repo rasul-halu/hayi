@@ -142,6 +142,12 @@ export async function completeLessonOnServer(req, res) {
       stats: achievementResult.stats,
     });
   } catch (error) {
+    if (error.statusCode === 404) {
+      return res.status(404).json({
+        error: "Lesson not found",
+      });
+    }
+
     if (process.env.NODE_ENV === "development") {
       console.error(
         "Lesson complete error:",

@@ -97,10 +97,7 @@ export default function Achievements() {
       setError("Не удалось загрузить достижения");
 
       if (process.env.NODE_ENV === "development") {
-        console.warn(
-          "Achievements loading failed:",
-          loadError.message
-        );
+        console.warn("Achievements loading failed:", loadError.message);
       }
     } finally {
       setIsLoading(false);
@@ -127,26 +124,30 @@ export default function Achievements() {
     );
   }, [
     demoUser,
-    isTelegramMode,
+    isTelegramMode
   ]);
 
   const firstUnlocked = newlyUnlocked[0];
-  const extraUnlockedCount =
-    Math.max(newlyUnlocked.length - 1, 0);
+  const extraUnlockedCount = Math.max(newlyUnlocked.length - 1, 0);
 
   return (
-    <PageContainer>
+    <PageContainer
+      style={{
+        background: "#F4F7F2",
+        color: "#2D2D2D"
+      }}
+    >
       <div
         style={{
           width: 54,
           height: 54,
-          borderRadius: 16,
-          background: "#FFD43B",
-          color: "#4B4B4B",
+          borderRadius: 18,
+          background: "#FFF1D6",
+          color: "#D6A600",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 5px 0 #E0B900",
+          boxShadow: "0 5px 0 #E9D4A9",
           marginBottom: 14
         }}
       >
@@ -158,7 +159,7 @@ export default function Achievements() {
         subtitle={
           isTelegramMode
             ? "Награды за прогресс, серию и активность"
-            : "Демо-достижения для гостевого режима"
+            : "Награды по твоему локальному прогрессу"
         }
       />
 
@@ -166,13 +167,14 @@ export default function Achievements() {
         <AppCard
           style={{
             marginTop: 18,
-            background: "#FFD43B",
-            color: "#4B4B4B",
-            boxShadow: "0 6px 0 #E0B900",
-            fontWeight: "900"
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
+            boxShadow: "0 6px 0 #D9D9D9",
+            fontWeight: 900
           }}
         >
-          Демо-достижения
+          Прогресс считается на этом устройстве.
         </AppCard>
       ) : null}
 
@@ -186,37 +188,21 @@ export default function Achievements() {
             boxShadow: "0 6px 0 #46A400"
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center"
-            }}
-          >
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <AppIcon icon={Sparkles} size={24} color="#58CC02" />
             <div>
-              <div
-                style={{
-                  fontWeight: "900"
-                }}
-              >
-                Новое достижение!
-              </div>
+              <div style={{ fontWeight: 900 }}>Новое достижение!</div>
               <div
                 style={{
                   marginTop: 4,
                   fontSize: 14,
-                  fontWeight: "800",
+                  fontWeight: 800,
                   color: "#555"
                 }}
               >
                 {firstUnlocked.title}
-                {firstUnlocked.xpReward
-                  ? ` · +${firstUnlocked.xpReward} XP`
-                  : ""}
-                {extraUnlockedCount > 0
-                  ? ` · и ещё ${extraUnlockedCount}`
-                  : ""}
+                {firstUnlocked.xpReward ? ` · +${firstUnlocked.xpReward} XP` : ""}
+                {extraUnlockedCount > 0 ? ` · и ещё ${extraUnlockedCount}` : ""}
               </div>
             </div>
           </div>
@@ -227,9 +213,11 @@ export default function Achievements() {
         <AppCard
           style={{
             marginTop: 18,
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center",
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           Загружаем достижения...
@@ -240,23 +228,17 @@ export default function Achievements() {
         <AppCard
           style={{
             marginTop: 18,
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center"
           }}
         >
-          <div
-            style={{
-              fontWeight: "900",
-              marginBottom: 12
-            }}
-          >
+          <div style={{ fontWeight: 900, marginBottom: 12 }}>
             {error}
           </div>
 
-          <AppButton
-            onClick={loadAchievements}
-            variant="secondary"
-          >
+          <AppButton onClick={loadAchievements} variant="secondary">
             <span
               style={{
                 display: "inline-flex",
@@ -276,20 +258,18 @@ export default function Achievements() {
         <AppCard
           style={{
             marginTop: 18,
-            color: "#4B4B4B",
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #E6E6E6",
             textAlign: "center",
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           Достижения пока недоступны
         </AppCard>
       ) : null}
 
-      <div
-        style={{
-          marginTop: 18
-        }}
-      >
+      <div style={{ marginTop: 18 }}>
         {achievements.map(achievement => (
           <AchievementCard
             key={achievement.key || achievement.id}

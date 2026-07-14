@@ -41,7 +41,7 @@ export default function BuildSentenceQuestion({
         style={{
           margin: 0,
           color: "#4B4B4B",
-          fontWeight: "800",
+          fontWeight: 800,
           textAlign: "center"
         }}
       >
@@ -68,10 +68,8 @@ export default function BuildSentenceQuestion({
     setAvailableWords(prev => [...prev, word]);
   };
 
-  const buildAreaWrong =
-    feedbackStatus === "wrong";
-  const buildAreaCorrect =
-    feedbackStatus === "correct";
+  const buildAreaWrong = feedbackStatus === "wrong";
+  const buildAreaCorrect = feedbackStatus === "correct";
 
   return (
     <>
@@ -81,7 +79,7 @@ export default function BuildSentenceQuestion({
           color: "#777",
           fontSize: 15,
           lineHeight: 1.35,
-          fontWeight: "900",
+          fontWeight: 900,
           textTransform: "uppercase"
         }}
       >
@@ -93,7 +91,7 @@ export default function BuildSentenceQuestion({
           marginBottom: 16,
           padding: "18px 16px",
           borderRadius: 20,
-          background: "#FFFFFF",
+          background: "#F8FAF6",
           border: "2px solid #E6E6E6",
           color: "#4B4B4B",
           boxShadow: "0 5px 0 #D9D9D9"
@@ -103,7 +101,7 @@ export default function BuildSentenceQuestion({
           style={{
             color: "#777",
             fontSize: 13,
-            fontWeight: "900",
+            fontWeight: 900,
             marginBottom: 6
           }}
         >
@@ -113,7 +111,7 @@ export default function BuildSentenceQuestion({
         <div
           style={{
             fontSize: 26,
-            fontWeight: "900",
+            fontWeight: 900,
             lineHeight: 1.25
           }}
         >
@@ -123,23 +121,23 @@ export default function BuildSentenceQuestion({
 
       <div
         style={{
-          minHeight: 70,
+          minHeight: 74,
           padding: 12,
           borderRadius: 18,
           border: buildAreaWrong
-            ? "2px solid #FF4D4D"
+            ? "2px solid #F06A6A"
             : buildAreaCorrect
               ? "2px solid #58CC02"
               : "2px dashed #BDBDBD",
           background: buildAreaWrong
-            ? "#FFD6D6"
+            ? "#FFF0F0"
             : buildAreaCorrect
-              ? "#D7FFB8"
+              ? "#E9F8DD"
               : "#FFFFFF",
           boxShadow: buildAreaWrong
-            ? "0 5px 0 #C83737"
+            ? "0 5px 0 #E6A0A0"
             : buildAreaCorrect
-              ? "0 5px 0 #46A400"
+              ? "0 5px 0 #BFE8A7"
               : "0 5px 0 #D9D9D9",
           display: "flex",
           flexWrap: "wrap",
@@ -151,10 +149,10 @@ export default function BuildSentenceQuestion({
           <span
             style={{
               color: "#8A8A8A",
-              fontWeight: "800"
+              fontWeight: 800
             }}
           >
-            Соберите предложение здесь
+            Собери предложение
           </span>
         ) : (
           selectedWords.map((word, index) => (
@@ -170,7 +168,7 @@ export default function BuildSentenceQuestion({
                 background: "#E9F8DD",
                 color: "#4B4B4B",
                 boxShadow: "0 3px 0 #46A400",
-                fontWeight: "900",
+                fontWeight: 900,
                 cursor: disabled ? "default" : "pointer"
               }}
             >
@@ -203,7 +201,7 @@ export default function BuildSentenceQuestion({
               color: "#4B4B4B",
               boxShadow: "0 4px 0 #D9D9D9",
               fontSize: 16,
-              fontWeight: "900",
+              fontWeight: 900,
               cursor: disabled ? "default" : "pointer",
               opacity: disabled ? 0.72 : 1
             }}

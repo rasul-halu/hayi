@@ -14,7 +14,7 @@ import Profile from "../pages/profile/Profile";
 import DailyStreak from "../pages/streak/DailyStreak";
 import Vocabulary from "../pages/dictionary/Vocabulary";
 import Alphabet from "../pages/alphabet/Alphabet";
-import AdminDashboard from "../pages/admin/AdminDashboard";
+import Admin from "../pages/admin/Admin";
 import Leaderboard from "../pages/leaderboard/Leaderboard";
 import Achievements from "../pages/achievements/Achievements";
 
@@ -112,7 +112,7 @@ export default function AppRoutes() {
 
         <Route
           path="/admin"
-          element={<AdminDashboard />}
+          element={<Admin />}
         />
 
         <Route

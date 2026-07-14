@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Volume2 } from "lucide-react";
+import { Type, Volume2 } from "lucide-react";
 import BottomNav from "../../components/layout/BottomNav";
+import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import SectionTitle from "../../components/ui/SectionTitle";
@@ -39,45 +40,59 @@ export default function Alphabet() {
   return (
     <PageContainer
       style={{
+        background: "#F4F7F2",
+        color: "#2D2D2D",
         maxWidth: 480,
         paddingBottom: 112
       }}
     >
+      <div
+        style={{
+          width: 54,
+          height: 54,
+          borderRadius: 18,
+          background: "#E9F8DD",
+          color: "#58CC02",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 5px 0 #CFE2C4",
+          marginBottom: 14
+        }}
+      >
+        <AppIcon icon={Type} size={30} />
+      </div>
+
       <SectionTitle
         title="Алфавит"
         subtitle="Нажми на букву, чтобы услышать произношение."
       />
 
-      <div
+      <AppCard
         style={{
-          minHeight: 42,
+          minHeight: 54,
           marginTop: 16,
-          padding: "10px 12px",
-          borderRadius: 16,
-          background: activeLetter
-            ? "#E9F8DD"
-            : "#5A5A5A",
-          color: activeLetter
-            ? "#46A400"
-            : "#D9D9D9",
+          padding: "12px 14px",
+          borderRadius: 18,
+          background: activeLetter ? "#E9F8DD" : "#FFFFFF",
+          color: activeLetter ? "#46A400" : "#6F746B",
+          border: `2px solid ${activeLetter ? "#BFE8A7" : "#E6E6E6"}`,
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          fontWeight: "900",
-          boxShadow: activeLetter
-            ? "0 4px 0 #46A400"
-            : "0 4px 0 rgba(0,0,0,0.18)"
+          gap: 10,
+          fontWeight: 900,
+          boxShadow: activeLetter ? "0 5px 0 #BFE8A7" : "0 5px 0 #D9D9D9"
         }}
       >
         <AppIcon
           icon={Volume2}
-          size={20}
-          color={activeLetter ? "#46A400" : "#BDBDBD"}
+          size={21}
+          color={activeLetter ? "#46A400" : "#8A8A8A"}
         />
         {activeLetter
           ? `Слушаем: ${activeLetter.letter}`
           : "Выбери букву"}
-      </div>
+      </AppCard>
 
       <div
         style={{
@@ -99,16 +114,10 @@ export default function Alphabet() {
                 minHeight: 76,
                 padding: "12px 8px",
                 borderRadius: 20,
-                border: active
-                  ? "3px solid #46A400"
-                  : "2px solid #E6E6E6",
-                background: active
-                  ? "#D7FFB8"
-                  : "#FFFFFF",
+                border: active ? "3px solid #46A400" : "2px solid #E6E6E6",
+                background: active ? "#D7FFB8" : "#FFFFFF",
                 color: "#4B4B4B",
-                boxShadow: active
-                  ? "0 5px 0 #46A400"
-                  : "0 5px 0 #D9D9D9",
+                boxShadow: active ? "0 5px 0 #46A400" : "0 5px 0 #D9D9D9",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -124,7 +133,7 @@ export default function Alphabet() {
                 style={{
                   fontSize: 30,
                   lineHeight: 1,
-                  fontWeight: "900"
+                  fontWeight: 900
                 }}
               >
                 {letter.letter}
@@ -134,7 +143,7 @@ export default function Alphabet() {
                 style={{
                   color: "#777",
                   fontSize: 12,
-                  fontWeight: "800"
+                  fontWeight: 800
                 }}
               >
                 {letter.name}

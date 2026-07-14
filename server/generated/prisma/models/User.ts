@@ -55,6 +55,7 @@ export type UserMinAggregateOutputType = {
   avatarUrl: string | null
   languageCode: string | null
   isPremium: boolean | null
+  role: string | null
   xp: number | null
   hearts: number | null
   maxHearts: number | null
@@ -77,6 +78,7 @@ export type UserMaxAggregateOutputType = {
   avatarUrl: string | null
   languageCode: string | null
   isPremium: boolean | null
+  role: string | null
   xp: number | null
   hearts: number | null
   maxHearts: number | null
@@ -99,6 +101,7 @@ export type UserCountAggregateOutputType = {
   avatarUrl: number
   languageCode: number
   isPremium: number
+  role: number
   xp: number
   hearts: number
   maxHearts: number
@@ -143,6 +146,7 @@ export type UserMinAggregateInputType = {
   avatarUrl?: true
   languageCode?: true
   isPremium?: true
+  role?: true
   xp?: true
   hearts?: true
   maxHearts?: true
@@ -165,6 +169,7 @@ export type UserMaxAggregateInputType = {
   avatarUrl?: true
   languageCode?: true
   isPremium?: true
+  role?: true
   xp?: true
   hearts?: true
   maxHearts?: true
@@ -187,6 +192,7 @@ export type UserCountAggregateInputType = {
   avatarUrl?: true
   languageCode?: true
   isPremium?: true
+  role?: true
   xp?: true
   hearts?: true
   maxHearts?: true
@@ -296,6 +302,7 @@ export type UserGroupByOutputType = {
   avatarUrl: string | null
   languageCode: string | null
   isPremium: boolean
+  role: string
   xp: number
   hearts: number
   maxHearts: number
@@ -341,6 +348,7 @@ export type UserWhereInput = {
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   languageCode?: Prisma.StringNullableFilter<"User"> | string | null
   isPremium?: Prisma.BoolFilter<"User"> | boolean
+  role?: Prisma.StringFilter<"User"> | string
   xp?: Prisma.IntFilter<"User"> | number
   hearts?: Prisma.IntFilter<"User"> | number
   maxHearts?: Prisma.IntFilter<"User"> | number
@@ -366,6 +374,7 @@ export type UserOrderByWithRelationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   languageCode?: Prisma.SortOrderInput | Prisma.SortOrder
   isPremium?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   xp?: Prisma.SortOrder
   hearts?: Prisma.SortOrder
   maxHearts?: Prisma.SortOrder
@@ -394,6 +403,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   languageCode?: Prisma.StringNullableFilter<"User"> | string | null
   isPremium?: Prisma.BoolFilter<"User"> | boolean
+  role?: Prisma.StringFilter<"User"> | string
   xp?: Prisma.IntFilter<"User"> | number
   hearts?: Prisma.IntFilter<"User"> | number
   maxHearts?: Prisma.IntFilter<"User"> | number
@@ -419,6 +429,7 @@ export type UserOrderByWithAggregationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   languageCode?: Prisma.SortOrderInput | Prisma.SortOrder
   isPremium?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   xp?: Prisma.SortOrder
   hearts?: Prisma.SortOrder
   maxHearts?: Prisma.SortOrder
@@ -449,6 +460,7 @@ export type UserScalarWhereWithAggregatesInput = {
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   languageCode?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   isPremium?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  role?: Prisma.StringWithAggregatesFilter<"User"> | string
   xp?: Prisma.IntWithAggregatesFilter<"User"> | number
   hearts?: Prisma.IntWithAggregatesFilter<"User"> | number
   maxHearts?: Prisma.IntWithAggregatesFilter<"User"> | number
@@ -471,6 +483,7 @@ export type UserCreateInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -496,6 +509,7 @@ export type UserUncheckedCreateInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -521,6 +535,7 @@ export type UserUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -546,6 +561,7 @@ export type UserUncheckedUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -571,6 +587,7 @@ export type UserCreateManyInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -593,6 +610,7 @@ export type UserUpdateManyMutationInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -615,6 +633,7 @@ export type UserUncheckedUpdateManyInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -637,6 +656,7 @@ export type UserCountOrderByAggregateInput = {
   avatarUrl?: Prisma.SortOrder
   languageCode?: Prisma.SortOrder
   isPremium?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   xp?: Prisma.SortOrder
   hearts?: Prisma.SortOrder
   maxHearts?: Prisma.SortOrder
@@ -669,6 +689,7 @@ export type UserMaxOrderByAggregateInput = {
   avatarUrl?: Prisma.SortOrder
   languageCode?: Prisma.SortOrder
   isPremium?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   xp?: Prisma.SortOrder
   hearts?: Prisma.SortOrder
   maxHearts?: Prisma.SortOrder
@@ -691,6 +712,7 @@ export type UserMinOrderByAggregateInput = {
   avatarUrl?: Prisma.SortOrder
   languageCode?: Prisma.SortOrder
   isPremium?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   xp?: Prisma.SortOrder
   hearts?: Prisma.SortOrder
   maxHearts?: Prisma.SortOrder
@@ -798,6 +820,7 @@ export type UserCreateWithoutLessonProgressInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -822,6 +845,7 @@ export type UserUncheckedCreateWithoutLessonProgressInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -862,6 +886,7 @@ export type UserUpdateWithoutLessonProgressInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -886,6 +911,7 @@ export type UserUncheckedUpdateWithoutLessonProgressInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -910,6 +936,7 @@ export type UserCreateWithoutXpEventsInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -934,6 +961,7 @@ export type UserUncheckedCreateWithoutXpEventsInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -974,6 +1002,7 @@ export type UserUpdateWithoutXpEventsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -998,6 +1027,7 @@ export type UserUncheckedUpdateWithoutXpEventsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1022,6 +1052,7 @@ export type UserCreateWithoutAchievementsInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -1046,6 +1077,7 @@ export type UserUncheckedCreateWithoutAchievementsInput = {
   avatarUrl?: string | null
   languageCode?: string | null
   isPremium?: boolean
+  role?: string
   xp?: number
   hearts?: number
   maxHearts?: number
@@ -1086,6 +1118,7 @@ export type UserUpdateWithoutAchievementsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1110,6 +1143,7 @@ export type UserUncheckedUpdateWithoutAchievementsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   languageCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPremium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   xp?: Prisma.IntFieldUpdateOperationsInput | number
   hearts?: Prisma.IntFieldUpdateOperationsInput | number
   maxHearts?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1183,6 +1217,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatarUrl?: boolean
   languageCode?: boolean
   isPremium?: boolean
+  role?: boolean
   xp?: boolean
   hearts?: boolean
   maxHearts?: boolean
@@ -1209,6 +1244,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   languageCode?: boolean
   isPremium?: boolean
+  role?: boolean
   xp?: boolean
   hearts?: boolean
   maxHearts?: boolean
@@ -1231,6 +1267,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   languageCode?: boolean
   isPremium?: boolean
+  role?: boolean
   xp?: boolean
   hearts?: boolean
   maxHearts?: boolean
@@ -1253,6 +1290,7 @@ export type UserSelectScalar = {
   avatarUrl?: boolean
   languageCode?: boolean
   isPremium?: boolean
+  role?: boolean
   xp?: boolean
   hearts?: boolean
   maxHearts?: boolean
@@ -1266,7 +1304,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramId" | "firstName" | "lastName" | "username" | "avatarUrl" | "languageCode" | "isPremium" | "xp" | "hearts" | "maxHearts" | "streak" | "longestStreak" | "totalCorrectAnswers" | "totalWrongAnswers" | "lastHeartRefillAt" | "lastLessonCompletedDate" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramId" | "firstName" | "lastName" | "username" | "avatarUrl" | "languageCode" | "isPremium" | "role" | "xp" | "hearts" | "maxHearts" | "streak" | "longestStreak" | "totalCorrectAnswers" | "totalWrongAnswers" | "lastHeartRefillAt" | "lastLessonCompletedDate" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   lessonProgress?: boolean | Prisma.User$lessonProgressArgs<ExtArgs>
   xpEvents?: boolean | Prisma.User$xpEventsArgs<ExtArgs>
@@ -1292,6 +1330,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     avatarUrl: string | null
     languageCode: string | null
     isPremium: boolean
+    role: string
     xp: number
     hearts: number
     maxHearts: number
@@ -1737,6 +1776,7 @@ export interface UserFieldRefs {
   readonly avatarUrl: Prisma.FieldRef<"User", 'String'>
   readonly languageCode: Prisma.FieldRef<"User", 'String'>
   readonly isPremium: Prisma.FieldRef<"User", 'Boolean'>
+  readonly role: Prisma.FieldRef<"User", 'String'>
   readonly xp: Prisma.FieldRef<"User", 'Int'>
   readonly hearts: Prisma.FieldRef<"User", 'Int'>
   readonly maxHearts: Prisma.FieldRef<"User", 'Int'>

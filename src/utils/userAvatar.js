@@ -1,19 +1,32 @@
-export function getUserInitials(user = {}) {
-  const name =
-    user.authProvider === "telegram"
-      ? user.firstName ||
-        (
-          user.displayName === "Гость" ||
-          user.displayName === "Р“РѕСЃС‚СЊ"
-            ? ""
-            : user.displayName
-        ) ||
-        user.username ||
-        "У"
-      : user.displayName ||
-        user.firstName ||
-        user.username ||
-        "";
+const GUEST_NAMES = new Set([
+  "Гость",
+  "Guest",
+  "Р“РѕСЃС‚СЊ",
+  "Р вЂњР С•РЎРѓРЎвЂљРЎРЉ"
+]);
 
-  return name.trim().slice(0, 1).toUpperCase();
+export function getUserInitials(user = {}) {
+  const telegramName =
+    user.firstName ||
+    user.displayName ||
+    user.username ||
+    "";
+
+  const fallbackName =
+    user.displayName ||
+    user.firstName ||
+    user.username ||
+    "";
+
+  const name = user.authProvider === "telegram"
+    ? telegramName
+    : fallbackName;
+
+  const cleanName = GUEST_NAMES.has(name) ? "" : String(name).trim();
+
+  if (!cleanName) {
+    return "";
+  }
+
+  return cleanName.slice(0, 1).toUpperCase();
 }

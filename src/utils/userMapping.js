@@ -46,6 +46,7 @@ export function mapBackendUserToAppUser(backendUser = {}) {
       backendUser.isPremium ||
       backendUser.is_premium
     ),
+    role: backendUser.role || "USER",
     isGuest: false,
     authProvider: "telegram"
   };

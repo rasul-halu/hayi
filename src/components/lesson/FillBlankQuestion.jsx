@@ -1,4 +1,7 @@
-import AnswerButton from "./AnswerButton";
+import AnswerButton, {
+  getOptionLabel,
+  getOptionValue
+} from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
 
 function renderSentence(sentence, question) {
@@ -73,19 +76,22 @@ export default function FillBlankQuestion({
         {renderSentence(question.sentence, question)}
       </div>
 
-      {question.answers.map(answer => (
-        <AnswerButton
-          key={answer}
-          text={answer}
-          selected={selected === answer}
-          disabled={disabled}
-          feedbackStatus={feedbackStatus}
-          newWords={question}
-          onClick={() =>
-            setSelected(answer)
-          }
-        />
-      ))}
+      {question.answers.map(answer => {
+        const answerLabel = getOptionLabel(answer);
+        const answerValue = getOptionValue(answer);
+
+        return (
+          <AnswerButton
+            key={answerValue || answerLabel}
+            label={answerLabel}
+            selected={selected === answerValue}
+            disabled={disabled}
+            feedbackStatus={feedbackStatus}
+            newWords={question}
+            onClick={() => setSelected(answerValue)}
+          />
+        );
+      })}
     </>
   );
 }

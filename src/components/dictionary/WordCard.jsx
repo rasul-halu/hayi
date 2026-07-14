@@ -12,15 +12,20 @@ export default function WordCard({
   return (
     <div
       style={{
-        background: "#5A5A5A",
+        background: "#FFFFFF",
+        color: "#2D2D2D",
         padding: 18,
         borderRadius: 18,
-        marginBottom: 12
+        border: "2px solid #E6E6E6",
+        marginBottom: 12,
+        boxShadow: "0 5px 0 #D9D9D9"
       }}
     >
       <h3
         style={{
-          margin: 0
+          margin: 0,
+          fontSize: 20,
+          fontWeight: 900
         }}
       >
         {title}
@@ -28,24 +33,28 @@ export default function WordCard({
 
       <p
         style={{
-          color: "#D9D9D9",
-          marginTop: 5
+          color: "#46A400",
+          marginTop: 6,
+          fontWeight: 900,
+          lineHeight: 1.35
         }}
       >
         {meaning}
       </p>
 
-      {extraNotes && (
+      {extraNotes ? (
         <p
           style={{
-            color: "#BDBDBD",
+            color: "#777",
             marginTop: 8,
-            fontSize: 14
+            fontSize: 14,
+            fontWeight: 700,
+            lineHeight: 1.35
           }}
         >
           {extraNotes}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -210,3 +210,49 @@ export async function getAchievements() {
 
   return data;
 }
+
+export async function getCourse(slug = "lezgian") {
+  const response = await fetch(`${API_URL}/courses/${slug}`, {
+    headers: getTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Course loading failed");
+  }
+
+  return data;
+}
+
+export async function getLesson(lessonId) {
+  const response = await fetch(`${API_URL}/lessons/${lessonId}`, {
+    headers: getTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(data.error || "Lesson loading failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getAdminMe() {
+  const response = await fetch(`${API_URL}/admin/me`, {
+    headers: requireTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(data.error || "Admin check failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
