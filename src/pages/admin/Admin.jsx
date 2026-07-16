@@ -6,6 +6,7 @@ import {
   WholeWord
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAdminMe, hasTelegramAuthData } from "../../api/apiClient";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
@@ -15,24 +16,29 @@ import SectionTitle from "../../components/ui/SectionTitle";
 
 const adminSections = [
   {
-    title: "Курсы",
-    icon: Layers
+    title: "Курсы и уроки",
+    icon: Layers,
+    path: "/admin/courses"
   },
   {
     title: "Уроки",
-    icon: BookOpen
+    icon: BookOpen,
+    disabled: true
   },
   {
     title: "Вопросы",
-    icon: HelpCircle
+    icon: HelpCircle,
+    disabled: true
   },
   {
     title: "Словарь",
-    icon: WholeWord
+    icon: WholeWord,
+    disabled: true
   }
 ];
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [adminData, setAdminData] = useState(null);
   const [isLoading, setIsLoading] = useState(hasTelegramAuthData());
   const [error, setError] = useState("");
@@ -86,7 +92,7 @@ export default function Admin() {
             boxShadow: "0 6px 0 #D9D9D9"
           }}
         >
-          Админка доступна только внутри Telegram.
+          Войдите через Telegram, чтобы открыть админку.
         </AppCard>
       </PageContainer>
     );
@@ -118,7 +124,7 @@ export default function Admin() {
 
       <SectionTitle
         title="Админка Хайи"
-        subtitle="Управление учебным контентом и настройками"
+        subtitle="Управление учебным контентом"
       />
 
       {isLoading ? (
@@ -212,7 +218,8 @@ export default function Admin() {
               <button
                 key={section.title}
                 type="button"
-                disabled
+                disabled={section.disabled}
+                onClick={() => section.path && navigate(section.path)}
                 style={{
                   minHeight: 112,
                   borderRadius: 18,
@@ -225,7 +232,8 @@ export default function Admin() {
                   alignContent: "center",
                   gap: 10,
                   fontWeight: 900,
-                  opacity: 0.78
+                  opacity: section.disabled ? 0.6 : 1,
+                  cursor: section.disabled ? "default" : "pointer"
                 }}
               >
                 <AppIcon icon={section.icon} size={28} color="#58CC02" />

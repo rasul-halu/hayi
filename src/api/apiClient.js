@@ -256,3 +256,89 @@ export async function getAdminMe() {
 
   return data;
 }
+
+async function adminJsonRequest(path, {
+  method = "GET",
+  body,
+} = {}) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: {
+      ...(body ? { "Content-Type": "application/json" } : {}),
+      ...requireTelegramAuthHeaders(),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(data.error || "Admin request failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getAdminCourses() {
+  return adminJsonRequest("/admin/courses");
+}
+
+export async function getAdminLesson(lessonId) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}`);
+}
+
+export async function updateAdminChapter(chapterId, data) {
+  return adminJsonRequest(`/admin/chapters/${chapterId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
+export async function updateAdminLesson(lessonId, data) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
+export async function updateAdminQuestion(questionId, data) {
+  return adminJsonRequest(`/admin/questions/${questionId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
+export async function createAdminChapter(courseId, data) {
+  return adminJsonRequest(`/admin/courses/${courseId}/chapters`, {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function createAdminLesson(chapterId, data) {
+  return adminJsonRequest(`/admin/chapters/${chapterId}/lessons`, {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function createAdminQuestion(lessonId, data) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}/questions`, {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function duplicateAdminLesson(lessonId) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}/duplicate`, {
+    method: "POST",
+  });
+}
+
+export async function duplicateAdminQuestion(questionId) {
+  return adminJsonRequest(`/admin/questions/${questionId}/duplicate`, {
+    method: "POST",
+  });
+}

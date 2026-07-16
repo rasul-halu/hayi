@@ -1,3 +1,6 @@
+// Source of truth for seeded course content. After the course moved to the
+// backend, production titles/descriptions should be changed here and pushed to
+// PostgreSQL with `npm.cmd run prisma:seed` from the server directory.
 export const courseSeed = {
   slug: "lezgian",
   title: "Хайи",
@@ -9,7 +12,7 @@ export const courseSeed = {
   chapters: [
     {
       title: "Глава 1",
-      description: "Первые слова",
+      description: "Здоровайтесь и представляйтесь",
       order: 1,
       lessons: [
         {

@@ -102,13 +102,24 @@ function normalizeIdList(value, fallback = []) {
     : fallback;
 
   const ids = source
-    .map(id => Number(id))
-    .filter(id =>
-      Number.isInteger(id) &&
-      id > 0
-    );
+    .map(normalizeLessonId)
+    .filter(id => id !== undefined);
 
   return [...new Set(ids)];
+}
+
+function normalizeLessonId(id) {
+  const numericId = Number(id);
+
+  if (Number.isInteger(numericId) && numericId > 0) {
+    return numericId;
+  }
+
+  if (typeof id === "string" && id.trim().length > 0) {
+    return id.trim();
+  }
+
+  return undefined;
 }
 
 function normalizeDate(value) {
@@ -524,12 +535,9 @@ export function UserProvider({ children }) {
     lessonId,
     xpReward = 10
   ) => {
-    const numericLessonId = Number(lessonId);
+    const safeLessonId = normalizeLessonId(lessonId);
 
-    if (
-      !Number.isInteger(numericLessonId) ||
-      numericLessonId <= 0
-    ) {
+    if (safeLessonId === undefined) {
       return;
     }
 
@@ -543,7 +551,7 @@ export function UserProvider({ children }) {
         DEFAULT_USER.unlockedLessonIds
       );
 
-      if (completedLessonIds.includes(numericLessonId)) {
+      if (completedLessonIds.includes(safeLessonId)) {
         return {
           ...prev,
           xp: toNumber(prev.xp, DEFAULT_USER.xp),
@@ -564,11 +572,13 @@ export function UserProvider({ children }) {
       }
 
       const nextLessonId =
-        getNextLessonId(numericLessonId);
+        typeof safeLessonId === "number"
+          ? getNextLessonId(safeLessonId)
+          : undefined;
 
       const nextCompletedLessonIds = [
         ...completedLessonIds,
-        numericLessonId
+        safeLessonId
       ];
 
       const nextUnlockedLessonIds =
@@ -608,12 +618,9 @@ export function UserProvider({ children }) {
   }, []);
 
   const cacheCompletedLessonById = useCallback((lessonId) => {
-    const numericLessonId = Number(lessonId);
+    const safeLessonId = normalizeLessonId(lessonId);
 
-    if (
-      !Number.isInteger(numericLessonId) ||
-      numericLessonId <= 0
-    ) {
+    if (safeLessonId === undefined) {
       return;
     }
 
@@ -626,7 +633,7 @@ export function UserProvider({ children }) {
         DEFAULT_USER.unlockedLessonIds
       );
 
-      if (completedLessonIds.includes(numericLessonId)) {
+      if (completedLessonIds.includes(safeLessonId)) {
         return {
           ...prev,
           completedLessonIds,
@@ -637,10 +644,12 @@ export function UserProvider({ children }) {
       }
 
       const nextLessonId =
-        getNextLessonId(numericLessonId);
+        typeof safeLessonId === "number"
+          ? getNextLessonId(safeLessonId)
+          : undefined;
       const nextCompletedLessonIds = [
         ...completedLessonIds,
-        numericLessonId
+        safeLessonId
       ];
       const nextUnlockedLessonIds =
         nextLessonId

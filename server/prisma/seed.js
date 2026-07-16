@@ -100,21 +100,8 @@ async function seedCourse() {
         },
       });
 
-      const seedQuestionOrders = lessonSeed.questions.map(
-        question => question.order
-      );
-
-      await prisma.question.deleteMany({
-        where: {
-          lessonId: lesson.id,
-          order: {
-            notIn: seedQuestionOrders.length > 0
-              ? seedQuestionOrders
-              : [-1],
-          },
-        },
-      });
-
+      // Update known questions in place. Removing old questions should be an
+      // explicit content operation so seed reruns cannot accidentally erase data.
       for (const questionSeed of lessonSeed.questions) {
         await prisma.question.upsert({
           where: {

@@ -8,12 +8,12 @@ export const course = {
     {
       id: 1,
       title: "Глава 1",
-      description: "Первые слова",
+      description: "Здоровайтесь и представляйтесь",
 
       lessons: [
         {
           id: 1,
-          title: "Приветствие",
+          title: "Привет",
           description: "Учимся узнавать и переводить простые приветствия.",
           xpReward: 10,
 

@@ -18,10 +18,12 @@ import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import StatPill from "../../components/ui/StatPill";
 import { useUser } from "../../context/UserContext";
+import useAdminAccess from "../../hooks/useAdminAccess";
 import { getUserInitials } from "../../utils/userAvatar";
 
 export default function Profile() {
   const { user, toggleSound } = useUser();
+  const { adminAccess } = useAdminAccess();
   const navigate = useNavigate();
   const completedLessonCount = Array.isArray(user.completedLessonIds)
     ? user.completedLessonIds.length
@@ -260,14 +262,39 @@ export default function Profile() {
         </AppButton>
       </AppCard>
 
-      {user.role === "ADMIN" ? (
-        <AppButton
+      {adminAccess ? (
+        <AppCard
+          style={{
+            marginTop: 18,
+            background: "#FFFFFF",
+            color: "#2D2D2D",
+            border: "2px solid #DDEED4",
+            boxShadow: "0 6px 0 #CFE2C4"
+          }}
+        >
+          <div style={{ marginBottom: 14 }}>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
+              Админка
+            </h2>
+            <p
+              style={{
+                margin: "4px 0 0",
+                color: "#6F746B",
+                fontWeight: 800,
+                lineHeight: 1.35
+              }}
+            >
+              Управление курсами и уроками
+            </p>
+          </div>
+
+          <AppButton
           onClick={() => navigate("/admin")}
           variant="yellow"
-          style={{ marginTop: 18 }}
         >
           Админка
         </AppButton>
+        </AppCard>
       ) : null}
 
       <button

@@ -24,12 +24,33 @@ import { useUser } from "../../context/UserContext";
 import { getCourseChapters } from "../../data/courseHelpers";
 import { mapApiCourseToFrontendCourse } from "../../utils/courseApiAdapters";
 import { getUserInitials } from "../../utils/userAvatar";
-import mainMascot from "../../assets/mascot/main-mascot.png";
+import mainMascot from "../../assets/mascot/thing.png";
+
+function normalizeLessonId(id) {
+  const numericId = Number(id);
+
+  if (Number.isInteger(numericId) && numericId > 0) {
+    return numericId;
+  }
+
+  if (typeof id === "string" && id.trim().length > 0) {
+    return id.trim();
+  }
+
+  return undefined;
+}
+
+function lessonIdListIncludes(list, lessonId) {
+  const normalizedLessonId = normalizeLessonId(lessonId);
+
+  return normalizedLessonId !== undefined &&
+    list.some(id => normalizeLessonId(id) === normalizedLessonId);
+}
 
 export default function Home() {
   const { user } = useUser();
   const navigate = useNavigate();
-  const [chapters, setChapters] = useState(() => getCourseChapters());
+  const [chapters, setChapters] = useState([]);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [courseError, setCourseError] = useState("");
   const unlockedLessonIds = useMemo(
@@ -58,13 +79,15 @@ export default function Home() {
 
   const nextLesson = useMemo(() => {
     return allLessons.find(lesson => {
-      const lessonId = Number(lesson.id);
+      const lessonId = normalizeLessonId(lesson.id);
       return (
-        unlockedLessonIds.includes(lessonId) &&
-        !completedLessonIds.includes(lessonId)
+        lessonIdListIncludes(unlockedLessonIds, lessonId) &&
+        !lessonIdListIncludes(completedLessonIds, lessonId)
       );
     }) ||
-      allLessons.find(lesson => unlockedLessonIds.includes(Number(lesson.id))) ||
+      allLessons.find(lesson =>
+        lessonIdListIncludes(unlockedLessonIds, lesson.id)
+      ) ||
       allLessons[0];
   }, [allLessons, completedLessonIds, unlockedLessonIds]);
 
@@ -75,7 +98,7 @@ export default function Home() {
 
     return chapters.find(chapter =>
       (chapter.lessons || []).some(lesson =>
-        !completedLessonIds.includes(Number(lesson.id))
+        !lessonIdListIncludes(completedLessonIds, lesson.id)
       )
     ) || chapters[chapters.length - 1];
   }, [chapters, completedLessonIds]);
@@ -86,7 +109,7 @@ export default function Home() {
   );
   const currentChapterLessons = currentChapter?.lessons || [];
   const completedLessonsInChapter = currentChapterLessons.filter(lesson =>
-    completedLessonIds.includes(Number(lesson.id))
+    lessonIdListIncludes(completedLessonIds, lesson.id)
   ).length;
   const totalLessonsInChapter = currentChapterLessons.length;
   const chapterProgressPercent = totalLessonsInChapter > 0
@@ -97,21 +120,38 @@ export default function Home() {
     completedLessonIds.length >= allLessons.length;
   const continueLesson =
     currentChapterLessons.find(lesson =>
-      !completedLessonIds.includes(Number(lesson.id)) &&
-      unlockedLessonIds.includes(Number(lesson.id))
+      !lessonIdListIncludes(completedLessonIds, lesson.id) &&
+      lessonIdListIncludes(unlockedLessonIds, lesson.id)
     ) ||
     currentChapterLessons.find(lesson =>
-      !completedLessonIds.includes(Number(lesson.id))
+      !lessonIdListIncludes(completedLessonIds, lesson.id)
     ) ||
     nextLesson;
 
   const loadCourse = useCallback(async () => {
     setIsCourseLoading(true);
     setCourseError("");
+    setChapters([]);
 
     try {
       const data = await getCourse();
       const course = mapApiCourseToFrontendCourse(data.course);
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("Course API loaded", {
+          title: course.title,
+          chapters: (course.chapters || []).map(chapter => ({
+            title: chapter.title,
+            description: chapter.description,
+            lessons: (chapter.lessons || []).map(lesson => ({
+              id: lesson.id,
+              title: lesson.title,
+              description: lesson.description,
+            })),
+          })),
+        });
+      }
+
       setChapters(course.chapters || []);
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
@@ -131,6 +171,8 @@ export default function Home() {
   useEffect(() => {
     void loadCourse();
   }, [loadCourse]);
+
+  const shouldShowCourseContent = !isCourseLoading && !courseError;
 
   return (
     <PageContainer
@@ -422,7 +464,7 @@ export default function Home() {
         </AppCard>
       ) : null}
 
-      {!courseError && chapters.map((chapter, chapterIndex) => (
+      {shouldShowCourseContent && chapters.map((chapter, chapterIndex) => (
         <AppCard
           key={chapter.id}
           style={{
@@ -440,9 +482,8 @@ export default function Home() {
 
           <div style={{ marginTop: 20 }}>
             {chapter.lessons.map((lesson, index) => {
-              const lessonId = Number(lesson.id);
-              const unlocked = unlockedLessonIds.includes(lessonId);
-              const completed = completedLessonIds.includes(lessonId);
+              const unlocked = lessonIdListIncludes(unlockedLessonIds, lesson.id);
+              const completed = lessonIdListIncludes(completedLessonIds, lesson.id);
 
               return (
                 <div

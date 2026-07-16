@@ -151,7 +151,18 @@ export default function Lesson() {
 
     try {
       const data = await getApiLesson(lessonId);
-      setLesson(mapApiLessonToFrontendLesson(data.lesson));
+      const apiLesson = mapApiLessonToFrontendLesson(data.lesson);
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("Lesson API loaded", {
+          id: apiLesson.id,
+          title: apiLesson.title,
+          description: apiLesson.description,
+          questionCount: apiLesson.questions?.length || 0,
+        });
+      }
+
+      setLesson(apiLesson);
     } catch (error) {
       const fallbackLesson = getLessonById(lessonId);
 
