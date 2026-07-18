@@ -289,6 +289,10 @@ export async function getAdminLesson(lessonId) {
   return adminJsonRequest(`/admin/lessons/${lessonId}`);
 }
 
+export async function getAdminLessonPreview(lessonId) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}/preview`);
+}
+
 export async function updateAdminChapter(chapterId, data) {
   return adminJsonRequest(`/admin/chapters/${chapterId}`, {
     method: "PATCH",
@@ -341,4 +345,33 @@ export async function duplicateAdminQuestion(questionId) {
   return adminJsonRequest(`/admin/questions/${questionId}/duplicate`, {
     method: "POST",
   });
+}
+
+async function adminUploadRequest(path, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: requireTelegramAuthHeaders(),
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(data.error || "Media upload failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+export async function uploadAdminImage(file) {
+  return adminUploadRequest("/admin/media/image", file);
+}
+
+export async function uploadAdminAudio(file) {
+  return adminUploadRequest("/admin/media/audio", file);
 }

@@ -70,6 +70,16 @@ export default function ListeningQuestion({
         >
           Прослушай и выбери ответ
         </p>
+
+        {question.audioUrl ? (
+          <audio
+            controls
+            src={question.audioUrl}
+            style={{ width: "100%", marginTop: 16 }}
+          >
+            <track kind="captions" />
+          </audio>
+        ) : null}
       </div>
 
       {question.answers.map(answer => {

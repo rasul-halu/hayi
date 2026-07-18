@@ -17,6 +17,7 @@ import Alphabet from "../pages/alphabet/Alphabet";
 import Admin from "../pages/admin/Admin";
 import AdminCourses from "../pages/admin/AdminCourses";
 import AdminLessonEditor from "../pages/admin/AdminLessonEditor";
+import AdminLessonPreview from "../pages/admin/AdminLessonPreview";
 import Leaderboard from "../pages/leaderboard/Leaderboard";
 import Achievements from "../pages/achievements/Achievements";
 
@@ -125,6 +126,11 @@ export default function AppRoutes() {
         <Route
           path="/admin/lessons/:lessonId"
           element={<AdminLessonEditor />}
+        />
+
+        <Route
+          path="/admin/lessons/:lessonId/preview"
+          element={<AdminLessonPreview />}
         />
 
         <Route

@@ -8,6 +8,7 @@ import {
   getAdminCourseById,
   getAdminCourses,
   getAdminLessonById,
+  getAdminLessonPreviewById,
   getAdminLessons,
   getAdminQuestionById,
   updateAdminChapter,
@@ -100,6 +101,47 @@ function normalizeJsonField(value, fieldName) {
   return value;
 }
 
+const QUESTION_TYPES = new Set([
+  "translate",
+  "multiple-choice",
+  "multipleChoice",
+  "listening",
+  "fillBlank",
+  "match",
+  "buildSentence",
+]);
+
+function assertJsonArray(value, fieldName) {
+  if (value !== null && value !== undefined && !Array.isArray(value)) {
+    throw createHttpError(400, `${fieldName} must be an array or null`);
+  }
+}
+
+function validateQuestionPayload(data) {
+  if (!QUESTION_TYPES.has(data.type)) {
+    throw createHttpError(400, "Unknown question type");
+  }
+
+  assertJsonArray(data.options, "options");
+  assertJsonArray(data.pairs, "pairs");
+  assertJsonArray(data.words, "words");
+  assertJsonArray(data.newWords, "newWords");
+
+  if (["translate", "multiple-choice", "multipleChoice", "listening", "fillBlank"].includes(data.type)) {
+    assertJsonArray(data.options, "options");
+  }
+
+  if (data.type === "match") {
+    assertJsonArray(data.pairs, "pairs");
+  }
+
+  if (data.type === "buildSentence") {
+    assertJsonArray(data.words, "words");
+  }
+
+  return data;
+}
+
 function getChapterPatch(body) {
   if (!isPlainObject(body)) {
     throw createHttpError(400, "Invalid chapter data");
@@ -169,7 +211,7 @@ function getQuestionPatch(body) {
     throw createHttpError(400, "Invalid question JSON");
   }
 
-  return {
+  return validateQuestionPayload({
     type: normalizeRequiredString(body.type, "type"),
     order: normalizeInteger(body.order, "order"),
     prompt: normalizeNullableString(body.prompt, "prompt"),
@@ -183,7 +225,7 @@ function getQuestionPatch(body) {
     words: normalizeJsonField(body.words, "words"),
     newWords: normalizeJsonField(body.newWords, "newWords"),
     metadata: normalizeJsonField(body.metadata, "metadata"),
-  };
+  });
 }
 
 function getQuestionCreate(body) {
@@ -191,7 +233,7 @@ function getQuestionCreate(body) {
     throw createHttpError(400, "Invalid question JSON");
   }
 
-  return {
+  return validateQuestionPayload({
     type: normalizeRequiredString(body.type, "type"),
     order: normalizeOptionalInteger(body.order, "order"),
     prompt: normalizeNullableString(body.prompt, "prompt"),
@@ -205,7 +247,7 @@ function getQuestionCreate(body) {
     words: normalizeJsonField(body.words, "words"),
     newWords: normalizeJsonField(body.newWords, "newWords"),
     metadata: normalizeJsonField(body.metadata, "metadata"),
-  };
+  });
 }
 
 function handleAdminError(error, next) {
@@ -331,6 +373,24 @@ export async function listAdminLessons(req, res, next) {
 export async function getAdminLesson(req, res, next) {
   try {
     const lesson = await getAdminLessonById(req.params.lessonId);
+
+    if (!lesson) {
+      return res.status(404).json({
+        error: "Lesson not found",
+      });
+    }
+
+    return res.json({
+      lesson,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getAdminLessonPreview(req, res, next) {
+  try {
+    const lesson = await getAdminLessonPreviewById(req.params.lessonId);
 
     if (!lesson) {
       return res.status(404).json({

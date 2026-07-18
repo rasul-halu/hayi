@@ -4,6 +4,7 @@ import {
   getAdminChapter,
   getAdminCourse,
   getAdminLesson,
+  getAdminLessonPreview,
   getAdminQuestion,
   listAdminCourses,
   listAdminLessons,
@@ -34,6 +35,7 @@ router.patch("/chapters/:chapterId", patchAdminChapter);
 router.post("/chapters/:chapterId/lessons", postAdminLesson);
 
 router.get("/lessons", listAdminLessons);
+router.get("/lessons/:lessonId/preview", getAdminLessonPreview);
 router.get("/lessons/:lessonId", getAdminLesson);
 router.patch("/lessons/:lessonId", patchAdminLesson);
 router.post("/lessons/:lessonId/duplicate", postDuplicateAdminLesson);

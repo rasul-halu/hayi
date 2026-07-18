@@ -43,6 +43,49 @@ function serializeLessonDetail(lesson) {
   };
 }
 
+function serializePreviewQuestion(question) {
+  const metadata = question.metadata || {};
+
+  return {
+    id: question.id,
+    type: question.type,
+    order: question.order,
+    prompt: question.prompt,
+    question: metadata.question || question.translation || "",
+    translation: question.translation,
+    sentence: metadata.sentence,
+    answers: question.options || [],
+    options: question.options || [],
+    correct: question.correctAnswer,
+    correctAnswer: question.correctAnswer,
+    pairs: question.pairs || [],
+    translations: metadata.translations,
+    words: question.words || [],
+    targetSentence: metadata.targetSentence,
+    newWord: metadata.newWord,
+    newWords: question.newWords || [],
+    image: metadata.image,
+    audioUrl: question.audioUrl,
+    characterImage: question.characterImage
+      ? {
+          src: question.characterImage,
+          alt: metadata.characterImageAlt || "",
+        }
+      : null,
+    explanation: question.explanation,
+    metadata,
+  };
+}
+
+function serializeLessonPreview(lesson) {
+  return {
+    ...serializeLessonSummary(lesson),
+    questions: (lesson.questions || [])
+      .sort((left, right) => left.order - right.order)
+      .map(serializePreviewQuestion),
+  };
+}
+
 function serializeChapter(chapter) {
   return {
     id: chapter.id,
@@ -178,6 +221,19 @@ export async function getAdminLessonById(lessonId) {
   });
 
   return lesson ? serializeLessonDetail(lesson) : null;
+}
+
+export async function getAdminLessonPreviewById(lessonId) {
+  const lesson = await prisma.lesson.findUnique({
+    where: {
+      id: lessonId,
+    },
+    include: {
+      questions: true,
+    },
+  });
+
+  return lesson ? serializeLessonPreview(lesson) : null;
 }
 
 export async function updateAdminLesson(lessonId, data) {

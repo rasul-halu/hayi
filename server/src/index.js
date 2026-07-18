@@ -2,7 +2,10 @@ import "dotenv/config";
 
 import cors from "cors";
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import achievementRouter from "./routes/achievement.routes.js";
+import adminMediaRouter from "./routes/adminMedia.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import courseRouter from "./routes/course.routes.js";
@@ -17,6 +20,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const CLIENT_URL = process.env.CLIENT_URL;
 const isProduction = process.env.NODE_ENV === "production";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function normalizeOrigin(origin) {
   return origin?.replace(/\/$/, "");
@@ -48,8 +53,10 @@ app.use(
     origin: corsOrigin,
   })
 );
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api", healthRouter);
+app.use("/api/admin/media", adminMediaRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/achievements", achievementRouter);
 app.use("/api/auth", authRouter);
