@@ -61,13 +61,13 @@ function Badge({
       style={{
         padding: "12px 8px",
         borderRadius: 18,
-        background: "#F7F7F7",
+        background: "#F7F8F5",
         border: "2px solid #E6E6E6",
         boxShadow: "0 4px 0 #D9D9D9",
         display: "grid",
         justifyItems: "center",
         gap: 5,
-        fontWeight: "900"
+        fontWeight: 900
       }}
     >
       <AppIcon icon={icon} size={24} color={color} />
@@ -101,9 +101,7 @@ function LessonCircle({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: active
-          ? "0 5px 0 rgba(0,0,0,0.18)"
-          : "0 5px 0 #D9D9D9"
+        boxShadow: active ? "0 5px 0 rgba(0,0,0,0.18)" : "0 5px 0 #D9D9D9"
       }}
     >
       <AppIcon icon={icon} size={24} />

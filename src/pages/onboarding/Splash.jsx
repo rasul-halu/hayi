@@ -31,13 +31,145 @@ function MiniStat({
         justifyContent: "center",
         gap: 7,
         fontSize: 13,
-        fontWeight: "900",
+        fontWeight: 900,
         whiteSpace: "nowrap"
       }}
     >
       <AppIcon icon={icon} size={17} color={color} />
       {label}
     </div>
+  );
+}
+
+function StartupLoading({
+  authStatus,
+  authError,
+  onRetry
+}) {
+  const hasError = authStatus === "error";
+
+  return (
+    <main
+      style={{
+        minHeight: "100dvh",
+        width: "100%",
+        maxWidth: 480,
+        margin: "0 auto",
+        padding: "calc(24px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))",
+        background: "#F4F7F2",
+        color: "#2D2D2D",
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        textAlign: "center"
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          display: "grid",
+          gap: 18
+        }}
+      >
+        <div
+          style={{
+            width: 150,
+            height: 150,
+            margin: "0 auto",
+            borderRadius: 34,
+            background: "#FFFFFF",
+            border: "2px solid #E6E6E6",
+            boxShadow: "0 8px 0 #D9D9D9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden"
+          }}
+        >
+          <img
+            className={hasError ? undefined : "startup-mascot-pulse"}
+            src={mascot}
+            alt="Маскот Хайи"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              padding: 10,
+              boxSizing: "border-box"
+            }}
+          />
+        </div>
+
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              color: "#58CC02",
+              fontSize: 44,
+              lineHeight: 1,
+              fontWeight: 900
+            }}
+          >
+            Хайи
+          </h1>
+
+          <p
+            style={{
+              margin: "12px 0 0",
+              color: "#6F746B",
+              fontSize: 17,
+              fontWeight: 900
+            }}
+          >
+            {hasError ? "Не удалось загрузить профиль" : "Подготавливаем Хайи..."}
+          </p>
+        </div>
+
+        {!hasError ? (
+          <div
+            aria-hidden="true"
+            style={{
+              width: 172,
+              height: 12,
+              margin: "0 auto",
+              borderRadius: 999,
+              background: "#E2E7DE",
+              overflow: "hidden"
+            }}
+          >
+            <div
+              className="startup-progress-bar"
+              style={{
+                width: 64,
+                height: "100%",
+                borderRadius: 999,
+                background: "#58CC02"
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            <p
+              style={{
+                margin: 0,
+                color: "#D93B3B",
+                fontSize: 14,
+                lineHeight: 1.4,
+                fontWeight: 800
+              }}
+            >
+              {authError}
+            </p>
+
+            <AppButton onClick={onRetry}>
+              Повторить
+            </AppButton>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
 
@@ -66,98 +198,26 @@ export default function Splash() {
 
   if (isTelegramMode) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          width: "100%",
-          maxWidth: 480,
-          margin: "0 auto",
-          padding: "24px 18px 28px",
-          background: "#4B4B4B",
-          color: "#FFFFFF",
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center"
+      <StartupLoading
+        authStatus={authStatus}
+        authError={authError}
+        onRetry={() => {
+          void authenticateTelegramUser().catch(() => {});
         }}
-      >
-        <img
-          src={mascot}
-          alt="Маскот Хайи"
-          style={{
-            width: 160,
-            height: 160,
-            objectFit: "contain",
-            marginBottom: 22
-          }}
-        />
-
-        <h1
-          style={{
-            margin: 0,
-            color: "#58CC02",
-            fontSize: 42,
-            fontWeight: "900"
-          }}
-        >
-          Хайи
-        </h1>
-
-        <p
-          style={{
-            margin: "14px 0 0",
-            color: "#D9D9D9",
-            fontSize: 17,
-            fontWeight: "800"
-          }}
-        >
-          {authStatus === "error"
-            ? "Не удалось войти через Telegram"
-            : "Входим через Telegram..."}
-        </p>
-
-        {authStatus === "error" ? (
-          <>
-            <p
-              style={{
-                margin: "10px 0 0",
-                color: "#FFDAD6",
-                fontSize: 14,
-                lineHeight: 1.4,
-                fontWeight: "700"
-              }}
-            >
-              {authError}
-            </p>
-
-            <AppButton
-              onClick={() => {
-                void authenticateTelegramUser().catch(() => {});
-              }}
-              style={{
-                marginTop: 22
-              }}
-            >
-              Повторить
-            </AppButton>
-          </>
-        ) : null}
-      </main>
+      />
     );
   }
 
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         width: "100%",
         maxWidth: 480,
         margin: "0 auto",
-        padding: "24px 18px 28px",
-        background: "#4B4B4B",
-        color: "#FFFFFF",
+        padding: "calc(24px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))",
+        background: "#F4F7F2",
+        color: "#2D2D2D",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
@@ -168,13 +228,13 @@ export default function Splash() {
       <div
         style={{
           textAlign: "center",
-          paddingTop: 20
+          paddingTop: 14
         }}
       >
         <div
           style={{
-            width: 250,
-            height: 250,
+            width: 236,
+            height: 236,
             margin: "0 auto 18px",
             borderRadius: 36,
             background: "#FFFFFF",
@@ -205,7 +265,7 @@ export default function Splash() {
             color: "#58CC02",
             fontSize: 56,
             lineHeight: 1,
-            fontWeight: "900",
+            fontWeight: 900,
             letterSpacing: 0
           }}
         >
@@ -216,10 +276,10 @@ export default function Splash() {
           style={{
             margin: "12px auto 0",
             maxWidth: 330,
-            color: "#FFFFFF",
+            color: "#2D2D2D",
             fontSize: 22,
             lineHeight: 1.2,
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           Изучай лезгинский легко
@@ -229,10 +289,10 @@ export default function Splash() {
           style={{
             margin: "10px auto 0",
             maxWidth: 330,
-            color: "#D9D9D9",
+            color: "#6F746B",
             fontSize: 15,
             lineHeight: 1.45,
-            fontWeight: "700"
+            fontWeight: 700
           }}
         >
           Короткие уроки, серия дней и игровые задания

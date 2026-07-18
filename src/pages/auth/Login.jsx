@@ -1,5 +1,4 @@
 import {
-  ShieldCheck,
   Sparkles,
   UserRound
 } from "lucide-react";
@@ -85,17 +84,18 @@ export default function Login() {
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         width: "100%",
         maxWidth: 480,
         margin: "0 auto",
-        padding: "24px 18px 28px",
+        padding: "calc(24px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))",
         background: "#F4F7F2",
         color: "#2D2D2D",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
+        overflow: "hidden"
       }}
     >
       <div
@@ -237,24 +237,9 @@ export default function Login() {
             >
               {isTelegramMode
                 ? "Профиль Telegram найден"
-                : "Открой приложение и продолжай обучение на этом устройстве."}
+                : "Начни изучать лезгинский язык прямо сейчас"}
             </div>
           </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            color: "#6F746B",
-            fontSize: 13,
-            fontWeight: 800
-          }}
-        >
-          <AppIcon icon={ShieldCheck} size={17} color="#58CC02" />
-          Авторизация через Telegram проверяется на сервере
         </div>
 
         {authError || contextAuthError ? (
@@ -293,7 +278,7 @@ export default function Login() {
           }}
         >
           {isLoading || authStatus === "loading"
-            ? "Подключаем Telegram..."
+            ? "Подготавливаем Хайи..."
             : isTelegramMode && (authError || contextAuthError)
               ? "Повторить"
               : isTelegramMode
@@ -323,7 +308,7 @@ export default function Login() {
           }}
         >
           <AppIcon icon={Sparkles} size={16} color="#FFD43B" />
-          Без email и пароля
+          Короткие уроки каждый день
         </div>
       </div>
     </main>

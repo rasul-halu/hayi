@@ -44,44 +44,78 @@ export default function OnboardingShell({
     return (
       <main
         style={{
-          minHeight: "100vh",
+          minHeight: "100dvh",
           width: "100%",
           maxWidth: 480,
           margin: "0 auto",
-          padding: 24,
-          background: "#4B4B4B",
-          color: "#FFFFFF",
+          padding: "calc(24px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))",
+          background: "#F4F7F2",
+          color: "#2D2D2D",
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          textAlign: "center"
+          textAlign: "center",
+          overflow: "hidden"
         }}
       >
-        <h1
+        <div
           style={{
-            margin: 0,
-            color: "#58CC02",
-            fontSize: 34,
-            fontWeight: "900"
+            width: "100%",
+            padding: 22,
+            borderRadius: 26,
+            background: "#FFFFFF",
+            border: "2px solid #E6E6E6",
+            boxShadow: "0 7px 0 #D9D9D9"
           }}
         >
-          Входим через Telegram...
-        </h1>
-
-        {authStatus === "error" ? (
-          <AppButton
-            onClick={() => {
-              void authenticateTelegramUser().catch(() => {});
-            }}
+          <h1
             style={{
-              marginTop: 22
+              margin: 0,
+              color: "#58CC02",
+              fontSize: 34,
+              fontWeight: 900
             }}
           >
-            Повторить
-          </AppButton>
-        ) : null}
+            Подготавливаем Хайи...
+          </h1>
+
+          <div
+            aria-hidden="true"
+            style={{
+              width: 160,
+              height: 12,
+              margin: "18px auto 0",
+              borderRadius: 999,
+              background: "#E2E7DE",
+              overflow: "hidden"
+            }}
+          >
+            <div
+              className="startup-progress-bar"
+              style={{
+                width: 58,
+                height: "100%",
+                borderRadius: 999,
+                background: "#58CC02"
+              }}
+            />
+          </div>
+
+          {authStatus === "error" ? (
+            <AppButton
+              onClick={() => {
+                void authenticateTelegramUser().catch(() => {});
+              }}
+              style={{
+                marginTop: 22
+              }}
+            >
+              Повторить
+            </AppButton>
+          ) : null}
+        </div>
       </main>
     );
   }
@@ -89,17 +123,18 @@ export default function OnboardingShell({
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         width: "100%",
         maxWidth: 480,
         margin: "0 auto",
-        padding: "22px 18px 28px",
-        background: "#4B4B4B",
-        color: "#FFFFFF",
+        padding: "calc(22px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))",
+        background: "#F4F7F2",
+        color: "#2D2D2D",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
+        overflow: "hidden"
       }}
     >
       <div
@@ -109,22 +144,22 @@ export default function OnboardingShell({
           minHeight: 40
         }}
       >
-        {showSkip && (
+        {showSkip ? (
           <button
             type="button"
             onClick={() => navigate("/login")}
             style={{
               border: "none",
               background: "transparent",
-              color: "#D9D9D9",
+              color: "#6F746B",
               fontSize: 15,
-              fontWeight: "800",
+              fontWeight: 900,
               cursor: "pointer"
             }}
           >
             Пропустить
           </button>
-        )}
+        ) : null}
       </div>
 
       <section
@@ -150,17 +185,13 @@ export default function OnboardingShell({
           {visual}
         </div>
 
-        <div
-          style={{
-            textAlign: "center"
-          }}
-        >
+        <div style={{ textAlign: "center" }}>
           <h1
             style={{
               margin: 0,
               fontSize: 34,
               lineHeight: 1.06,
-              fontWeight: "900",
+              fontWeight: 900,
               letterSpacing: 0
             }}
           >
@@ -171,10 +202,10 @@ export default function OnboardingShell({
             style={{
               margin: "14px auto 0",
               maxWidth: 360,
-              color: "#D9D9D9",
+              color: "#6F746B",
               fontSize: 17,
               lineHeight: 1.45,
-              fontWeight: "700"
+              fontWeight: 700
             }}
           >
             {text}

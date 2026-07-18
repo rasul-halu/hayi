@@ -20,7 +20,7 @@ export default function PageDots({
             borderRadius: 999,
             background: index === activeIndex
               ? "#58CC02"
-              : "rgba(255,255,255,0.28)",
+              : "#D9D9D9",
             transition: "width 180ms ease, background 180ms ease"
           }}
         />

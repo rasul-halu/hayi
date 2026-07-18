@@ -85,3 +85,32 @@ a {
 .lesson-feedback-message--wrong {
   transform: translateY(-1px);
 }
+
+@keyframes startup-mascot-pulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.02);
+  }
+}
+
+@keyframes startup-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+.startup-mascot-pulse {
+  animation: startup-mascot-pulse 1800ms ease-in-out infinite;
+}
+
+.startup-progress-bar {
+  animation: startup-progress 1500ms ease-in-out infinite;
+}

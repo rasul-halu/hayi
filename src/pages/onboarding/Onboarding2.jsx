@@ -10,8 +10,8 @@ import AppIcon from "../../components/ui/AppIcon";
 const items = [
   {
     icon: Headphones,
-    title: "Слушай",
-    color: "#58CC02"
+    title: "Звуки",
+    color: "#2F80ED"
   },
   {
     icon: Languages,
@@ -46,7 +46,7 @@ function PracticePreview() {
           style={{
             minHeight: 104,
             borderRadius: 22,
-            background: "#F7F7F7",
+            background: "#F7F8F5",
             border: "2px solid #E6E6E6",
             boxShadow: "0 5px 0 #D9D9D9",
             display: "flex",
@@ -54,7 +54,7 @@ function PracticePreview() {
             alignItems: "center",
             justifyContent: "center",
             gap: 10,
-            fontWeight: "900"
+            fontWeight: 900
           }}
         >
           <div
@@ -62,7 +62,7 @@ function PracticePreview() {
               width: 48,
               height: 48,
               borderRadius: 16,
-              background: "#E9F8DD",
+              background: "#FFFFFF",
               display: "flex",
               alignItems: "center",
               justifyContent: "center"
@@ -82,7 +82,7 @@ export default function Onboarding2() {
     <OnboardingShell
       activeIndex={1}
       title="Тренируй слова, звуки и предложения"
-      text="Слушай произношение, собирай фразы, сопоставляй слова и повторяй ошибки."
+      text="Слушай произношение, собирай фразы и повторяй ошибки."
       visual={<PracticePreview />}
       nextPath="/onboarding-3"
       primaryLabel="Далее"

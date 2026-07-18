@@ -543,7 +543,9 @@ export default function Home() {
       >
         <PracticeCard
           icon={<AppIcon icon={Headphones} size={25} />}
-          title="Listening"
+          title="Аудирование"
+          badge="Скоро"
+          disabled
         />
         <PracticeCard
           icon={<AppIcon icon={Languages} size={25} />}
