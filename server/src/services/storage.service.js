@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { v2 as cloudinary } from "cloudinary";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -27,6 +28,10 @@ function createHttpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+}
+
+function getStorageProvider() {
+  return process.env.MEDIA_STORAGE_PROVIDER || "local";
 }
 
 function getPublicBaseUrl() {
@@ -63,22 +68,88 @@ async function uploadLocalFile(file, folder) {
   return `${getPublicBaseUrl()}/uploads/${folder}/${fileName}`;
 }
 
-function assertSupportedProvider() {
-  const provider = process.env.MEDIA_STORAGE_PROVIDER || "local";
+function configureCloudinary() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-  if (provider !== "local") {
+  if (!cloudName || !apiKey || !apiSecret) {
     throw createHttpError(500, "Media storage provider is not configured");
   }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+}
+
+function uploadCloudinaryFile(file, {
+  folder,
+  resourceType,
+}) {
+  if (!file?.buffer) {
+    throw createHttpError(400, "No file uploaded");
+  }
+
+  configureCloudinary();
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: `hayi/${folder}`,
+        resource_type: resourceType,
+        use_filename: false,
+        unique_filename: true,
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(createHttpError(500, "Upload failed"));
+          return;
+        }
+
+        resolve(result.secure_url);
+      }
+    );
+
+    uploadStream.end(file.buffer);
+  });
+}
+
+async function uploadFile(file, {
+  folder,
+  resourceType,
+}) {
+  const provider = getStorageProvider();
+
+  if (provider === "cloudinary") {
+    return uploadCloudinaryFile(file, {
+      folder,
+      resourceType,
+    });
+  }
+
+  if (provider === "local") {
+    return uploadLocalFile(file, folder);
+  }
+
+  throw createHttpError(500, "Media storage provider is not configured");
 }
 
 export async function uploadImage(file) {
-  assertSupportedProvider();
-  return uploadLocalFile(file, "images");
+  return uploadFile(file, {
+    folder: "images",
+    resourceType: "image",
+  });
 }
 
 export async function uploadAudio(file) {
-  assertSupportedProvider();
-  return uploadLocalFile(file, "audio");
+  return uploadFile(file, {
+    folder: "audio",
+    resourceType: "video",
+  });
 }
 
 export async function deleteFile(fileUrl) {

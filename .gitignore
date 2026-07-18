@@ -23,6 +23,7 @@
 server/.env
 server/*.log
 server/*-test.*.log
+/server/uploads
 *.tmp
 *.temp
 

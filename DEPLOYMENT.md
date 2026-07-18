@@ -20,6 +20,11 @@ CLIENT_URL=https://FRONTEND_URL.vercel.app
 DATABASE_URL=Neon connection string
 TELEGRAM_BOT_TOKEN=BotFather token
 ADMIN_TELEGRAM_IDS=your_telegram_id
+MEDIA_STORAGE_PROVIDER=cloudinary
+PUBLIC_API_URL=https://BACKEND_URL.onrender.com
+CLOUDINARY_CLOUD_NAME=Cloudinary cloud name
+CLOUDINARY_API_KEY=Cloudinary API key
+CLOUDINARY_API_SECRET=Cloudinary API secret
 ```
 
 `PORT` can usually be omitted because Render provides it. The server still
@@ -37,6 +42,17 @@ Do not use `prisma migrate dev` in production.
 should receive the `ADMIN` role when they sign in through Telegram. Do not
 commit real ids if you do not want them public; set them in Render environment
 variables instead.
+
+Media uploads use `server/src/services/storage.service.js`. For production on
+Render, set `MEDIA_STORAGE_PROVIDER=cloudinary` and fill the Cloudinary env
+variables. Uploaded images and audio will be stored in Cloudinary folders under
+`hayi/`.
+
+For local development without Cloudinary, use `MEDIA_STORAGE_PROVIDER=local`.
+Local files are served from `/uploads`, and `PUBLIC_API_URL` is used to build
+absolute media URLs for the frontend. Render's filesystem is not persistent
+across redeploys/restarts, so do not use local storage as the final production
+media provider.
 
 ## Frontend: Vercel
 
