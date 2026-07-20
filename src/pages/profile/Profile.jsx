@@ -297,23 +297,6 @@ export default function Profile() {
         </AppCard>
       ) : null}
 
-      <button
-        type="button"
-        style={{
-          width: "100%",
-          marginTop: 18,
-          padding: 16,
-          background: "#FFFFFF",
-          border: "2px solid #FFD0D0",
-          borderRadius: 18,
-          color: "#D93B3B",
-          fontWeight: 900,
-          boxShadow: "0 5px 0 #F0B8B8"
-        }}
-      >
-        Выйти
-      </button>
-
       <BottomNav />
     </PageContainer>
   );

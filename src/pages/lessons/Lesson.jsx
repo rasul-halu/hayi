@@ -141,7 +141,8 @@ export default function Lesson() {
   const {
     user,
     handleCorrectAnswer,
-    handleWrongAnswer
+    handleWrongAnswer,
+    refreshHearts
   } = useUser();
 
   const loadLesson = useCallback(async () => {
@@ -216,9 +217,17 @@ export default function Lesson() {
 
   useEffect(() => {
     if (user.hearts === 0) {
-      navigate("/hearts-empty");
+      void refreshHearts().then(heartState => {
+        const currentHearts = Number(
+          heartState?.hearts ?? user.hearts
+        );
+
+        if (currentHearts <= 0) {
+          navigate("/hearts-empty");
+        }
+      });
     }
-  }, [navigate, user.hearts]);
+  }, [navigate, refreshHearts, user.hearts]);
 
   if (isLessonLoading) {
     return (

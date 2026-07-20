@@ -10,18 +10,27 @@ import {
   authenticateWithTelegram,
   completeLessonOnServer,
   getProgress,
+  getUserHearts,
   getUserStats,
   hasTelegramAuthData,
   recordCorrectAnswer,
   recordWrongAnswer
 } from "../api/apiClient";
 import { getNextLessonId } from "../data/courseHelpers";
+import {
+  calculateCurrentStreak,
+  calculateLongestStreak,
+  getTodayDateKey,
+  isActivityToday,
+  normalizeActivityDateKeys
+} from "../utils/streakUtils";
 import { getTelegramInitData } from "../utils/telegram";
 import { mapBackendUserToAppUser } from "../utils/userMapping";
 
 const UserContext = createContext();
 
 const MAX_HEARTS = 5;
+const HEART_RESTORE_INTERVAL_MS = 60 * 60 * 1000;
 const HEART_REWARD_STREAK = 3;
 const LEGACY_USER_KEY = "haiyi-user";
 const GUEST_USER_KEY = "hayi-guest-user";
@@ -29,12 +38,6 @@ const TELEGRAM_USER_KEY = "hayi-telegram-user";
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function getDateOffsetKey(daysOffset) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysOffset);
-  return date.toISOString().slice(0, 10);
 }
 
 const DEFAULT_USER = {
@@ -56,11 +59,15 @@ const DEFAULT_USER = {
   totalWrongAnswers: 0,
   lastLessonCompletedDate: null,
   todayLessonCompleted: false,
+  activityDateKeys: [],
   completedLessons: 0,
   unlockedLessons: 1,
   completedLessonIds: [],
   unlockedLessonIds: [1],
   hearts: MAX_HEARTS,
+  maxHearts: MAX_HEARTS,
+  nextHeartAt: null,
+  lastHeartRefillAt: new Date().toISOString(),
   lastHeartRefillDate: getTodayKey(),
   correctAnswerStreak: 0,
   soundEnabled: true
@@ -81,10 +88,18 @@ function clamp(value, min, max) {
   );
 }
 
-function normalizeHearts(value) {
+function normalizeHearts(value, maxHearts = MAX_HEARTS) {
   return clamp(
     toNumber(value, DEFAULT_USER.hearts),
     0,
+    maxHearts
+  );
+}
+
+function normalizeMaxHearts(value) {
+  return clamp(
+    toNumber(value, MAX_HEARTS),
+    1,
     MAX_HEARTS
   );
 }
@@ -126,6 +141,87 @@ function normalizeDate(value) {
   return typeof value === "string" && value.length > 0
     ? value
     : null;
+}
+
+function normalizeDateTime(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  return Number.isFinite(date.getTime())
+    ? date.toISOString()
+    : null;
+}
+
+function getGuestHeartState(user, now = new Date()) {
+  const maxHearts = normalizeMaxHearts(user.maxHearts);
+  const hearts = normalizeHearts(user.hearts, maxHearts);
+  const lastHeartRefillAt =
+    normalizeDateTime(user.lastHeartRefillAt) ||
+    normalizeDateTime(user.heartsUpdatedAt) ||
+    now.toISOString();
+
+  if (hearts >= maxHearts) {
+    return {
+      hearts: maxHearts,
+      maxHearts,
+      nextHeartAt: null,
+      secondsUntilNextHeart: 0,
+      lastHeartRefillAt: now.toISOString()
+    };
+  }
+
+  const anchor = new Date(lastHeartRefillAt);
+  const elapsedMs = Math.max(
+    0,
+    now.getTime() - anchor.getTime()
+  );
+  const restoredCount = Math.floor(
+    elapsedMs / HEART_RESTORE_INTERVAL_MS
+  );
+  const appliedRestores = Math.min(
+    restoredCount,
+    maxHearts - hearts
+  );
+  const nextHearts = Math.min(
+    hearts + appliedRestores,
+    maxHearts
+  );
+
+  if (nextHearts >= maxHearts) {
+    return {
+      hearts: maxHearts,
+      maxHearts,
+      nextHeartAt: null,
+      secondsUntilNextHeart: 0,
+      lastHeartRefillAt: now.toISOString()
+    };
+  }
+
+  const nextLastHeartRefillAt =
+    appliedRestores > 0
+      ? new Date(
+          anchor.getTime() +
+          appliedRestores * HEART_RESTORE_INTERVAL_MS
+        )
+      : anchor;
+  const nextHeartAt = new Date(
+    nextLastHeartRefillAt.getTime() +
+    HEART_RESTORE_INTERVAL_MS
+  );
+
+  return {
+    hearts: nextHearts,
+    maxHearts,
+    nextHeartAt: nextHeartAt.toISOString(),
+    secondsUntilNextHeart: Math.max(
+      0,
+      Math.ceil((nextHeartAt.getTime() - now.getTime()) / 1000)
+    ),
+    lastHeartRefillAt: nextLastHeartRefillAt.toISOString()
+  };
 }
 
 function isGuestDisplayName(value) {
@@ -231,17 +327,32 @@ function normalizeUser(savedUser = {}) {
   const today = getTodayKey();
   const lastLessonCompletedDate =
     normalizeDate(initialUser.lastLessonCompletedDate);
-  const shouldRefillHearts =
-    initialUser.lastHeartRefillDate !== today;
-
-  const streak = toNumber(
-    initialUser.streak,
-    DEFAULT_USER.streak
+  const activityDateKeys = normalizeActivityDateKeys(
+    Array.isArray(savedUser.activityDateKeys) &&
+    savedUser.activityDateKeys.length > 0
+      ? savedUser.activityDateKeys
+      : lastLessonCompletedDate
+        ? [lastLessonCompletedDate]
+        : []
   );
+  const currentStreak = calculateCurrentStreak(activityDateKeys);
+  const maxHearts = normalizeMaxHearts(initialUser.maxHearts);
+  const heartState = getGuestHeartState({
+    hearts: initialUser.hearts,
+    maxHearts,
+    lastHeartRefillAt: initialUser.lastHeartRefillAt,
+    heartsUpdatedAt: initialUser.heartsUpdatedAt
+  });
+
+  const streak = currentStreak;
 
   const longestStreak = toNumber(
     initialUser.longestStreak,
-    Math.max(DEFAULT_USER.longestStreak, streak)
+    Math.max(
+      DEFAULT_USER.longestStreak,
+      calculateLongestStreak(activityDateKeys),
+      streak
+    )
   );
 
   return {
@@ -305,9 +416,9 @@ function normalizeUser(savedUser = {}) {
         ? "telegram"
         : "guest",
     xp: toNumber(initialUser.xp, DEFAULT_USER.xp),
-    hearts: shouldRefillHearts
-      ? MAX_HEARTS
-      : normalizeHearts(initialUser.hearts),
+    hearts: heartState.hearts,
+    maxHearts: heartState.maxHearts,
+    nextHeartAt: heartState.nextHeartAt,
     streak,
     longestStreak: Math.max(longestStreak, streak),
     totalCorrectAnswers: toNumber(
@@ -320,11 +431,13 @@ function normalizeUser(savedUser = {}) {
     ),
     lastLessonCompletedDate,
     todayLessonCompleted:
-      lastLessonCompletedDate === today,
+      isActivityToday(activityDateKeys),
+    activityDateKeys,
     completedLessonIds,
     unlockedLessonIds: safeUnlockedLessonIds,
     completedLessons: completedLessonIds.length,
     unlockedLessons: safeUnlockedLessonIds.length,
+    lastHeartRefillAt: heartState.lastHeartRefillAt,
     lastHeartRefillDate: today,
     correctAnswerStreak: toNumber(
       initialUser.correctAnswerStreak,
@@ -363,6 +476,64 @@ export function UserProvider({ children }) {
     setAuthError("");
   };
 
+  const applyHeartState = useCallback((heartState) => {
+    if (!heartState) {
+      return null;
+    }
+
+    const maxHearts = normalizeMaxHearts(heartState.maxHearts);
+    const nextState = {
+      hearts: normalizeHearts(heartState.hearts, maxHearts),
+      maxHearts,
+      nextHeartAt:
+        normalizeDateTime(heartState.nextHeartAt) || null,
+      secondsUntilNextHeart:
+        toNumber(heartState.secondsUntilNextHeart, 0)
+    };
+
+    setUser(prev => ({
+      ...prev,
+      ...nextState,
+      lastHeartRefillAt:
+        normalizeDateTime(heartState.lastHeartRefillAt) ||
+        prev.lastHeartRefillAt ||
+        new Date().toISOString()
+    }));
+
+    return nextState;
+  }, []);
+
+  const refreshHearts = useCallback(async () => {
+    if (hasTelegramAuthData()) {
+      try {
+        const heartState = await getUserHearts();
+        return applyHeartState(heartState);
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "Server hearts refresh failed:",
+            error.message
+          );
+        }
+
+        return null;
+      }
+    }
+
+    let nextState = null;
+
+    setUser(prev => {
+      nextState = getGuestHeartState(prev);
+
+      return {
+        ...prev,
+        ...nextState
+      };
+    });
+
+    return nextState;
+  }, [applyHeartState]);
+
   const syncStatsFromServer = useCallback((stats) => {
     if (!stats) {
       return;
@@ -371,15 +542,26 @@ export function UserProvider({ children }) {
     setUser(prev => ({
       ...prev,
       xp: toNumber(stats.xp, prev.xp),
-      hearts: clamp(
-        toNumber(stats.hearts, prev.hearts),
-        0,
-        toNumber(stats.maxHearts, MAX_HEARTS)
+      hearts: normalizeHearts(
+        stats.hearts,
+        normalizeMaxHearts(stats.maxHearts)
       ),
+      maxHearts: normalizeMaxHearts(stats.maxHearts),
+      nextHeartAt:
+        normalizeDateTime(stats.nextHeartAt) || null,
+      secondsUntilNextHeart:
+        toNumber(stats.secondsUntilNextHeart, 0),
       streak: toNumber(stats.streak, prev.streak),
       longestStreak: toNumber(
         stats.longestStreak,
         prev.longestStreak
+      ),
+      todayLessonCompleted:
+        typeof stats.todayLessonCompleted === "boolean"
+          ? stats.todayLessonCompleted
+          : isActivityToday(stats.activityDateKeys || prev.activityDateKeys),
+      activityDateKeys: normalizeActivityDateKeys(
+        stats.activityDateKeys || prev.activityDateKeys
       ),
       totalCorrectAnswers: toNumber(
         stats.totalCorrectAnswers,
@@ -393,6 +575,9 @@ export function UserProvider({ children }) {
         typeof stats.lastLessonCompletedDate === "string"
           ? stats.lastLessonCompletedDate
           : prev.lastLessonCompletedDate,
+      lastHeartRefillAt:
+        normalizeDateTime(stats.lastHeartRefillAt) ||
+        prev.lastHeartRefillAt,
       lastHeartRefillDate: getTodayKey()
     }));
   }, []);
@@ -520,6 +705,34 @@ export function UserProvider({ children }) {
     telegramAuthAttemptedRef.current = true;
     void authenticateTelegramUser().catch(() => {});
   }, [authenticateTelegramUser]);
+
+  useEffect(() => {
+    void refreshHearts();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void refreshHearts();
+      }
+    };
+
+    const handleFocus = () => {
+      void refreshHearts();
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refreshHearts]);
 
   const addXP = (amount) => {
 
@@ -673,41 +886,31 @@ export function UserProvider({ children }) {
 
   const markLessonCompletedToday = useCallback(() => {
     setUser(prev => {
-      const today = getTodayKey();
-      const yesterday = getDateOffsetKey(-1);
-      const lastLessonCompletedDate =
-        normalizeDate(prev.lastLessonCompletedDate);
-      const currentStreak = toNumber(
-        prev.streak,
-        DEFAULT_USER.streak
-      );
+      const today = getTodayDateKey();
+      const activityDateKeys = normalizeActivityDateKeys([
+        ...(Array.isArray(prev.activityDateKeys)
+          ? prev.activityDateKeys
+          : []),
+        today
+      ]);
+      const nextStreak = calculateCurrentStreak(activityDateKeys);
       const currentLongestStreak = toNumber(
         prev.longestStreak,
         DEFAULT_USER.longestStreak
       );
 
-      if (lastLessonCompletedDate === today) {
-        return {
-          ...prev,
-          streak: currentStreak,
-          longestStreak:
-            Math.max(currentLongestStreak, currentStreak),
-          todayLessonCompleted: true
-        };
-      }
-
-      const nextStreak =
-        lastLessonCompletedDate === yesterday
-          ? currentStreak + 1
-          : 1;
-
       return {
         ...prev,
         streak: nextStreak,
         longestStreak:
-          Math.max(currentLongestStreak, nextStreak),
+          Math.max(
+            currentLongestStreak,
+            calculateLongestStreak(activityDateKeys),
+            nextStreak
+          ),
         todayLessonCompleted: true,
-        lastLessonCompletedDate: today
+        lastLessonCompletedDate: today,
+        activityDateKeys
       };
     });
   }, []);
@@ -739,15 +942,42 @@ export function UserProvider({ children }) {
 
   const loseHeart = () => {
 
-    setUser(prev => ({
-      ...prev,
-      hearts:
-        clamp(
-          normalizeHearts(prev.hearts) - 1,
-          0,
-          MAX_HEARTS
-        )
-    }));
+    setUser(prev => {
+      const maxHearts = normalizeMaxHearts(prev.maxHearts);
+      const currentHearts = normalizeHearts(
+        prev.hearts,
+        maxHearts
+      );
+      const nextHearts = clamp(
+        currentHearts - 1,
+        0,
+        maxHearts
+      );
+      const now = new Date();
+      const shouldStartTimer =
+        currentHearts >= maxHearts &&
+        nextHearts < maxHearts;
+      const lastHeartRefillAt =
+        shouldStartTimer
+          ? now.toISOString()
+          : prev.lastHeartRefillAt ||
+            now.toISOString();
+      const nextHeartAt =
+        nextHearts >= maxHearts
+          ? null
+          : new Date(
+              new Date(lastHeartRefillAt).getTime() +
+              HEART_RESTORE_INTERVAL_MS
+            ).toISOString();
+
+      return {
+        ...prev,
+        hearts: nextHearts,
+        maxHearts,
+        nextHeartAt,
+        lastHeartRefillAt
+      };
+    });
   };
 
   const resetHearts = () => {
@@ -755,21 +985,37 @@ export function UserProvider({ children }) {
     setUser(prev => ({
       ...prev,
       hearts: MAX_HEARTS,
+      maxHearts: MAX_HEARTS,
+      nextHeartAt: null,
+      lastHeartRefillAt: new Date().toISOString(),
       lastHeartRefillDate: getTodayKey()
     }));
   };
 
   const restoreOneHeart = () => {
 
-    setUser(prev => ({
-      ...prev,
-      hearts:
-        clamp(
-          normalizeHearts(prev.hearts) + 1,
-          0,
-          MAX_HEARTS
-        )
-    }));
+    setUser(prev => {
+      const maxHearts = normalizeMaxHearts(prev.maxHearts);
+      const nextHearts = clamp(
+        normalizeHearts(prev.hearts, maxHearts) + 1,
+        0,
+        maxHearts
+      );
+
+      return {
+        ...prev,
+        hearts: nextHearts,
+        maxHearts,
+        nextHeartAt:
+          nextHearts >= maxHearts
+            ? null
+            : prev.nextHeartAt,
+        lastHeartRefillAt:
+          nextHearts >= maxHearts
+            ? new Date().toISOString()
+            : prev.lastHeartRefillAt
+      };
+    });
   };
 
   const registerCorrectAnswer = () => {
@@ -874,6 +1120,11 @@ export function UserProvider({ children }) {
 
       return data;
     } catch (error) {
+      if (error.status === 402) {
+        await refreshHearts();
+        return null;
+      }
+
       if (process.env.NODE_ENV === "development") {
         console.warn(
           "Server lesson complete failed:",
@@ -890,6 +1141,7 @@ export function UserProvider({ children }) {
     cacheCompletedLessonById,
     completeLessonById,
     markLessonCompletedToday,
+    refreshHearts,
     syncStatsFromServer
   ]);
 
@@ -926,9 +1178,11 @@ export function UserProvider({ children }) {
         login,
         loginWithTelegramUser,
         authenticateTelegramUser,
+        applyHeartState,
         syncStatsFromServer,
         loadStatsFromServer,
         loadProgressFromServer,
+        refreshHearts,
         addXP,
         completeLesson,
         completeLessonById,

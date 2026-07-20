@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getHearts,
   getStats,
   saveCorrectAnswer,
   saveWrongAnswer,
@@ -9,6 +10,7 @@ import requireTelegramAuth from "../middleware/requireTelegramAuth.js";
 const router = express.Router();
 
 router.get("/", requireTelegramAuth, getStats);
+router.get("/hearts", requireTelegramAuth, getHearts);
 router.post("/correct-answer", requireTelegramAuth, saveCorrectAnswer);
 router.post("/wrong-answer", requireTelegramAuth, saveWrongAnswer);
 

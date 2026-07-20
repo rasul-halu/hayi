@@ -1,3 +1,4 @@
+import { applyHeartRegeneration } from "../services/hearts.service.js";
 import {
   getUserStats,
   recordCorrectAnswer,
@@ -23,6 +24,16 @@ export async function getStats(req, res) {
     });
   } catch (error) {
     return handleStatsError(res, error, "Stats loading error:");
+  }
+}
+
+export async function getHearts(req, res) {
+  try {
+    const { heartState } = await applyHeartRegeneration(req.user.id);
+
+    return res.json(heartState);
+  } catch (error) {
+    return handleStatsError(res, error, "Hearts loading error:");
   }
 }
 

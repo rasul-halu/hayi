@@ -1,3 +1,8 @@
+import {
+  normalizeActivityDateKeys,
+  normalizeDateKey
+} from "./streakUtils";
+
 const MONTH_NAMES = [
   "Январь",
   "Февраль",
@@ -28,17 +33,7 @@ function asDate(value) {
 }
 
 export function toDateKey(value) {
-  const date = asDate(value);
-
-  if (!date) {
-    return "";
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return normalizeDateKey(value);
 }
 
 export function isSameDay(dateA, dateB) {
@@ -54,16 +49,16 @@ export function isSameDay(dateA, dateB) {
 
 export function formatMonthTitle(date = new Date()) {
   const current = asDate(date) || new Date();
-  return `${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}`;
+  return `${MONTH_NAMES[current.getUTCMonth()]} ${current.getUTCFullYear()}`;
 }
 
 export function getCurrentMonthDays(date = new Date()) {
   const current = asDate(date) || new Date();
-  const year = current.getFullYear();
-  const month = current.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
+  const year = current.getUTCFullYear();
+  const month = current.getUTCMonth();
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const lastDay = new Date(Date.UTC(year, month + 1, 0));
+  const leadingEmptyDays = (firstDay.getUTCDay() + 6) % 7;
   const cells = [];
 
   for (let index = 0; index < leadingEmptyDays; index += 1) {
@@ -73,8 +68,8 @@ export function getCurrentMonthDays(date = new Date()) {
     });
   }
 
-  for (let day = 1; day <= lastDay.getDate(); day += 1) {
-    const cellDate = new Date(year, month, day);
+  for (let day = 1; day <= lastDay.getUTCDate(); day += 1) {
+    const cellDate = new Date(Date.UTC(year, month, day));
 
     cells.push({
       type: "day",
@@ -96,27 +91,6 @@ export function getCurrentMonthDays(date = new Date()) {
   return cells;
 }
 
-export function getStreakDaySet({ streak, lastLessonCompletedDate }) {
-  const streakLength = Math.max(0, Number(streak) || 0);
-  const days = new Set();
-
-  if (streakLength === 0) {
-    return days;
-  }
-
-  // TODO: replace this fallback with real DailyActivity records from backend.
-  const today = new Date();
-  const parsedLastDate = asDate(lastLessonCompletedDate);
-  const endDate =
-    parsedLastDate && parsedLastDate <= today
-      ? parsedLastDate
-      : today;
-
-  for (let index = 0; index < streakLength; index += 1) {
-    const date = new Date(endDate);
-    date.setDate(endDate.getDate() - index);
-    days.add(toDateKey(date));
-  }
-
-  return days;
+export function getActivityDaySet(activityDateKeys = []) {
+  return new Set(normalizeActivityDateKeys(activityDateKeys));
 }

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCourse } from "../../api/apiClient";
 import PracticeCard from "../../components/dashboard/PracticeCard";
+import NoHeartsModal from "../../components/hearts/NoHeartsModal";
 import BottomNav from "../../components/layout/BottomNav";
 import LessonNode from "../../components/lesson/LessonNode";
 import AppButton from "../../components/ui/AppButton";
@@ -48,11 +49,12 @@ function lessonIdListIncludes(list, lessonId) {
 }
 
 export default function Home() {
-  const { user } = useUser();
+  const { user, refreshHearts } = useUser();
   const navigate = useNavigate();
   const [chapters, setChapters] = useState([]);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [courseError, setCourseError] = useState("");
+  const [isNoHeartsModalOpen, setIsNoHeartsModalOpen] = useState(false);
   const unlockedLessonIds = useMemo(
     () => Array.isArray(user.unlockedLessonIds)
       ? user.unlockedLessonIds
@@ -171,6 +173,24 @@ export default function Home() {
   useEffect(() => {
     void loadCourse();
   }, [loadCourse]);
+
+  const handleLessonAttempt = useCallback(async (lessonId) => {
+    if (!lessonId) {
+      return;
+    }
+
+    const heartState = await refreshHearts();
+    const currentHearts = Number(
+      heartState?.hearts ?? user.hearts
+    );
+
+    if (currentHearts > 0) {
+      navigate(`/lesson/${lessonId}`);
+      return;
+    }
+
+    setIsNoHeartsModalOpen(true);
+  }, [navigate, refreshHearts, user.hearts]);
 
   const shouldShowCourseContent = !isCourseLoading && !courseError;
 
@@ -431,7 +451,11 @@ export default function Home() {
 
         {!isCourseLoading ? (
           <AppButton
-            onClick={() => continueLesson && navigate(`/lesson/${continueLesson.id}`)}
+            onClick={() => {
+              if (continueLesson) {
+                void handleLessonAttempt(continueLesson.id);
+              }
+            }}
             disabled={!continueLesson}
             style={{
               marginTop: 18,
@@ -507,6 +531,7 @@ export default function Home() {
                       lesson={lesson}
                       unlocked={unlocked}
                       completed={completed}
+                      onLessonAttempt={handleLessonAttempt}
                     />
 
                     <div
@@ -558,6 +583,15 @@ export default function Home() {
           onClick={() => navigate("/leaderboard")}
         />
       </div>
+
+      <NoHeartsModal
+        open={isNoHeartsModalOpen}
+        hearts={user.hearts}
+        maxHearts={user.maxHearts}
+        nextHeartAt={user.nextHeartAt}
+        onClose={() => setIsNoHeartsModalOpen(false)}
+        onCountdownComplete={refreshHearts}
+      />
 
       <BottomNav />
     </PageContainer>

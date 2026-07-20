@@ -17,11 +17,19 @@ import streakMascot from "../../assets/mascot/streak-mascot.png";
 import { useUser } from "../../context/UserContext";
 import {
   formatMonthTitle,
+  getActivityDaySet,
   getCurrentMonthDays,
-  getStreakDaySet,
   isSameDay,
   toDateKey
 } from "../../utils/streakCalendar";
+import {
+  calculateCurrentStreak,
+  calculateLongestStreak,
+  getDayWord,
+  isActivityToday,
+  normalizeActivityDateKeys,
+  pluralizeDays
+} from "../../utils/streakUtils";
 
 const WEEK_DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const STREAK_GOALS = [3, 7, 14, 30];
@@ -88,12 +96,28 @@ export default function DailyStreak() {
   const { user } = useUser();
   const [mascotFailed, setMascotFailed] = useState(false);
   const today = useMemo(() => new Date(), []);
-  const streak = Math.max(0, Number(user.streak) || 0);
+  const activityDateKeys = useMemo(
+    () => normalizeActivityDateKeys(user.activityDateKeys || []),
+    [user.activityDateKeys]
+  );
+  const derivedCurrentStreak = useMemo(
+    () => calculateCurrentStreak(activityDateKeys, today),
+    [activityDateKeys, today]
+  );
+  const derivedLongestStreak = useMemo(
+    () => calculateLongestStreak(activityDateKeys),
+    [activityDateKeys]
+  );
+  const streak = activityDateKeys.length > 0
+    ? derivedCurrentStreak
+    : Math.max(0, Number(user.streak) || 0);
   const longestStreak = Math.max(
     streak,
+    derivedLongestStreak,
     Number(user.longestStreak) || 0
   );
   const todayCompleted =
+    isActivityToday(activityDateKeys, today) ||
     Boolean(user.todayLessonCompleted) ||
     isSameDay(user.lastLessonCompletedDate, today);
 
@@ -102,13 +126,9 @@ export default function DailyStreak() {
     [today]
   );
 
-  const streakDays = useMemo(
-    () =>
-      getStreakDaySet({
-        streak,
-        lastLessonCompletedDate: user.lastLessonCompletedDate
-      }),
-    [streak, user.lastLessonCompletedDate]
+  const activityDays = useMemo(
+    () => getActivityDaySet(activityDateKeys),
+    [activityDateKeys]
   );
 
   const nextGoal = getNextGoal(streak);
@@ -117,6 +137,15 @@ export default function DailyStreak() {
     100,
     Math.round((streak / nextGoal) * 100)
   );
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug("Streak diagnostics", {
+      activityDates: activityDateKeys,
+      currentStreak: streak,
+      longestStreak,
+      todayCompleted
+    });
+  }
 
   return (
     <PageContainer
@@ -274,7 +303,7 @@ export default function DailyStreak() {
                 >
                   <AppIcon icon={Flame} size={23} />
                 </span>
-                {streak} дней
+                {pluralizeDays(streak)}
               </span>
             </h2>
 
@@ -361,7 +390,7 @@ export default function DailyStreak() {
                 fontWeight: 800
               }}
             >
-              Дни текущей серии отмечены огнём
+              Дни активности отмечены огнём
             </p>
           </div>
           <AppIcon icon={CalendarDays} size={28} color="#58CC02" />
@@ -396,12 +425,12 @@ export default function DailyStreak() {
 
             const isTodayCell = isSameDay(cell.date, today);
             const isFuture = cell.date > today;
-            const isStreakDay = streakDays.has(toDateKey(cell.date));
+            const isActivityDay = activityDays.has(toDateKey(cell.date));
             let background = "#F7F8F5";
             let borderColor = "#ECEFE8";
             let color = "#4B4B4B";
 
-            if (isStreakDay) {
+            if (isActivityDay) {
               background = "#FFF1D6";
               borderColor = "#FFB84D";
               color = "#9A5600";
@@ -441,7 +470,7 @@ export default function DailyStreak() {
                 }}
               >
                 {cell.day}
-                {isStreakDay ? (
+                {isActivityDay ? (
                   <span
                     style={{
                       position: "absolute",
@@ -536,8 +565,8 @@ export default function DailyStreak() {
               }}
             >
               {remainingDays === 0
-                ? `Серия ${nextGoal} дней достигнута`
-                : `Ещё ${remainingDays} дней до серии ${nextGoal}`}
+                ? `Серия ${pluralizeDays(nextGoal)} достигнута`
+                : `Ещё ${remainingDays} ${getDayWord(remainingDays)} до серии ${nextGoal}`}
             </p>
           </div>
           <AppIcon icon={Trophy} size={28} color="#FFD43B" />

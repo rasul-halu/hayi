@@ -114,6 +114,20 @@ export async function getUserStats() {
   return data;
 }
 
+export async function getUserHearts() {
+  const response = await fetch(`${API_URL}/user/hearts`, {
+    headers: requireTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Hearts loading failed");
+  }
+
+  return data;
+}
+
 export async function recordCorrectAnswer() {
   const response = await fetch(`${API_URL}/stats/correct-answer`, {
     method: "POST",
@@ -159,7 +173,9 @@ export async function completeLessonOnServer({ lessonId }) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || "Lesson completion saving failed");
+    const error = new Error(data.error || "Lesson completion saving failed");
+    error.status = response.status;
+    throw error;
   }
 
   return data;

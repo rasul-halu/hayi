@@ -14,6 +14,7 @@ import leaderboardRouter from "./routes/leaderboard.routes.js";
 import lessonRouter from "./routes/lesson.routes.js";
 import progressRouter from "./routes/progress.routes.js";
 import statsRouter from "./routes/stats.routes.js";
+import userRouter from "./routes/user.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -65,6 +66,7 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/lessons", lessonRouter);
 app.use("/api/progress", progressRouter);
 app.use("/api/stats", statsRouter);
+app.use("/api/user", userRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

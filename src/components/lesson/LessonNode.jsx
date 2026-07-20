@@ -9,7 +9,8 @@ import AppIcon from "../ui/AppIcon";
 export default function LessonNode({
   lesson,
   unlocked,
-  completed
+  completed,
+  onLessonAttempt
 }) {
   const navigate = useNavigate();
 
@@ -35,6 +36,11 @@ export default function LessonNode({
     <button
       onClick={() => {
         if (unlocked) {
+          if (onLessonAttempt) {
+            void onLessonAttempt(lesson.id);
+            return;
+          }
+
           navigate(`/lesson/${lesson.id}`);
         }
       }}

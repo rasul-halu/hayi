@@ -1,5 +1,9 @@
 import { ACHIEVEMENTS } from "../config/achievements.js";
 import prisma from "../lib/prisma.js";
+import {
+  getEffectiveStreakStats,
+  getUserActivityDateKeys,
+} from "./streak.service.js";
 import { toStatsResponse } from "./userStats.service.js";
 import { awardXp } from "./xp.service.js";
 
@@ -7,6 +11,7 @@ const MAX_EVALUATION_PASSES = 3;
 
 function getCurrentValue(achievement, {
   user,
+  streakStats,
   completedLessonsCount,
 }) {
   if (achievement.type === "completed_lessons") {
@@ -18,7 +23,7 @@ function getCurrentValue(achievement, {
   }
 
   if (achievement.type === "streak") {
-    return user.longestStreak;
+    return streakStats.longestStreak;
   }
 
   if (achievement.type === "correct_answers") {
@@ -50,7 +55,12 @@ function formatAchievement(achievement, {
 }
 
 async function getAchievementState(userId, client = prisma) {
-  const [user, completedLessonsCount, unlockedAchievements] =
+  const [
+    user,
+    completedLessonsCount,
+    unlockedAchievements,
+    activityDateKeys,
+  ] =
     await Promise.all([
       client.user.findUniqueOrThrow({
         where: {
@@ -68,7 +78,12 @@ async function getAchievementState(userId, client = prisma) {
           userId,
         },
       }),
+      getUserActivityDateKeys(userId, client),
     ]);
+  const streakStats = getEffectiveStreakStats({
+    user,
+    activityDateKeys,
+  });
 
   const unlockedByKey = new Map(
     unlockedAchievements.map(achievement => [
@@ -79,6 +94,7 @@ async function getAchievementState(userId, client = prisma) {
 
   return {
     user,
+    streakStats,
     completedLessonsCount,
     unlockedByKey,
   };
@@ -171,7 +187,7 @@ export async function evaluateAndUnlockAchievements(userId) {
     return {
       achievements: buildAchievementProgress(finalState),
       newlyUnlocked,
-      stats: toStatsResponse(finalState.user),
+      stats: toStatsResponse(finalState.user, finalState.streakStats),
     };
   });
 }

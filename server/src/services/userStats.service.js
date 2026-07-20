@@ -1,24 +1,43 @@
 import {
-  HEART_REFILL_INTERVAL_HOURS,
+  MAX_HEARTS,
 } from "../config/game.constants.js";
 import prisma from "../lib/prisma.js";
-import {
-  isPreviousUtcDay,
-  isSameUtcDay,
-} from "../utils/dateUtils.js";
 import { getPublishedLessonXpReward } from "./course.service.js";
+import {
+  applyHeartRegeneration,
+  getRegeneratedHeartState,
+  loseHeartForUser,
+} from "./hearts.service.js";
+import {
+  getEffectiveStreakStats,
+  getUserActivityDateKeys,
+} from "./streak.service.js";
 import { awardXp } from "./xp.service.js";
 
-const HEART_REFILL_INTERVAL_MS =
-  HEART_REFILL_INTERVAL_HOURS * 60 * 60 * 1000;
-
-export function toStatsResponse(user) {
-  return {
-    xp: user.xp,
-    hearts: user.hearts,
-    maxHearts: user.maxHearts,
+export function toStatsResponse(user, streakStats) {
+  const heartState = getRegeneratedHeartState(user);
+  const effectiveStreakStats = streakStats || {
     streak: user.streak,
     longestStreak: user.longestStreak,
+    todayLessonCompleted: false,
+    activityDateKeys: [],
+  };
+
+  return {
+    xp: user.xp,
+    hearts: heartState.hearts,
+    maxHearts: heartState.maxHearts || MAX_HEARTS,
+    nextHeartAt: heartState.nextHeartAt
+      ? heartState.nextHeartAt.toISOString()
+      : null,
+    secondsUntilNextHeart: heartState.secondsUntilNextHeart,
+    lastHeartRefillAt: user.lastHeartRefillAt
+      ? user.lastHeartRefillAt.toISOString()
+      : null,
+    streak: effectiveStreakStats.streak,
+    longestStreak: effectiveStreakStats.longestStreak,
+    todayLessonCompleted: effectiveStreakStats.todayLessonCompleted,
+    activityDateKeys: effectiveStreakStats.activityDateKeys,
     totalCorrectAnswers: user.totalCorrectAnswers,
     totalWrongAnswers: user.totalWrongAnswers,
     lastLessonCompletedDate: user.lastLessonCompletedDate,
@@ -26,88 +45,54 @@ export function toStatsResponse(user) {
 }
 
 export async function applyHeartRefill(user) {
-  const now = new Date();
-  const maxHearts = user.maxHearts;
-
-  if (user.hearts >= maxHearts) {
-    if (user.lastHeartRefillAt && user.lastHeartRefillAt < now) {
-      return prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          hearts: maxHearts,
-          lastHeartRefillAt: now,
-        },
-      });
-    }
-
-    return user;
-  }
-
-  const lastHeartRefillAt = user.lastHeartRefillAt || now;
-  const elapsedMs = now.getTime() - lastHeartRefillAt.getTime();
-  const refillCount = Math.floor(elapsedMs / HEART_REFILL_INTERVAL_MS);
-
-  if (refillCount <= 0) {
-    return user;
-  }
-
-  const nextHearts = Math.min(user.hearts + refillCount, maxHearts);
-  const nextLastHeartRefillAt =
-    nextHearts >= maxHearts
-      ? now
-      : new Date(
-          lastHeartRefillAt.getTime() +
-          refillCount * HEART_REFILL_INTERVAL_MS
-        );
-
-  return prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      hearts: nextHearts,
-      lastHeartRefillAt: nextLastHeartRefillAt,
-    },
-  });
+  return (await applyHeartRegeneration(user.id)).user;
 }
 
 export async function getUserStats(userId) {
-  const user = await prisma.user.findUniqueOrThrow({
-    where: {
-      id: userId,
-    },
-  });
+  const { user } = await applyHeartRegeneration(userId);
+  const activityDateKeys = await getUserActivityDateKeys(userId);
 
-  return toStatsResponse(await applyHeartRefill(user));
+  return toStatsResponse(
+    user,
+    getEffectiveStreakStats({
+      user,
+      activityDateKeys,
+    })
+  );
 }
 
 export async function recordWrongAnswer(userId) {
-  const user = await prisma.user.findUniqueOrThrow({
-    where: {
-      id: userId,
-    },
-  });
-
-  const refilledUser = await applyHeartRefill(user);
+  const { user: heartUser } = await loseHeartForUser(userId);
 
   const updatedUser = await prisma.user.update({
     where: {
       id: userId,
     },
     data: {
-      hearts: Math.max(refilledUser.hearts - 1, 0),
       totalWrongAnswers: {
         increment: 1,
       },
     },
   });
 
-  return toStatsResponse(updatedUser);
+  const responseUser = {
+    ...updatedUser,
+    hearts: heartUser.hearts,
+    lastHeartRefillAt: heartUser.lastHeartRefillAt,
+  };
+  const activityDateKeys = await getUserActivityDateKeys(userId);
+
+  return toStatsResponse(
+    responseUser,
+    getEffectiveStreakStats({
+      user: responseUser,
+      activityDateKeys,
+    })
+  );
 }
 
 export async function recordCorrectAnswer(userId) {
+  const { user: heartUser } = await applyHeartRegeneration(userId);
   const updatedUser = await prisma.user.update({
     where: {
       id: userId,
@@ -119,35 +104,34 @@ export async function recordCorrectAnswer(userId) {
     },
   });
 
-  return toStatsResponse(updatedUser);
-}
-
-function getNextStreakValues(user, now) {
-  const lastLessonCompletedDate = user.lastLessonCompletedDate;
-
-  // UTC is the first server-side policy. Later this should become a
-  // product-level timezone policy per user or per Telegram locale.
-  if (isSameUtcDay(lastLessonCompletedDate, now)) {
-    return {
-      streak: user.streak,
-      longestStreak: user.longestStreak,
-    };
-  }
-
-  const streak = isPreviousUtcDay(lastLessonCompletedDate, now)
-    ? user.streak + 1
-    : 1;
-
-  return {
-    streak,
-    longestStreak: Math.max(user.longestStreak, streak),
+  const responseUser = {
+    ...updatedUser,
+    hearts: heartUser.hearts,
+    lastHeartRefillAt: heartUser.lastHeartRefillAt,
   };
+  const activityDateKeys = await getUserActivityDateKeys(userId);
+
+  return toStatsResponse(
+    responseUser,
+    getEffectiveStreakStats({
+      user: responseUser,
+      activityDateKeys,
+    })
+  );
 }
 
 export async function completeLessonAndUpdateStats({
   userId,
   lessonId,
 }) {
+  const { user: heartUser } = await applyHeartRegeneration(userId);
+
+  if (heartUser.hearts <= 0) {
+    const error = new Error("Hearts are empty");
+    error.statusCode = 402;
+    throw error;
+  }
+
   return prisma.$transaction(async tx => {
     const lesson = await getPublishedLessonXpReward(lessonId, tx);
 
@@ -201,16 +185,24 @@ export async function completeLessonAndUpdateStats({
         });
 
     if (wasAlreadyCompleted) {
+      const activityDateKeys = await getUserActivityDateKeys(userId, tx);
+
       return {
         progress,
-        stats: toStatsResponse(user),
+        stats: toStatsResponse(
+          user,
+          getEffectiveStreakStats({
+            user,
+            activityDateKeys,
+            now,
+          })
+        ),
         xpAwarded: 0,
         xpEvent: null,
         alreadyCompleted: true,
       };
     }
 
-    const streakValues = getNextStreakValues(user, now);
     const uniqueKey = `lesson_complete:${userId}:${lessonId}`;
     const xpReward = lesson.xpReward;
 
@@ -221,6 +213,12 @@ export async function completeLessonAndUpdateStats({
       lessonId,
       uniqueKey,
       tx,
+    });
+    const activityDateKeys = await getUserActivityDateKeys(userId, tx);
+    const streakValues = getEffectiveStreakStats({
+      user,
+      activityDateKeys,
+      now,
     });
 
     const updatedUser = await tx.user.update({
@@ -236,7 +234,7 @@ export async function completeLessonAndUpdateStats({
 
     return {
       progress,
-      stats: toStatsResponse(updatedUser),
+      stats: toStatsResponse(updatedUser, streakValues),
       xpAwarded: xpReward,
       xpEvent: xpAward.event,
       alreadyCompleted: false,

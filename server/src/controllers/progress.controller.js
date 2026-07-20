@@ -148,6 +148,12 @@ export async function completeLessonOnServer(req, res) {
       });
     }
 
+    if (error.statusCode === 402) {
+      return res.status(402).json({
+        error: "Hearts are empty",
+      });
+    }
+
     if (process.env.NODE_ENV === "development") {
       console.error(
         "Lesson complete error:",
