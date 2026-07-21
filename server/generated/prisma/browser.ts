@@ -57,3 +57,8 @@ export type Lesson = Prisma.LessonModel
  * 
  */
 export type Question = Prisma.QuestionModel
+/**
+ * Model DictionaryWord
+ * 
+ */
+export type DictionaryWord = Prisma.DictionaryWordModel

@@ -1,6 +1,12 @@
 import express from "express";
 import { getAdminMe } from "../controllers/admin.controller.js";
 import {
+  getAdminDictionaryWord,
+  listAdminDictionary,
+  patchAdminDictionaryWord,
+  postAdminDictionaryWord,
+} from "../controllers/dictionary.controller.js";
+import {
   getAdminChapter,
   getAdminCourse,
   getAdminLesson,
@@ -25,6 +31,11 @@ const router = express.Router();
 router.use(requireTelegramAuth, requireAdmin);
 
 router.get("/me", getAdminMe);
+
+router.get("/dictionary", listAdminDictionary);
+router.post("/dictionary", postAdminDictionaryWord);
+router.get("/dictionary/:wordId", getAdminDictionaryWord);
+router.patch("/dictionary/:wordId", patchAdminDictionaryWord);
 
 router.get("/courses", listAdminCourses);
 router.get("/courses/:courseId", getAdminCourse);

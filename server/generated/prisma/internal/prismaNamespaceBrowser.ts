@@ -58,7 +58,8 @@ export const ModelName = {
   Course: 'Course',
   Chapter: 'Chapter',
   Lesson: 'Lesson',
-  Question: 'Question'
+  Question: 'Question',
+  DictionaryWord: 'DictionaryWord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -208,6 +209,25 @@ export const QuestionScalarFieldEnum = {
 } as const
 
 export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
+
+
+export const DictionaryWordScalarFieldEnum = {
+  id: 'id',
+  lezgian: 'lezgian',
+  russian: 'russian',
+  transcription: 'transcription',
+  exampleLezgian: 'exampleLezgian',
+  exampleRussian: 'exampleRussian',
+  audioUrl: 'audioUrl',
+  imageUrl: 'imageUrl',
+  category: 'category',
+  order: 'order',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DictionaryWordScalarFieldEnum = (typeof DictionaryWordScalarFieldEnum)[keyof typeof DictionaryWordScalarFieldEnum]
 
 
 export const SortOrder = {

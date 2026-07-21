@@ -1,4 +1,5 @@
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function toDate(value) {
   if (!value) {
@@ -14,8 +15,23 @@ function toDate(value) {
     : null;
 }
 
-function keyToUtcDate(key) {
-  const date = new Date(`${key}T00:00:00.000Z`);
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function keyToLocalDate(key) {
+  if (typeof key !== "string" || !DATE_KEY_PATTERN.test(key)) {
+    return null;
+  }
+
+  const [year, month, day] = key
+    .split("-")
+    .map(part => Number(part));
+  const date = new Date(year, month - 1, day);
 
   return Number.isFinite(date.getTime())
     ? date
@@ -23,7 +39,7 @@ function keyToUtcDate(key) {
 }
 
 function addDaysToKey(key, days) {
-  const date = keyToUtcDate(key);
+  const date = keyToLocalDate(key);
 
   if (!date) {
     return "";
@@ -35,17 +51,21 @@ function addDaysToKey(key, days) {
 }
 
 export function normalizeDateKey(value) {
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+
+    if (DATE_KEY_PATTERN.test(trimmedValue)) {
+      return trimmedValue;
+    }
+  }
+
   const date = toDate(value);
 
   if (!date) {
     return "";
   }
 
-  return new Date(Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate()
-  )).toISOString().slice(0, 10);
+  return formatLocalDateKey(date);
 }
 
 export function normalizeActivityDateKeys(values = []) {

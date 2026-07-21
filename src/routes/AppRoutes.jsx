@@ -16,6 +16,7 @@ import Vocabulary from "../pages/dictionary/Vocabulary";
 import Alphabet from "../pages/alphabet/Alphabet";
 import Admin from "../pages/admin/Admin";
 import AdminCourses from "../pages/admin/AdminCourses";
+import AdminDictionary from "../pages/admin/AdminDictionary";
 import AdminLessonEditor from "../pages/admin/AdminLessonEditor";
 import AdminLessonPreview from "../pages/admin/AdminLessonPreview";
 import Leaderboard from "../pages/leaderboard/Leaderboard";
@@ -121,6 +122,11 @@ export default function AppRoutes() {
         <Route
           path="/admin/courses"
           element={<AdminCourses />}
+        />
+
+        <Route
+          path="/admin/dictionary"
+          element={<AdminDictionary />}
         />
 
         <Route

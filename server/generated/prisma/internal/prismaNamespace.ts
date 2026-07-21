@@ -391,7 +391,8 @@ export const ModelName = {
   Course: 'Course',
   Chapter: 'Chapter',
   Lesson: 'Lesson',
-  Question: 'Question'
+  Question: 'Question',
+  DictionaryWord: 'DictionaryWord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "lessonProgress" | "xpEvent" | "userAchievement" | "course" | "chapter" | "lesson" | "question"
+    modelProps: "user" | "lessonProgress" | "xpEvent" | "userAchievement" | "course" | "chapter" | "lesson" | "question" | "dictionaryWord"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1003,6 +1004,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DictionaryWord: {
+      payload: Prisma.$DictionaryWordPayload<ExtArgs>
+      fields: Prisma.DictionaryWordFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DictionaryWordFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DictionaryWordFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        findFirst: {
+          args: Prisma.DictionaryWordFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DictionaryWordFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        findMany: {
+          args: Prisma.DictionaryWordFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>[]
+        }
+        create: {
+          args: Prisma.DictionaryWordCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        createMany: {
+          args: Prisma.DictionaryWordCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DictionaryWordCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>[]
+        }
+        delete: {
+          args: Prisma.DictionaryWordDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        update: {
+          args: Prisma.DictionaryWordUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        deleteMany: {
+          args: Prisma.DictionaryWordDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DictionaryWordUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DictionaryWordUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>[]
+        }
+        upsert: {
+          args: Prisma.DictionaryWordUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DictionaryWordPayload>
+        }
+        aggregate: {
+          args: Prisma.DictionaryWordAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDictionaryWord>
+        }
+        groupBy: {
+          args: Prisma.DictionaryWordGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DictionaryWordGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DictionaryWordCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DictionaryWordCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1173,6 +1248,25 @@ export const QuestionScalarFieldEnum = {
 } as const
 
 export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
+
+
+export const DictionaryWordScalarFieldEnum = {
+  id: 'id',
+  lezgian: 'lezgian',
+  russian: 'russian',
+  transcription: 'transcription',
+  exampleLezgian: 'exampleLezgian',
+  exampleRussian: 'exampleRussian',
+  audioUrl: 'audioUrl',
+  imageUrl: 'imageUrl',
+  category: 'category',
+  order: 'order',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DictionaryWordScalarFieldEnum = (typeof DictionaryWordScalarFieldEnum)[keyof typeof DictionaryWordScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1416,6 +1510,7 @@ export type GlobalOmitConfig = {
   chapter?: Prisma.ChapterOmit
   lesson?: Prisma.LessonOmit
   question?: Prisma.QuestionOmit
+  dictionaryWord?: Prisma.DictionaryWordOmit
 }
 
 /* Types for Logging */

@@ -241,6 +241,20 @@ export async function getCourse(slug = "lezgian") {
   return data;
 }
 
+export async function getPublicDictionary() {
+  const response = await fetch(`${API_URL}/dictionary`, {
+    headers: getTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Dictionary loading failed");
+  }
+
+  return data;
+}
+
 export async function getLesson(lessonId) {
   const response = await fetch(`${API_URL}/lessons/${lessonId}`, {
     headers: getTelegramAuthHeaders(),
@@ -299,6 +313,28 @@ async function adminJsonRequest(path, {
 
 export async function getAdminCourses() {
   return adminJsonRequest("/admin/courses");
+}
+
+export async function getAdminDictionary() {
+  return adminJsonRequest("/admin/dictionary");
+}
+
+export async function getAdminDictionaryWord(wordId) {
+  return adminJsonRequest(`/admin/dictionary/${wordId}`);
+}
+
+export async function createAdminDictionaryWord(data) {
+  return adminJsonRequest("/admin/dictionary", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function updateAdminDictionaryWord(wordId, data) {
+  return adminJsonRequest(`/admin/dictionary/${wordId}`, {
+    method: "PATCH",
+    body: data,
+  });
 }
 
 export async function getAdminLesson(lessonId) {

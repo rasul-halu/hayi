@@ -49,16 +49,16 @@ export function isSameDay(dateA, dateB) {
 
 export function formatMonthTitle(date = new Date()) {
   const current = asDate(date) || new Date();
-  return `${MONTH_NAMES[current.getUTCMonth()]} ${current.getUTCFullYear()}`;
+  return `${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}`;
 }
 
 export function getCurrentMonthDays(date = new Date()) {
   const current = asDate(date) || new Date();
-  const year = current.getUTCFullYear();
-  const month = current.getUTCMonth();
-  const firstDay = new Date(Date.UTC(year, month, 1));
-  const lastDay = new Date(Date.UTC(year, month + 1, 0));
-  const leadingEmptyDays = (firstDay.getUTCDay() + 6) % 7;
+  const year = current.getFullYear();
+  const month = current.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
   const cells = [];
 
   for (let index = 0; index < leadingEmptyDays; index += 1) {
@@ -68,8 +68,8 @@ export function getCurrentMonthDays(date = new Date()) {
     });
   }
 
-  for (let day = 1; day <= lastDay.getUTCDate(); day += 1) {
-    const cellDate = new Date(Date.UTC(year, month, day));
+  for (let day = 1; day <= lastDay.getDate(); day += 1) {
+    const cellDate = new Date(year, month, day);
 
     cells.push({
       type: "day",

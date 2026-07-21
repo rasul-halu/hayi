@@ -37,7 +37,7 @@ const GUEST_USER_KEY = "hayi-guest-user";
 const TELEGRAM_USER_KEY = "hayi-telegram-user";
 
 function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return getTodayDateKey();
 }
 
 const DEFAULT_USER = {
@@ -55,11 +55,13 @@ const DEFAULT_USER = {
   xp: 120,
   streak: 0,
   longestStreak: 0,
+  bestStreak: 0,
   totalCorrectAnswers: 0,
   totalWrongAnswers: 0,
   lastLessonCompletedDate: null,
   todayLessonCompleted: false,
   activityDateKeys: [],
+  activeDates: [],
   completedLessons: 0,
   unlockedLessons: 1,
   completedLessonIds: [],
@@ -331,6 +333,9 @@ function normalizeUser(savedUser = {}) {
     Array.isArray(savedUser.activityDateKeys) &&
     savedUser.activityDateKeys.length > 0
       ? savedUser.activityDateKeys
+      : Array.isArray(savedUser.activeDates) &&
+        savedUser.activeDates.length > 0
+        ? savedUser.activeDates
       : lastLessonCompletedDate
         ? [lastLessonCompletedDate]
         : []
@@ -347,7 +352,7 @@ function normalizeUser(savedUser = {}) {
   const streak = currentStreak;
 
   const longestStreak = toNumber(
-    initialUser.longestStreak,
+    initialUser.longestStreak ?? initialUser.bestStreak,
     Math.max(
       DEFAULT_USER.longestStreak,
       calculateLongestStreak(activityDateKeys),
@@ -421,6 +426,7 @@ function normalizeUser(savedUser = {}) {
     nextHeartAt: heartState.nextHeartAt,
     streak,
     longestStreak: Math.max(longestStreak, streak),
+    bestStreak: Math.max(longestStreak, streak),
     totalCorrectAnswers: toNumber(
       initialUser.totalCorrectAnswers,
       DEFAULT_USER.totalCorrectAnswers
@@ -433,6 +439,7 @@ function normalizeUser(savedUser = {}) {
     todayLessonCompleted:
       isActivityToday(activityDateKeys),
     activityDateKeys,
+    activeDates: activityDateKeys,
     completedLessonIds,
     unlockedLessonIds: safeUnlockedLessonIds,
     completedLessons: completedLessonIds.length,
@@ -460,6 +467,11 @@ export function UserProvider({ children }) {
   );
   const [authError, setAuthError] = useState("");
   const [user, setUser] = useState(getInitialUser);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const login = (username, avatarUrl = "") => {
 
@@ -539,47 +551,74 @@ export function UserProvider({ children }) {
       return;
     }
 
-    setUser(prev => ({
-      ...prev,
-      xp: toNumber(stats.xp, prev.xp),
-      hearts: normalizeHearts(
-        stats.hearts,
-        normalizeMaxHearts(stats.maxHearts)
-      ),
-      maxHearts: normalizeMaxHearts(stats.maxHearts),
-      nextHeartAt:
-        normalizeDateTime(stats.nextHeartAt) || null,
-      secondsUntilNextHeart:
-        toNumber(stats.secondsUntilNextHeart, 0),
-      streak: toNumber(stats.streak, prev.streak),
-      longestStreak: toNumber(
-        stats.longestStreak,
-        prev.longestStreak
-      ),
-      todayLessonCompleted:
-        typeof stats.todayLessonCompleted === "boolean"
-          ? stats.todayLessonCompleted
-          : isActivityToday(stats.activityDateKeys || prev.activityDateKeys),
-      activityDateKeys: normalizeActivityDateKeys(
-        stats.activityDateKeys || prev.activityDateKeys
-      ),
-      totalCorrectAnswers: toNumber(
-        stats.totalCorrectAnswers,
-        prev.totalCorrectAnswers || 0
-      ),
-      totalWrongAnswers: toNumber(
-        stats.totalWrongAnswers,
-        prev.totalWrongAnswers || 0
-      ),
-      lastLessonCompletedDate:
-        typeof stats.lastLessonCompletedDate === "string"
-          ? stats.lastLessonCompletedDate
-          : prev.lastLessonCompletedDate,
-      lastHeartRefillAt:
-        normalizeDateTime(stats.lastHeartRefillAt) ||
-        prev.lastHeartRefillAt,
-      lastHeartRefillDate: getTodayKey()
-    }));
+    setUser(prev => {
+      const activityDateKeys = normalizeActivityDateKeys([
+        ...(Array.isArray(prev.activityDateKeys)
+          ? prev.activityDateKeys
+          : []),
+        ...(Array.isArray(prev.activeDates)
+          ? prev.activeDates
+          : []),
+        ...(Array.isArray(stats.activityDateKeys)
+          ? stats.activityDateKeys
+          : []),
+        ...(Array.isArray(stats.activeDates)
+          ? stats.activeDates
+          : []),
+        stats.lastLessonCompletedDate ||
+          prev.lastLessonCompletedDate
+      ]);
+      const currentStreak = calculateCurrentStreak(activityDateKeys);
+      const longestStreak = Math.max(
+        currentStreak,
+        calculateLongestStreak(activityDateKeys),
+        toNumber(stats.longestStreak, 0),
+        toNumber(stats.bestStreak, 0),
+        toNumber(prev.longestStreak, 0),
+        toNumber(prev.bestStreak, 0)
+      );
+      const maxHearts = normalizeMaxHearts(stats.maxHearts);
+
+      return {
+        ...prev,
+        xp: toNumber(stats.xp, prev.xp),
+        hearts: normalizeHearts(
+          stats.hearts,
+          maxHearts
+        ),
+        maxHearts,
+        nextHeartAt:
+          normalizeDateTime(stats.nextHeartAt) || null,
+        secondsUntilNextHeart:
+          toNumber(stats.secondsUntilNextHeart, 0),
+        streak: currentStreak,
+        longestStreak,
+        bestStreak: longestStreak,
+        todayLessonCompleted:
+          typeof stats.todayLessonCompleted === "boolean"
+            ? stats.todayLessonCompleted ||
+              isActivityToday(activityDateKeys)
+            : isActivityToday(activityDateKeys),
+        activityDateKeys,
+        activeDates: activityDateKeys,
+        totalCorrectAnswers: toNumber(
+          stats.totalCorrectAnswers,
+          prev.totalCorrectAnswers || 0
+        ),
+        totalWrongAnswers: toNumber(
+          stats.totalWrongAnswers,
+          prev.totalWrongAnswers || 0
+        ),
+        lastLessonCompletedDate:
+          typeof stats.lastLessonCompletedDate === "string"
+            ? stats.lastLessonCompletedDate
+            : prev.lastLessonCompletedDate,
+        lastHeartRefillAt:
+          normalizeDateTime(stats.lastHeartRefillAt) ||
+          prev.lastHeartRefillAt,
+        lastHeartRefillDate: getTodayKey()
+      };
+    });
   }, []);
 
   const loadStatsFromServer = useCallback(async () => {
@@ -905,12 +944,21 @@ export function UserProvider({ children }) {
         longestStreak:
           Math.max(
             currentLongestStreak,
+            toNumber(prev.bestStreak, 0),
+            calculateLongestStreak(activityDateKeys),
+            nextStreak
+          ),
+        bestStreak:
+          Math.max(
+            currentLongestStreak,
+            toNumber(prev.bestStreak, 0),
             calculateLongestStreak(activityDateKeys),
             nextStreak
           ),
         todayLessonCompleted: true,
         lastLessonCompletedDate: today,
-        activityDateKeys
+        activityDateKeys,
+        activeDates: activityDateKeys
       };
     });
   }, []);
@@ -992,18 +1040,77 @@ export function UserProvider({ children }) {
     }));
   };
 
-  const restoreOneHeart = () => {
+  const restoreHeart = useCallback((amount = 1) => {
+    const safeAmount = Math.max(0, toNumber(amount, 1));
+    const currentUser = userRef.current || DEFAULT_USER;
+    const maxHearts = normalizeMaxHearts(currentUser.maxHearts);
+    const currentHearts = normalizeHearts(
+      currentUser.hearts,
+      maxHearts
+    );
+
+    if (safeAmount <= 0 || currentHearts >= maxHearts) {
+      return false;
+    }
 
     setUser(prev => {
-      const maxHearts = normalizeMaxHearts(prev.maxHearts);
-      const nextHearts = clamp(
-        normalizeHearts(prev.hearts, maxHearts) + 1,
-        0,
-        maxHearts
+      const nextMaxHearts = normalizeMaxHearts(prev.maxHearts);
+      const nextHearts = Math.min(
+        nextMaxHearts,
+        normalizeHearts(prev.hearts, nextMaxHearts) + safeAmount
       );
 
       return {
         ...prev,
+        hearts: nextHearts,
+        maxHearts: nextMaxHearts,
+        nextHeartAt:
+          nextHearts >= nextMaxHearts
+            ? null
+            : prev.nextHeartAt,
+        lastHeartRefillAt:
+          nextHearts >= nextMaxHearts
+            ? new Date().toISOString()
+            : prev.lastHeartRefillAt
+      };
+    });
+
+    return true;
+  }, []);
+
+  const restoreOneHeart = () => restoreHeart(1);
+
+  const registerCorrectAnswer = useCallback(() => {
+    let heartWasRestored = false;
+
+    setUser(prev => {
+      const maxHearts = normalizeMaxHearts(prev.maxHearts);
+      const currentHearts = normalizeHearts(
+        prev.hearts,
+        maxHearts
+      );
+      const nextCorrectAnswerStreak =
+        toNumber(prev.correctAnswerStreak, 0) + 1;
+
+      if (nextCorrectAnswerStreak < HEART_REWARD_STREAK) {
+        return {
+          ...prev,
+          correctAnswerStreak:
+            nextCorrectAnswerStreak,
+          hearts: currentHearts,
+          maxHearts
+        };
+      }
+
+      const nextHearts = Math.min(
+        maxHearts,
+        currentHearts + 1
+      );
+      heartWasRestored = nextHearts > currentHearts;
+
+      return {
+        ...prev,
+        correctAnswerStreak: 0,
         hearts: nextHearts,
         maxHearts,
         nextHeartAt:
@@ -1016,40 +1123,13 @@ export function UserProvider({ children }) {
             : prev.lastHeartRefillAt
       };
     });
-  };
 
-  const registerCorrectAnswer = () => {
-
-    setUser(prev => {
-      const nextCorrectAnswerStreak =
-        toNumber(prev.correctAnswerStreak, 0) + 1;
-
-      if (nextCorrectAnswerStreak < HEART_REWARD_STREAK) {
-        return {
-          ...prev,
-          correctAnswerStreak:
-            nextCorrectAnswerStreak,
-          hearts: normalizeHearts(prev.hearts)
-        };
-      }
-
-      return {
-        ...prev,
-        correctAnswerStreak: 0,
-        hearts:
-          clamp(
-            normalizeHearts(prev.hearts) + 1,
-            0,
-            MAX_HEARTS
-          )
-      };
-    });
-  };
+    return heartWasRestored;
+  }, []);
 
   const handleCorrectAnswer = useCallback(async () => {
     if (!hasTelegramAuthData()) {
-      registerCorrectAnswer();
-      return;
+      return registerCorrectAnswer();
     }
 
     try {
@@ -1063,7 +1143,12 @@ export function UserProvider({ children }) {
         );
       }
     }
-  }, [syncStatsFromServer]);
+
+    return registerCorrectAnswer();
+  }, [
+    registerCorrectAnswer,
+    syncStatsFromServer
+  ]);
 
   const resetCorrectAnswerStreak = () => {
 
@@ -1117,6 +1202,7 @@ export function UserProvider({ children }) {
 
       cacheCompletedLessonById(lessonId);
       syncStatsFromServer(data.stats);
+      markLessonCompletedToday();
 
       return data;
     } catch (error) {
@@ -1166,6 +1252,10 @@ export function UserProvider({ children }) {
       storageKey,
       JSON.stringify(user)
     );
+    localStorage.setItem(
+      LEGACY_USER_KEY,
+      JSON.stringify(user)
+    );
   }, [user]);
 
   return (
@@ -1191,6 +1281,7 @@ export function UserProvider({ children }) {
         unlockNextLesson,
         loseHeart,
         resetHearts,
+        restoreHeart,
         restoreOneHeart,
         registerCorrectAnswer,
         handleCorrectAnswer,

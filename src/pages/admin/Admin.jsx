@@ -33,7 +33,7 @@ const adminSections = [
   {
     title: "Словарь",
     icon: WholeWord,
-    disabled: true
+    path: "/admin/dictionary"
   }
 ];
 

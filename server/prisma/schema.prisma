@@ -163,3 +163,23 @@ model Question {
   @@unique([lessonId, order])
   @@index([lessonId])
 }
+
+model DictionaryWord {
+  id             String   @id @default(cuid())
+  lezgian        String
+  russian        String
+  transcription  String?
+  exampleLezgian String?
+  exampleRussian String?
+  audioUrl       String?
+  imageUrl       String?
+  category       String?
+  order          Int      @default(0)
+  isPublished    Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isPublished])
+  @@index([category, order])
+}
