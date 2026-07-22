@@ -1050,10 +1050,15 @@ function QuestionForm({ form, setForm }) {
         onChange={value => update("explanation", value)}
       />
 
-      {form.type === "listening" ? (
+      {["listening", "buildSentence"].includes(form.type) ? (
         <MediaUploader
           type="audio"
-          label="Аудио вопроса"
+          label={form.type === "buildSentence"
+            ? "Озвучка предложения"
+            : "Аудио вопроса"}
+          helperText={form.type === "buildSentence"
+            ? "Загрузите запись правильного предложения целиком"
+            : "Загрузите запись для задания на аудирование"}
           value={form.audioUrl}
           onChange={value => update("audioUrl", value)}
         />

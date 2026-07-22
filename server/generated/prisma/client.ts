@@ -86,3 +86,8 @@ export type Question = Prisma.QuestionModel
  * 
  */
 export type DictionaryWord = Prisma.DictionaryWordModel
+/**
+ * Model AlphabetLetter
+ * 
+ */
+export type AlphabetLetter = Prisma.AlphabetLetterModel

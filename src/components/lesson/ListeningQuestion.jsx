@@ -1,10 +1,9 @@
-import { Volume2 } from "lucide-react";
-import AppIcon from "../ui/AppIcon";
 import AnswerButton, {
   getOptionLabel,
   getOptionValue
 } from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
+import AudioPlayButton from "../audio/AudioPlayButton";
 
 export default function ListeningQuestion({
   question,
@@ -39,27 +38,14 @@ export default function ListeningQuestion({
           marginBottom: 24
         }}
       >
-        <div
-          style={{
-            width: 88,
-            height: 88,
-            borderRadius: "50%",
-            background: "#58CC02",
-            color: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto",
-            boxShadow: "0 6px 0 #46A400"
-          }}
-        >
-          <AppIcon
-            icon={Volume2}
-            size={42}
-            color="#FFFFFF"
-            strokeWidth={2.4}
+        {question.audioUrl ? (
+          <AudioPlayButton
+            src={question.audioUrl}
+            size={88}
+            label="Прослушать задание"
+            disabled={disabled}
           />
-        </div>
+        ) : null}
 
         <p
           style={{
@@ -71,15 +57,6 @@ export default function ListeningQuestion({
           Прослушай и выбери ответ
         </p>
 
-        {question.audioUrl ? (
-          <audio
-            controls
-            src={question.audioUrl}
-            style={{ width: "100%", marginTop: 16 }}
-          >
-            <track kind="captions" />
-          </audio>
-        ) : null}
       </div>
 
       {question.answers.map(answer => {

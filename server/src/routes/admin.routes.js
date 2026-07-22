@@ -1,6 +1,11 @@
 import express from "express";
 import { getAdminMe } from "../controllers/admin.controller.js";
 import {
+  listAdminAlphabet,
+  patchAdminAlphabetLetter,
+  postAdminAlphabetLetter,
+} from "../controllers/alphabet.controller.js";
+import {
   getAdminDictionaryWord,
   listAdminDictionary,
   patchAdminDictionaryWord,
@@ -31,6 +36,10 @@ const router = express.Router();
 router.use(requireTelegramAuth, requireAdmin);
 
 router.get("/me", getAdminMe);
+
+router.get("/alphabet", listAdminAlphabet);
+router.post("/alphabet", postAdminAlphabetLetter);
+router.patch("/alphabet/:letterId", patchAdminAlphabetLetter);
 
 router.get("/dictionary", listAdminDictionary);
 router.post("/dictionary", postAdminDictionaryWord);

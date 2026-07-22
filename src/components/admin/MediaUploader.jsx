@@ -1,4 +1,4 @@
-import { ImagePlus, Music, Upload } from "lucide-react";
+import { ImagePlus, Music, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import {
   uploadAdminAudio,
@@ -50,6 +50,7 @@ export default function MediaUploader({
   value,
   onChange,
   label,
+  helperText = "",
   disabled = false
 }) {
   const [file, setFile] = useState(null);
@@ -89,6 +90,12 @@ export default function MediaUploader({
         <AppIcon icon={isImage ? ImagePlus : Music} size={18} />
         {label}
       </div>
+
+      {helperText ? (
+        <div style={{ color: "#6F746B", fontSize: 13, fontWeight: 800 }}>
+          {helperText}
+        </div>
+      ) : null}
 
       {isImage && value ? (
         <img
@@ -136,6 +143,24 @@ export default function MediaUploader({
           {isUploading ? "Загружаем файл..." : "Загрузить"}
         </span>
       </AppButton>
+
+      {value ? (
+        <AppButton
+          onClick={() => {
+            setFile(null);
+            setError("");
+            setMessage("");
+            onChange("");
+          }}
+          disabled={disabled || isUploading}
+          variant="secondary"
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <AppIcon icon={Trash2} size={18} />
+            Очистить
+          </span>
+        </AppButton>
+      ) : null}
 
       {message ? (
         <div style={{ color: "#46A400", fontWeight: 900 }}>{message}</div>

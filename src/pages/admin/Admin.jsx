@@ -3,6 +3,7 @@ import {
   HelpCircle,
   Layers,
   ShieldCheck,
+  Type,
   WholeWord
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -34,6 +35,12 @@ const adminSections = [
     title: "Словарь",
     icon: WholeWord,
     path: "/admin/dictionary"
+  },
+  {
+    title: "Алфавит",
+    subtitle: "Буквы и произношение",
+    icon: Type,
+    path: "/admin/alphabet"
   }
 ];
 
@@ -237,7 +244,12 @@ export default function Admin() {
                 }}
               >
                 <AppIcon icon={section.icon} size={28} color="#58CC02" />
-                {section.title}
+                <span>{section.title}</span>
+                {section.subtitle ? (
+                  <span style={{ color: "#777", fontSize: 12, fontWeight: 800 }}>
+                    {section.subtitle}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>

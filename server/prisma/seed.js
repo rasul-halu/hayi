@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import prisma from "../src/lib/prisma.js";
+import { alphabetSeedCount, seedAlphabet } from "./alphabetSeed.js";
 import { courseSeed } from "./data/course.seed.js";
 
 function toQuestionData(question, lessonId) {
@@ -121,8 +122,12 @@ async function seedCourse() {
 }
 
 try {
-  const course = await seedCourse();
+  const [course] = await Promise.all([
+    seedCourse(),
+    seedAlphabet(prisma),
+  ]);
   console.log(`Seeded course: ${course.slug}`);
+  console.log(`Seeded alphabet letters: ${alphabetSeedCount}`);
 } finally {
   await prisma.$disconnect();
 }

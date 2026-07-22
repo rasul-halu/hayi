@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { highlightNewWords } from "../../utils/highlightNewWords";
+import AudioPlayButton from "../audio/AudioPlayButton";
 
 function moveItem(items, index) {
   return items.filter((_, itemIndex) => itemIndex !== index);
@@ -97,25 +98,40 @@ export default function BuildSentenceQuestion({
           boxShadow: "0 5px 0 #D9D9D9"
         }}
       >
-        <div
-          style={{
-            color: "#777",
-            fontSize: 13,
-            fontWeight: 900,
-            marginBottom: 6
-          }}
-        >
-          Переведите:
-        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                color: "#777",
+                fontSize: 13,
+                fontWeight: 900,
+                marginBottom: 6
+              }}
+            >
+              Переведите:
+            </div>
 
-        <div
-          style={{
-            fontSize: 26,
-            fontWeight: 900,
-            lineHeight: 1.25
-          }}
-        >
-          {highlightNewWords(question.question, question)}
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 900,
+                lineHeight: 1.25,
+                overflowWrap: "anywhere"
+              }}
+            >
+              {highlightNewWords(question.question, question)}
+            </div>
+          </div>
+
+          {question.audioUrl ? (
+            <AudioPlayButton
+              src={question.audioUrl}
+              size={58}
+              label="Прослушать правильное предложение"
+              disabled={disabled}
+              variant="soft"
+            />
+          ) : null}
         </div>
       </div>
 

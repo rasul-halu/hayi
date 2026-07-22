@@ -255,6 +255,20 @@ export async function getPublicDictionary() {
   return data;
 }
 
+export async function getPublicAlphabet() {
+  const response = await fetch(`${API_URL}/alphabet`, {
+    headers: getTelegramAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Alphabet loading failed");
+  }
+
+  return data;
+}
+
 export async function getLesson(lessonId) {
   const response = await fetch(`${API_URL}/lessons/${lessonId}`, {
     headers: getTelegramAuthHeaders(),
@@ -317,6 +331,24 @@ export async function getAdminCourses() {
 
 export async function getAdminDictionary() {
   return adminJsonRequest("/admin/dictionary");
+}
+
+export async function getAdminAlphabet() {
+  return adminJsonRequest("/admin/alphabet");
+}
+
+export async function createAdminAlphabetLetter(data) {
+  return adminJsonRequest("/admin/alphabet", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function updateAdminAlphabetLetter(letterId, data) {
+  return adminJsonRequest(`/admin/alphabet/${letterId}`, {
+    method: "PATCH",
+    body: data,
+  });
 }
 
 export async function getAdminDictionaryWord(wordId) {

@@ -1,41 +1,55 @@
-import { useEffect, useState } from "react";
-import { Type, Volume2 } from "lucide-react";
+import { RefreshCw, Type } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { getPublicAlphabet } from "../../api/apiClient";
+import AudioPlayButton from "../../components/audio/AudioPlayButton";
 import BottomNav from "../../components/layout/BottomNav";
+import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import SectionTitle from "../../components/ui/SectionTitle";
 import { useUser } from "../../context/UserContext";
-import { alphabetLetters } from "../../data/alphabetData";
-import { playAudioFile } from "../../utils/soundEffects";
+import { alphabetLetters as developmentAlphabet } from "../../data/alphabetData";
 
-const ACTIVE_TIMEOUT = 650;
+function getDevelopmentFallback() {
+  return developmentAlphabet.map((letter, index) => ({
+    ...letter,
+    displayLetter: letter.letter,
+    audioUrl: letter.audio,
+    order: index + 1,
+    isPublished: true
+  }));
+}
 
 export default function Alphabet() {
   const { user } = useUser();
-  const [activeLetterId, setActiveLetterId] = useState(null);
+  const [letters, setLetters] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadAlphabet = useCallback(async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const data = await getPublicAlphabet();
+      setLetters(data.letters || []);
+    } catch {
+      if (process.env.NODE_ENV === "development") {
+        setLetters(getDevelopmentFallback());
+        setError("Backend недоступен. Показан локальный список для разработки.");
+      } else {
+        setLetters([]);
+        setError("Не удалось загрузить алфавит");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!activeLetterId) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setActiveLetterId(null);
-    }, ACTIVE_TIMEOUT);
-
-    return () => clearTimeout(timeoutId);
-  }, [activeLetterId]);
-
-  const activeLetter =
-    alphabetLetters.find(letter =>
-      letter.id === activeLetterId
-    );
-
-  const handleLetterClick = (letter) => {
-    setActiveLetterId(letter.id);
-    playAudioFile(letter.audio, user.soundEnabled);
-  };
+    void loadAlphabet();
+  }, [loadAlphabet]);
 
   return (
     <PageContainer
@@ -65,93 +79,94 @@ export default function Alphabet() {
 
       <SectionTitle
         title="Алфавит"
-        subtitle="Нажми на букву, чтобы услышать произношение."
+        subtitle="Нажми на кнопку звука, чтобы услышать произношение."
       />
 
-      <AppCard
-        style={{
-          minHeight: 54,
-          marginTop: 16,
-          padding: "12px 14px",
-          borderRadius: 18,
-          background: activeLetter ? "#E9F8DD" : "#FFFFFF",
-          color: activeLetter ? "#46A400" : "#6F746B",
-          border: `2px solid ${activeLetter ? "#BFE8A7" : "#E6E6E6"}`,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          fontWeight: 900,
-          boxShadow: activeLetter ? "0 5px 0 #BFE8A7" : "0 5px 0 #D9D9D9"
-        }}
-      >
-        <AppIcon
-          icon={Volume2}
-          size={21}
-          color={activeLetter ? "#46A400" : "#8A8A8A"}
-        />
-        {activeLetter
-          ? `Слушаем: ${activeLetter.letter}`
-          : "Выбери букву"}
-      </AppCard>
+      {isLoading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 18 }}>
+          {Array.from({ length: 9 }, (_, index) => (
+            <div
+              key={index}
+              style={{ minHeight: 104, borderRadius: 20, background: "#E7EBE4" }}
+            />
+          ))}
+        </div>
+      ) : null}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))",
-          gap: 12,
-          marginTop: 18
-        }}
-      >
-        {alphabetLetters.map(letter => {
-          const active = activeLetterId === letter.id;
+      {error ? (
+        <AppCard style={{ marginTop: 18, textAlign: "center" }}>
+          <div style={{ fontWeight: 900 }}>{error}</div>
+          {letters.length === 0 ? (
+            <div style={{ marginTop: 12 }}>
+              <AppButton onClick={loadAlphabet} variant="secondary">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <AppIcon icon={RefreshCw} size={18} />
+                  Повторить
+                </span>
+              </AppButton>
+            </div>
+          ) : null}
+        </AppCard>
+      ) : null}
 
-          return (
-            <button
+      {!isLoading && !error && letters.length === 0 ? (
+        <AppCard style={{ marginTop: 18, textAlign: "center", fontWeight: 900 }}>
+          Алфавит пока не заполнен
+        </AppCard>
+      ) : null}
+
+      {!isLoading && letters.length > 0 ? (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))",
+            gap: 12,
+            marginTop: 18
+          }}
+        >
+          {letters.map(letter => (
+            <div
               key={letter.id}
-              type="button"
-              onClick={() => handleLetterClick(letter)}
               style={{
-                minHeight: 76,
-                padding: "12px 8px",
+                minHeight: 112,
+                padding: "14px 8px 12px",
                 borderRadius: 20,
-                border: active ? "3px solid #46A400" : "2px solid #E6E6E6",
-                background: active ? "#D7FFB8" : "#FFFFFF",
+                border: "2px solid #E6E6E6",
+                background: "#FFFFFF",
                 color: "#4B4B4B",
-                boxShadow: active ? "0 5px 0 #46A400" : "0 5px 0 #D9D9D9",
+                boxShadow: "0 5px 0 #D9D9D9",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                cursor: "pointer",
-                transition:
-                  "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease"
+                justifyContent: "space-between",
+                gap: 10,
+                textAlign: "center"
               }}
-              aria-label={`Слушать букву ${letter.name}`}
             >
-              <span
-                style={{
-                  fontSize: 30,
-                  lineHeight: 1,
-                  fontWeight: 900
-                }}
-              >
-                {letter.letter}
-              </span>
+              <div>
+                <div style={{ fontSize: 30, lineHeight: 1, fontWeight: 900 }}>
+                  {letter.displayLetter || letter.letter}
+                </div>
+                {letter.name && letter.name !== letter.displayLetter ? (
+                  <div style={{ marginTop: 5, color: "#777", fontSize: 12, fontWeight: 800 }}>
+                    {letter.name}
+                  </div>
+                ) : null}
+              </div>
 
-              <span
-                style={{
-                  color: "#777",
-                  fontSize: 12,
-                  fontWeight: 800
-                }}
-              >
-                {letter.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              {letter.audioUrl ? (
+                <AudioPlayButton
+                  src={letter.audioUrl}
+                  size={38}
+                  label={`Слушать букву ${letter.name || letter.letter}`}
+                  disabled={user?.soundEnabled === false}
+                  variant="soft"
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <BottomNav />
     </PageContainer>

@@ -392,7 +392,8 @@ export const ModelName = {
   Chapter: 'Chapter',
   Lesson: 'Lesson',
   Question: 'Question',
-  DictionaryWord: 'DictionaryWord'
+  DictionaryWord: 'DictionaryWord',
+  AlphabetLetter: 'AlphabetLetter'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -408,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "lessonProgress" | "xpEvent" | "userAchievement" | "course" | "chapter" | "lesson" | "question" | "dictionaryWord"
+    modelProps: "user" | "lessonProgress" | "xpEvent" | "userAchievement" | "course" | "chapter" | "lesson" | "question" | "dictionaryWord" | "alphabetLetter"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1078,6 +1079,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AlphabetLetter: {
+      payload: Prisma.$AlphabetLetterPayload<ExtArgs>
+      fields: Prisma.AlphabetLetterFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AlphabetLetterFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AlphabetLetterFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        findFirst: {
+          args: Prisma.AlphabetLetterFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AlphabetLetterFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        findMany: {
+          args: Prisma.AlphabetLetterFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>[]
+        }
+        create: {
+          args: Prisma.AlphabetLetterCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        createMany: {
+          args: Prisma.AlphabetLetterCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AlphabetLetterCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>[]
+        }
+        delete: {
+          args: Prisma.AlphabetLetterDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        update: {
+          args: Prisma.AlphabetLetterUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        deleteMany: {
+          args: Prisma.AlphabetLetterDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AlphabetLetterUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AlphabetLetterUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>[]
+        }
+        upsert: {
+          args: Prisma.AlphabetLetterUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlphabetLetterPayload>
+        }
+        aggregate: {
+          args: Prisma.AlphabetLetterAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAlphabetLetter>
+        }
+        groupBy: {
+          args: Prisma.AlphabetLetterGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AlphabetLetterGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AlphabetLetterCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AlphabetLetterCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1267,6 +1342,25 @@ export const DictionaryWordScalarFieldEnum = {
 } as const
 
 export type DictionaryWordScalarFieldEnum = (typeof DictionaryWordScalarFieldEnum)[keyof typeof DictionaryWordScalarFieldEnum]
+
+
+export const AlphabetLetterScalarFieldEnum = {
+  id: 'id',
+  letter: 'letter',
+  displayLetter: 'displayLetter',
+  name: 'name',
+  description: 'description',
+  example: 'example',
+  exampleMeaning: 'exampleMeaning',
+  audioUrl: 'audioUrl',
+  imageUrl: 'imageUrl',
+  order: 'order',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AlphabetLetterScalarFieldEnum = (typeof AlphabetLetterScalarFieldEnum)[keyof typeof AlphabetLetterScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1511,6 +1605,7 @@ export type GlobalOmitConfig = {
   lesson?: Prisma.LessonOmit
   question?: Prisma.QuestionOmit
   dictionaryWord?: Prisma.DictionaryWordOmit
+  alphabetLetter?: Prisma.AlphabetLetterOmit
 }
 
 /* Types for Logging */

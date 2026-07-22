@@ -59,7 +59,8 @@ export const ModelName = {
   Chapter: 'Chapter',
   Lesson: 'Lesson',
   Question: 'Question',
-  DictionaryWord: 'DictionaryWord'
+  DictionaryWord: 'DictionaryWord',
+  AlphabetLetter: 'AlphabetLetter'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -228,6 +229,25 @@ export const DictionaryWordScalarFieldEnum = {
 } as const
 
 export type DictionaryWordScalarFieldEnum = (typeof DictionaryWordScalarFieldEnum)[keyof typeof DictionaryWordScalarFieldEnum]
+
+
+export const AlphabetLetterScalarFieldEnum = {
+  id: 'id',
+  letter: 'letter',
+  displayLetter: 'displayLetter',
+  name: 'name',
+  description: 'description',
+  example: 'example',
+  exampleMeaning: 'exampleMeaning',
+  audioUrl: 'audioUrl',
+  imageUrl: 'imageUrl',
+  order: 'order',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AlphabetLetterScalarFieldEnum = (typeof AlphabetLetterScalarFieldEnum)[keyof typeof AlphabetLetterScalarFieldEnum]
 
 
 export const SortOrder = {
