@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
+import { resolveMediaImage } from "../../utils/mediaUrl";
 
 export default function CharacterImage({
   image
 }) {
   const [hasError, setHasError] = useState(false);
+  const resolvedImage = resolveMediaImage(image);
 
   useEffect(() => {
     setHasError(false);
-  }, [image?.src]);
+  }, [resolvedImage?.src]);
 
-  if (!image || hasError) {
+  if (!resolvedImage || hasError) {
     return null;
   }
 
@@ -30,8 +32,8 @@ export default function CharacterImage({
       }}
     >
       <img
-        src={image.src}
-        alt={image.alt || ""}
+        src={resolvedImage.src}
+        alt={resolvedImage.alt || ""}
         onError={() => setHasError(true)}
         style={{
           display: "block",

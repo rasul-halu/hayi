@@ -44,6 +44,48 @@ function normalizeNullableString(value, fieldName) {
   return value;
 }
 
+function normalizeNullableMediaUrl(value, fieldName) {
+  const normalizedValue = normalizeNullableString(value, fieldName);
+
+  if (normalizedValue === undefined || normalizedValue === null) {
+    return normalizedValue;
+  }
+
+  const trimmedValue = normalizedValue.trim();
+
+  if (trimmedValue.startsWith("/uploads/")) {
+    return trimmedValue;
+  }
+
+  if (/^[a-zA-Z]:[\\/]/.test(trimmedValue) ||
+    trimmedValue.includes("\\") ||
+    trimmedValue.startsWith("file:") ||
+    trimmedValue.startsWith("blob:") ||
+    trimmedValue.startsWith("data:")) {
+    throw createHttpError(400, `${fieldName} must be an uploaded file path or public HTTPS URL`);
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(trimmedValue);
+  } catch {
+    throw createHttpError(400, `${fieldName} must be an uploaded file path or public HTTPS URL`);
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1";
+
+  if (parsedUrl.protocol !== "https:" || isLocalHost) {
+    throw createHttpError(400, `${fieldName} must be an uploaded file path or public HTTPS URL`);
+  }
+
+  return trimmedValue;
+}
+
 function normalizeRequiredString(value, fieldName) {
   if (typeof value !== "string" || value.trim() === "") {
     throw createHttpError(400, `${fieldName} is required`);
@@ -180,7 +222,7 @@ function getLessonPatch(body) {
       max: 1000,
     }),
     isPublished: normalizeBoolean(body.isPublished, "isPublished"),
-    imageUrl: normalizeNullableString(body.imageUrl, "imageUrl"),
+    imageUrl: normalizeNullableMediaUrl(body.imageUrl, "imageUrl"),
   };
 }
 
@@ -202,7 +244,7 @@ function getLessonCreate(body) {
     isPublished: body.isPublished === undefined
       ? false
       : normalizeBoolean(body.isPublished, "isPublished"),
-    imageUrl: normalizeNullableString(body.imageUrl, "imageUrl"),
+    imageUrl: normalizeNullableMediaUrl(body.imageUrl, "imageUrl"),
   };
 }
 
@@ -217,8 +259,8 @@ function getQuestionPatch(body) {
     prompt: normalizeNullableString(body.prompt, "prompt"),
     translation: normalizeNullableString(body.translation, "translation"),
     correctAnswer: normalizeNullableString(body.correctAnswer, "correctAnswer"),
-    audioUrl: normalizeNullableString(body.audioUrl, "audioUrl"),
-    characterImage: normalizeNullableString(body.characterImage, "characterImage"),
+    audioUrl: normalizeNullableMediaUrl(body.audioUrl, "audioUrl"),
+    characterImage: normalizeNullableMediaUrl(body.characterImage, "characterImage"),
     explanation: normalizeNullableString(body.explanation, "explanation"),
     options: normalizeJsonField(body.options, "options"),
     pairs: normalizeJsonField(body.pairs, "pairs"),
@@ -239,8 +281,8 @@ function getQuestionCreate(body) {
     prompt: normalizeNullableString(body.prompt, "prompt"),
     translation: normalizeNullableString(body.translation, "translation"),
     correctAnswer: normalizeNullableString(body.correctAnswer, "correctAnswer"),
-    audioUrl: normalizeNullableString(body.audioUrl, "audioUrl"),
-    characterImage: normalizeNullableString(body.characterImage, "characterImage"),
+    audioUrl: normalizeNullableMediaUrl(body.audioUrl, "audioUrl"),
+    characterImage: normalizeNullableMediaUrl(body.characterImage, "characterImage"),
     explanation: normalizeNullableString(body.explanation, "explanation"),
     options: normalizeJsonField(body.options, "options"),
     pairs: normalizeJsonField(body.pairs, "pairs"),

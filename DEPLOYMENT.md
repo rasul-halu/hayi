@@ -21,7 +21,6 @@ DATABASE_URL=Neon connection string
 TELEGRAM_BOT_TOKEN=BotFather token
 ADMIN_TELEGRAM_IDS=your_telegram_id
 MEDIA_STORAGE_PROVIDER=cloudinary
-PUBLIC_API_URL=https://BACKEND_URL.onrender.com
 CLOUDINARY_CLOUD_NAME=Cloudinary cloud name
 CLOUDINARY_API_KEY=Cloudinary API key
 CLOUDINARY_API_SECRET=Cloudinary API secret
@@ -49,10 +48,11 @@ variables. Uploaded images and audio will be stored in Cloudinary folders under
 `hayi/`.
 
 For local development without Cloudinary, use `MEDIA_STORAGE_PROVIDER=local`.
-Local files are served from `/uploads`, and `PUBLIC_API_URL` is used to build
-absolute media URLs for the frontend. Render's filesystem is not persistent
-across redeploys/restarts, so do not use local storage as the final production
-media provider.
+Local uploads are saved under `server/uploads`, and the database stores relative
+paths such as `/uploads/audio/file.mp3`. The frontend turns those paths into
+absolute URLs using `REACT_APP_API_URL`. Render's filesystem is not persistent
+across redeploys/restarts unless a persistent disk is explicitly configured, so
+do not use local storage as the final production media provider.
 
 ## Frontend: Vercel
 

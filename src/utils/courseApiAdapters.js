@@ -1,3 +1,8 @@
+import {
+  resolveMediaImage,
+  resolveMediaUrl,
+} from "./mediaUrl";
+
 export function mapApiQuestionToFrontendQuestion(question = {}) {
   return {
     id: question.id,
@@ -13,9 +18,9 @@ export function mapApiQuestionToFrontendQuestion(question = {}) {
     targetSentence: question.targetSentence,
     newWord: question.newWord,
     newWords: question.newWords || [],
-    image: question.image,
-    audioUrl: question.audioUrl,
-    characterImage: question.characterImage,
+    image: resolveMediaImage(question.image),
+    audioUrl: resolveMediaUrl(question.audioUrl),
+    characterImage: resolveMediaImage(question.characterImage),
     explanation: question.explanation,
     metadata: question.metadata || {},
   };
@@ -32,7 +37,7 @@ export function mapApiLessonToFrontendLesson(lesson = {}) {
     description: lesson.description,
     order: lesson.order,
     xpReward: lesson.xpReward,
-    imageUrl: lesson.imageUrl,
+    imageUrl: resolveMediaUrl(lesson.imageUrl),
     questions: (lesson.questions || []).map(mapApiQuestionToFrontendQuestion),
   };
 }
@@ -44,6 +49,7 @@ export function mapApiCourseToFrontendCourse(course = {}) {
       ...chapter,
       lessons: (chapter.lessons || []).map(lesson => ({
         ...lesson,
+        imageUrl: resolveMediaUrl(lesson.imageUrl),
         id: Number.isNaN(Number(lesson.id))
           ? lesson.id
           : Number(lesson.id),

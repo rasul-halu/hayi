@@ -34,16 +34,6 @@ function getStorageProvider() {
   return process.env.MEDIA_STORAGE_PROVIDER || "local";
 }
 
-function getPublicBaseUrl() {
-  const configuredUrl = process.env.PUBLIC_API_URL || process.env.API_PUBLIC_URL;
-
-  if (configuredUrl) {
-    return configuredUrl.replace(/\/$/, "");
-  }
-
-  return `http://localhost:${process.env.PORT || 4000}`;
-}
-
 function getFileExtension(file) {
   const originalExtension = path.extname(file.originalname || "").toLowerCase();
 
@@ -65,7 +55,7 @@ async function uploadLocalFile(file, folder) {
   });
   await writeFile(targetPath, file.buffer);
 
-  return `${getPublicBaseUrl()}/uploads/${folder}/${fileName}`;
+  return `/uploads/${folder}/${fileName}`;
 }
 
 function configureCloudinary() {

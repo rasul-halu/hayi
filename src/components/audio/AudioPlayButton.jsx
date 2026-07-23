@@ -1,6 +1,7 @@
 import { LoaderCircle, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "../ui/AppIcon";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 let activeAudio = null;
 
@@ -22,15 +23,16 @@ export default function AudioPlayButton({
 }) {
   const audioRef = useRef(null);
   const [status, setStatus] = useState("idle");
-  const isUnavailable = disabled || !src;
+  const resolvedSrc = resolveMediaUrl(src);
+  const isUnavailable = disabled || !resolvedSrc;
 
   useEffect(() => {
-    if (!src) {
+    if (!resolvedSrc) {
       setStatus("idle");
       return undefined;
     }
 
-    const audio = new Audio(src);
+    const audio = new Audio(resolvedSrc);
     audio.preload = "metadata";
     audioRef.current = audio;
 
@@ -66,7 +68,7 @@ export default function AudioPlayButton({
       audio.load();
       audioRef.current = null;
     };
-  }, [src]);
+  }, [resolvedSrc]);
 
   async function handlePlay() {
     const audio = audioRef.current;

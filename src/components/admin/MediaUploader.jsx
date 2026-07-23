@@ -6,6 +6,7 @@ import {
 } from "../../api/apiClient";
 import AppButton from "../ui/AppButton";
 import AppIcon from "../ui/AppIcon";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const inputStyle = {
   width: "100%",
@@ -58,6 +59,7 @@ export default function MediaUploader({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const isImage = type === "image";
+  const previewUrl = resolveMediaUrl(value);
 
   async function uploadSelectedFile() {
     if (!file) {
@@ -99,7 +101,7 @@ export default function MediaUploader({
 
       {isImage && value ? (
         <img
-          src={value}
+          src={previewUrl}
           alt=""
           style={{
             width: "100%",
@@ -112,7 +114,7 @@ export default function MediaUploader({
       ) : null}
 
       {!isImage && value ? (
-        <audio controls src={value} style={{ width: "100%" }}>
+        <audio controls src={previewUrl} style={{ width: "100%" }}>
           <track kind="captions" />
         </audio>
       ) : null}
