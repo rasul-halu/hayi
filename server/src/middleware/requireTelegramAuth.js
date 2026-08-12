@@ -23,12 +23,11 @@ export default async function requireTelegramAuth(req, res, next) {
 
     return next();
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        "Telegram auth middleware error:",
-        error.code || error.name || "UnknownError"
-      );
-    }
+    console.error("Telegram auth middleware error:", {
+      name: error?.name,
+      code: error?.code,
+      message: error?.message,
+    });
 
     return res.status(503).json({
       error: "Database is temporarily unavailable",

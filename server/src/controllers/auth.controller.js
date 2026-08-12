@@ -27,12 +27,11 @@ export async function authenticateTelegram(req, res, next) {
         user,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          "Database auth error:",
-          error.code || error.name || "UnknownError"
-        );
-      }
+      console.error("Database auth error:", {
+        name: error?.name,
+        code: error?.code,
+        message: error?.message,
+      });
 
       return res.status(503).json({
         error: "Database is temporarily unavailable",
