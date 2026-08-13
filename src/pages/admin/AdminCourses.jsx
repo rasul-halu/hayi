@@ -13,11 +13,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createAdminChapter,
+  createAdminCourse,
   createAdminLesson,
   duplicateAdminLesson,
   getAdminCourses,
   hasTelegramAuthData,
   updateAdminChapter,
+  updateAdminCourse,
   updateAdminLesson
 } from "../../api/apiClient";
 import AppButton from "../../components/ui/AppButton";
@@ -67,6 +69,23 @@ const emptyLessonForm = {
   imageUrl: ""
 };
 
+const emptyCourseForm = {
+  title: "",
+  description: "",
+  slug: "lezgian",
+  language: "lezgian",
+  order: "",
+  isPublished: false
+};
+
+function updateCourseInCourses(courses, updatedCourse) {
+  return courses.map(course =>
+    course.id === updatedCourse.id
+      ? updatedCourse
+      : course
+  );
+}
+
 function updateChapterInCourses(courses, updatedChapter) {
   return courses.map(course => ({
     ...course,
@@ -94,6 +113,8 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(isTelegramMode);
   const [error, setError] = useState("");
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState("");
   const [editingChapterId, setEditingChapterId] = useState("");
   const [creatingChapterCourseId, setCreatingChapterCourseId] = useState("");
   const [creatingLessonChapterId, setCreatingLessonChapterId] = useState("");
@@ -102,6 +123,7 @@ export default function AdminCourses() {
     description: "",
     order: 1
   });
+  const [courseForm, setCourseForm] = useState(emptyCourseForm);
   const [newChapterForm, setNewChapterForm] = useState(emptyChapterForm);
   const [newLessonForm, setNewLessonForm] = useState(emptyLessonForm);
   const [saveError, setSaveError] = useState("");
@@ -149,8 +171,36 @@ export default function AdminCourses() {
     });
   }
 
+  function startCreateCourse() {
+    setIsCreatingCourse(true);
+    setEditingCourseId("");
+    setCreatingChapterCourseId("");
+    setCreatingLessonChapterId("");
+    setSaveError("");
+    setActionMessage("");
+    setCourseForm(emptyCourseForm);
+  }
+
+  function startEditCourse(course) {
+    setEditingCourseId(course.id);
+    setIsCreatingCourse(false);
+    setCreatingChapterCourseId("");
+    setCreatingLessonChapterId("");
+    setSaveError("");
+    setActionMessage("");
+    setCourseForm({
+      title: course.title || "",
+      description: course.description || "",
+      slug: course.slug || "",
+      language: course.language || "lezgian",
+      order: course.order ?? 0,
+      isPublished: Boolean(course.isPublished)
+    });
+  }
+
   function startCreateChapter(courseId) {
     setCreatingChapterCourseId(courseId);
+    setIsCreatingCourse(false);
     setCreatingLessonChapterId("");
     setSaveError("");
     setActionMessage("");
@@ -159,10 +209,61 @@ export default function AdminCourses() {
 
   function startCreateLesson(chapterId) {
     setCreatingLessonChapterId(chapterId);
+    setIsCreatingCourse(false);
     setCreatingChapterCourseId("");
     setSaveError("");
     setActionMessage("");
     setNewLessonForm(emptyLessonForm);
+  }
+
+  async function saveNewCourse() {
+    setSavingAction("new-course");
+    setSaveError("");
+
+    try {
+      await createAdminCourse({
+        title: courseForm.title,
+        description: courseForm.description || null,
+        slug: courseForm.slug,
+        language: courseForm.language,
+        order: getOptionalNumber(courseForm.order),
+        isPublished: Boolean(courseForm.isPublished)
+      });
+
+      setIsCreatingCourse(false);
+      setCourseForm(emptyCourseForm);
+      setActionMessage("Курс создан.");
+      await loadCourses();
+    } catch (saveErrorValue) {
+      setSaveError(saveErrorValue.message || "Не удалось создать курс.");
+    } finally {
+      setSavingAction("");
+    }
+  }
+
+  async function saveCourse(courseId) {
+    setSavingAction(`course:${courseId}`);
+    setSaveError("");
+
+    try {
+      const data = await updateAdminCourse(courseId, {
+        title: courseForm.title,
+        description: courseForm.description || null,
+        language: courseForm.language,
+        order: Number(courseForm.order),
+        isPublished: Boolean(courseForm.isPublished)
+      });
+
+      setCourses(currentCourses =>
+        updateCourseInCourses(currentCourses, data.course)
+      );
+      setEditingCourseId("");
+      setActionMessage("Курс сохранён.");
+    } catch (saveErrorValue) {
+      setSaveError(saveErrorValue.message || "Не удалось сохранить курс.");
+    } finally {
+      setSavingAction("");
+    }
   }
 
   async function saveChapter(chapterId) {
@@ -305,6 +406,19 @@ export default function AdminCourses() {
         subtitle="Создание, дублирование и публикация учебного контента"
       />
 
+      {!isLoading && !error ? (
+        <AppButton
+          onClick={startCreateCourse}
+          variant="secondary"
+          style={{ marginTop: 14 }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <AppIcon icon={Plus} size={18} />
+            Создать курс
+          </span>
+        </AppButton>
+      ) : null}
+
       {isLoading ? (
         <AppCard style={{ ...cardStyle, marginTop: 18, textAlign: "center" }}>
           Загружаем курсы...
@@ -351,7 +465,33 @@ export default function AdminCourses() {
         </AppCard>
       ) : null}
 
+      {isCreatingCourse ? (
+        <CourseFormCard
+          title="Создать курс"
+          form={courseForm}
+          setForm={setCourseForm}
+          isSaving={savingAction === "new-course"}
+          onSave={saveNewCourse}
+          onCancel={() => setIsCreatingCourse(false)}
+          canEditSlug
+        />
+      ) : null}
+
       {!isLoading && !error && courses.length === 0 ? (
+        <AppCard style={{ ...cardStyle, marginTop: 18, textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 900 }}>
+            Курсов пока нет
+          </div>
+          <div style={{ color: "#6F746B", fontWeight: 800, marginTop: 8, lineHeight: 1.35 }}>
+            Создайте первый курс, чтобы начать добавлять главы и уроки.
+          </div>
+          <AppButton onClick={startCreateCourse} style={{ marginTop: 16 }}>
+            Создать курс
+          </AppButton>
+        </AppCard>
+      ) : null}
+
+      {false && !isLoading && !error && courses.length === 0 ? (
         <AppCard style={{ ...cardStyle, marginTop: 18, textAlign: "center" }}>
           Курсы пока не найдены.
         </AppCard>
@@ -380,6 +520,29 @@ export default function AdminCourses() {
               {course.isPublished ? "published" : "draft"}
             </span>
           </div>
+
+          {editingCourseId === course.id ? (
+            <CourseFormCard
+              title="Редактировать курс"
+              form={courseForm}
+              setForm={setCourseForm}
+              isSaving={savingAction === `course:${course.id}`}
+              onSave={() => saveCourse(course.id)}
+              onCancel={() => setEditingCourseId("")}
+              canEditSlug={false}
+            />
+          ) : (
+            <AppButton
+              onClick={() => startEditCourse(course)}
+              variant="secondary"
+              style={{ marginTop: 14 }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <AppIcon icon={Edit3} size={18} />
+                Редактировать курс
+              </span>
+            </AppButton>
+          )}
 
           <AppButton
             onClick={() => startCreateChapter(course.id)}
@@ -443,6 +606,28 @@ export default function AdminCourses() {
                 </AppButton>
               </div>
             </div>
+          ) : null}
+
+          {(course.chapters || []).length === 0 ? (
+            <AppCard
+              style={{
+                marginTop: 14,
+                background: "#F8FAF6",
+                border: "2px solid #E6E6E6",
+                boxShadow: "none",
+                textAlign: "center",
+                fontWeight: 900
+              }}
+            >
+              <div>В этом курсе пока нет глав</div>
+              <AppButton
+                onClick={() => startCreateChapter(course.id)}
+                variant="secondary"
+                style={{ marginTop: 12 }}
+              >
+                Добавить главу
+              </AppButton>
+            </AppCard>
           ) : null}
 
           {(course.chapters || []).map(chapter => (
@@ -631,6 +816,28 @@ export default function AdminCourses() {
                     </div>
                   ) : null}
 
+                  {(chapter.lessons || []).length === 0 ? (
+                    <AppCard
+                      style={{
+                        marginTop: 14,
+                        background: "#F8FAF6",
+                        border: "2px solid #E6E6E6",
+                        boxShadow: "none",
+                        textAlign: "center",
+                        fontWeight: 900
+                      }}
+                    >
+                      <div>В этой главе пока нет уроков</div>
+                      <AppButton
+                        onClick={() => startCreateLesson(chapter.id)}
+                        variant="secondary"
+                        style={{ marginTop: 12 }}
+                      >
+                        Добавить урок
+                      </AppButton>
+                    </AppCard>
+                  ) : null}
+
                   <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
                     {(chapter.lessons || []).map(lesson => (
                       <div
@@ -730,5 +937,84 @@ export default function AdminCourses() {
         </AppCard>
       ))}
     </PageContainer>
+  );
+}
+
+function CourseFormCard({
+  title,
+  form,
+  setForm,
+  isSaving,
+  onSave,
+  onCancel,
+  canEditSlug
+}) {
+  const update = (field, value) => {
+    setForm(current => ({
+      ...current,
+      [field]: value
+    }));
+  };
+
+  return (
+    <AppCard style={{ ...cardStyle, marginTop: 18 }}>
+      <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 12 }}>
+        {title}
+      </div>
+
+      <div style={{ display: "grid", gap: 10 }}>
+        <input
+          value={form.title}
+          onChange={event => update("title", event.target.value)}
+          style={inputStyle}
+          placeholder="Название курса"
+        />
+        <textarea
+          value={form.description}
+          onChange={event => update("description", event.target.value)}
+          style={{ ...inputStyle, minHeight: 86, resize: "vertical" }}
+          placeholder="Описание курса"
+        />
+        {canEditSlug ? (
+          <input
+            value={form.slug}
+            onChange={event => update("slug", event.target.value)}
+            style={inputStyle}
+            placeholder="slug, например lezgian"
+          />
+        ) : null}
+        <input
+          value={form.language}
+          onChange={event => update("language", event.target.value)}
+          style={inputStyle}
+          placeholder="Язык, например lezgian"
+        />
+        <input
+          type="number"
+          value={form.order}
+          onChange={event => update("order", event.target.value)}
+          style={inputStyle}
+          placeholder="Порядок"
+        />
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900 }}>
+          <input
+            type="checkbox"
+            checked={form.isPublished}
+            onChange={event => update("isPublished", event.target.checked)}
+            style={{ width: 22, height: 22 }}
+          />
+          Опубликован
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <AppButton onClick={onSave} disabled={isSaving}>
+            Сохранить
+          </AppButton>
+          <AppButton onClick={onCancel} variant="secondary" disabled={isSaving}>
+            Отмена
+          </AppButton>
+        </div>
+      </div>
+    </AppCard>
   );
 }

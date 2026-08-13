@@ -131,6 +131,30 @@ export async function getAdminCourses() {
   return courses.map(serializeCourse);
 }
 
+export async function createAdminCourse(data) {
+  const order = data.order ?? await getNextCourseOrder();
+
+  const course = await prisma.course.create({
+    data: {
+      slug: data.slug,
+      title: data.title,
+      description: data.description,
+      language: data.language,
+      isPublished: data.isPublished,
+      order,
+    },
+    include: {
+      chapters: {
+        include: {
+          lessons: true,
+        },
+      },
+    },
+  });
+
+  return serializeCourse(course);
+}
+
 export async function getAdminCourseById(courseId) {
   const course = await prisma.course.findUnique({
     where: {
@@ -146,6 +170,24 @@ export async function getAdminCourseById(courseId) {
   });
 
   return course ? serializeCourse(course) : null;
+}
+
+export async function updateAdminCourse(courseId, data) {
+  const course = await prisma.course.update({
+    where: {
+      id: courseId,
+    },
+    data,
+    include: {
+      chapters: {
+        include: {
+          lessons: true,
+        },
+      },
+    },
+  });
+
+  return serializeCourse(course);
 }
 
 export async function getAdminChapterById(chapterId) {
@@ -412,6 +454,16 @@ async function getNextChapterOrder(courseId, tx = prisma) {
     where: {
       courseId,
     },
+    _max: {
+      order: true,
+    },
+  });
+
+  return (result._max.order || 0) + 1;
+}
+
+async function getNextCourseOrder(tx = prisma) {
+  const result = await tx.course.aggregate({
     _max: {
       order: true,
     },

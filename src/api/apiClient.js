@@ -329,6 +329,20 @@ export async function getAdminCourses() {
   return adminJsonRequest("/admin/courses");
 }
 
+export async function createAdminCourse(data) {
+  return adminJsonRequest("/admin/courses", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function updateAdminCourse(courseId, data) {
+  return adminJsonRequest(`/admin/courses/${courseId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
 export async function getAdminDictionary() {
   return adminJsonRequest("/admin/dictionary");
 }

@@ -1,4 +1,5 @@
 import {
+  createAdminCourse,
   createAdminChapter,
   createAdminLesson,
   createAdminQuestion,
@@ -12,6 +13,7 @@ import {
   getAdminLessons,
   getAdminQuestionById,
   updateAdminChapter,
+  updateAdminCourse,
   updateAdminLesson,
   updateAdminQuestion,
 } from "../services/adminCourse.service.js";
@@ -92,6 +94,16 @@ function normalizeRequiredString(value, fieldName) {
   }
 
   return value.trim();
+}
+
+function normalizeSlug(value) {
+  const slug = normalizeRequiredString(value, "slug").toLowerCase();
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw createHttpError(400, "slug must contain lowercase latin letters, numbers, and hyphens");
+  }
+
+  return slug;
 }
 
 function normalizeInteger(value, fieldName, {
@@ -193,6 +205,41 @@ function getChapterPatch(body) {
     title: normalizeRequiredString(body.title, "title"),
     description: normalizeNullableString(body.description, "description"),
     order: normalizeInteger(body.order, "order"),
+  };
+}
+
+function getCoursePatch(body) {
+  if (!isPlainObject(body)) {
+    throw createHttpError(400, "Invalid course data");
+  }
+
+  return {
+    title: normalizeRequiredString(body.title, "title"),
+    description: normalizeNullableString(body.description, "description"),
+    language: normalizeRequiredString(body.language, "language"),
+    isPublished: normalizeBoolean(body.isPublished, "isPublished"),
+    order: normalizeInteger(body.order, "order", {
+      min: 0,
+    }),
+  };
+}
+
+function getCourseCreate(body) {
+  if (!isPlainObject(body)) {
+    throw createHttpError(400, "Invalid course data");
+  }
+
+  return {
+    slug: normalizeSlug(body.slug),
+    title: normalizeRequiredString(body.title, "title"),
+    description: normalizeNullableString(body.description, "description"),
+    language: normalizeRequiredString(body.language, "language"),
+    isPublished: body.isPublished === undefined
+      ? false
+      : normalizeBoolean(body.isPublished, "isPublished"),
+    order: normalizeOptionalInteger(body.order, "order", {
+      min: 0,
+    }),
   };
 }
 
@@ -316,6 +363,19 @@ export async function listAdminCourses(req, res, next) {
   }
 }
 
+export async function postAdminCourse(req, res, next) {
+  try {
+    const course = await createAdminCourse(getCourseCreate(req.body));
+
+    return res.status(201).json({
+      created: true,
+      course,
+    });
+  } catch (error) {
+    return handleAdminError(error, next);
+  }
+}
+
 export async function getAdminCourse(req, res, next) {
   try {
     const course = await getAdminCourseById(req.params.courseId);
@@ -331,6 +391,22 @@ export async function getAdminCourse(req, res, next) {
     });
   } catch (error) {
     return next(error);
+  }
+}
+
+export async function patchAdminCourse(req, res, next) {
+  try {
+    const course = await updateAdminCourse(
+      req.params.courseId,
+      getCoursePatch(req.body)
+    );
+
+    return res.json({
+      saved: true,
+      course,
+    });
+  } catch (error) {
+    return handleAdminError(error, next);
   }
 }
 

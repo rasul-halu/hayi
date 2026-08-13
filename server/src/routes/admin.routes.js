@@ -20,9 +20,11 @@ import {
   listAdminCourses,
   listAdminLessons,
   patchAdminChapter,
+  patchAdminCourse,
   patchAdminLesson,
   patchAdminQuestion,
   postAdminChapter,
+  postAdminCourse,
   postAdminLesson,
   postAdminQuestion,
   postDuplicateAdminLesson,
@@ -47,7 +49,9 @@ router.get("/dictionary/:wordId", getAdminDictionaryWord);
 router.patch("/dictionary/:wordId", patchAdminDictionaryWord);
 
 router.get("/courses", listAdminCourses);
+router.post("/courses", postAdminCourse);
 router.get("/courses/:courseId", getAdminCourse);
+router.patch("/courses/:courseId", patchAdminCourse);
 router.post("/courses/:courseId/chapters", postAdminChapter);
 
 router.get("/chapters/:chapterId", getAdminChapter);
