@@ -1,8 +1,8 @@
 import multer from "multer";
 import path from "path";
 
-const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
-const AUDIO_MAX_SIZE_BYTES = 12 * 1024 * 1024;
+const IMAGE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const AUDIO_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
 const IMAGE_MIME_TYPES = new Set([
   "image/jpeg",

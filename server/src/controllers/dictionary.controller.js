@@ -5,6 +5,7 @@ import {
   listPublishedDictionaryWords,
   updateDictionaryWord,
 } from "../services/dictionary.service.js";
+import { validateOptionalMediaUrl } from "../utils/mediaUrl.js";
 
 const MUTABLE_FIELDS = [
   "lezgian",
@@ -23,10 +24,10 @@ const OPTIONAL_STRING_FIELDS = [
   "transcription",
   "exampleLezgian",
   "exampleRussian",
-  "audioUrl",
-  "imageUrl",
   "category",
 ];
+
+const MEDIA_URL_FIELDS = ["audioUrl", "imageUrl"];
 
 function normalizeOptionalString(value) {
   if (value === undefined) {
@@ -80,6 +81,18 @@ function validateDictionaryPayload(body = {}, {
       data[field] = normalizeOptionalString(body[field]);
     }
   });
+
+  for (const field of MEDIA_URL_FIELDS) {
+    if (!partial || body[field] !== undefined) {
+      const mediaUrl = validateOptionalMediaUrl(body[field], field);
+
+      if (mediaUrl.error) {
+        return mediaUrl;
+      }
+
+      data[field] = mediaUrl.value;
+    }
+  }
 
   if (!partial || body.order !== undefined) {
     const order = Number(body.order ?? 0);

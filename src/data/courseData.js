@@ -13,7 +13,7 @@ export const course = {
       lessons: [
         {
           id: 1,
-          title: "Привет",
+          title: "Приветствие",
           description: "Учимся узнавать и переводить простые приветствия.",
           xpReward: 10,
 

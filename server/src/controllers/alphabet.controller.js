@@ -4,6 +4,7 @@ import {
   listPublishedAlphabetLetters,
   updateAlphabetLetter,
 } from "../services/alphabet.service.js";
+import { validateOptionalMediaUrl } from "../utils/mediaUrl.js";
 
 const MUTABLE_FIELDS = [
   "letter",
@@ -24,9 +25,9 @@ const OPTIONAL_STRING_FIELDS = [
   "description",
   "example",
   "exampleMeaning",
-  "audioUrl",
-  "imageUrl",
 ];
+
+const MEDIA_URL_FIELDS = ["audioUrl", "imageUrl"];
 
 function normalizeOptionalString(value) {
   if (value === undefined) return undefined;
@@ -56,6 +57,14 @@ function validateAlphabetPayload(body = {}, { partial = false } = {}) {
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (!partial || body[field] !== undefined) {
       data[field] = normalizeOptionalString(body[field]);
+    }
+  }
+
+  for (const field of MEDIA_URL_FIELDS) {
+    if (!partial || body[field] !== undefined) {
+      const mediaUrl = validateOptionalMediaUrl(body[field], field);
+      if (mediaUrl.error) return mediaUrl;
+      data[field] = mediaUrl.value;
     }
   }
 

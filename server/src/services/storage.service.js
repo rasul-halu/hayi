@@ -1,8 +1,14 @@
 import crypto from "crypto";
-import { v2 as cloudinary } from "cloudinary";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  getPublicS3ObjectUrl,
+  getS3Client,
+  getS3Configuration,
+  hasS3Configuration,
+} from "../lib/s3.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,13 +37,21 @@ function createHttpError(statusCode, message) {
 }
 
 function getStorageProvider() {
-  return process.env.MEDIA_STORAGE_PROVIDER || "local";
+  if (process.env.NODE_ENV === "production") {
+    return "s3";
+  }
+
+  const configuredProvider = process.env.MEDIA_STORAGE_PROVIDER?.trim();
+
+  if (configuredProvider) {
+    return configuredProvider;
+  }
+
+  return hasS3Configuration() ? "s3" : "local";
 }
 
 function getFileExtension(file) {
-  const originalExtension = path.extname(file.originalname || "").toLowerCase();
-
-  return originalExtension || EXTENSIONS_BY_MIME_TYPE[file.mimetype] || "";
+  return EXTENSIONS_BY_MIME_TYPE[file.mimetype] || "";
 }
 
 async function uploadLocalFile(file, folder) {
@@ -55,95 +69,81 @@ async function uploadLocalFile(file, folder) {
   });
   await writeFile(targetPath, file.buffer);
 
-  return `/uploads/${folder}/${fileName}`;
+  return {
+    url: `/uploads/${folder}/${fileName}`,
+    key: `${folder}/${fileName}`,
+  };
 }
 
-function configureCloudinary() {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw createHttpError(500, "Media storage provider is not configured");
-  }
-
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-    secure: true,
-  });
-}
-
-function uploadCloudinaryFile(file, {
-  folder,
-  resourceType,
-}) {
+async function uploadS3File(file, folder) {
   if (!file?.buffer) {
     throw createHttpError(400, "No file uploaded");
   }
 
-  configureCloudinary();
+  const extension = getFileExtension(file);
+  const key = `${folder}/${crypto.randomUUID()}${extension}`;
+  const { bucket } = getS3Configuration();
 
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: `hayi/${folder}`,
-        resource_type: resourceType,
-        use_filename: false,
-        unique_filename: true,
-        overwrite: false,
-      },
-      (error, result) => {
-        if (error) {
-          reject(createHttpError(500, "Upload failed"));
-          return;
-        }
+  try {
+    await getS3Client().send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      CacheControl: "public, max-age=31536000, immutable",
+    }));
+  } catch (error) {
+    console.error("S3 media upload error:", {
+      name: error?.name,
+      code: error?.code,
+      status: error?.$metadata?.httpStatusCode,
+      message: error?.message,
+    });
 
-        resolve(result.secure_url);
-      }
-    );
+    const uploadError = createHttpError(503, "Media upload failed");
+    uploadError.code = "S3_UPLOAD_FAILED";
+    uploadError.expose = true;
+    throw uploadError;
+  }
 
-    uploadStream.end(file.buffer);
-  });
+  return {
+    url: getPublicS3ObjectUrl(key),
+    key,
+  };
 }
 
 async function uploadFile(file, {
   folder,
-  resourceType,
 }) {
   const provider = getStorageProvider();
 
-  if (provider === "cloudinary") {
-    return uploadCloudinaryFile(file, {
-      folder,
-      resourceType,
-    });
+  if (provider === "s3") {
+    return uploadS3File(file, folder);
   }
 
-  if (provider === "local") {
+  if (provider === "local" && process.env.NODE_ENV !== "production") {
     return uploadLocalFile(file, folder);
   }
 
-  throw createHttpError(500, "Media storage provider is not configured");
+  const error = createHttpError(503, "Media storage provider is not configured");
+  error.expose = true;
+  throw error;
 }
 
 export async function uploadImage(file) {
   return uploadFile(file, {
     folder: "images",
-    resourceType: "image",
   });
 }
 
 export async function uploadAudio(file) {
   return uploadFile(file, {
     folder: "audio",
-    resourceType: "video",
   });
 }
 
 export async function deleteFile(fileUrl) {
-  // TODO: implement physical deletion when a persistent media provider is added.
+  // TODO: add explicit S3 object deletion when media lifecycle management is needed.
   return {
     deleted: false,
     fileUrl,

@@ -18,6 +18,7 @@ import progressRouter from "./routes/progress.routes.js";
 import statsRouter from "./routes/stats.routes.js";
 import userRouter from "./routes/user.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
+import { assertS3Configuration } from "./lib/s3.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -25,6 +26,10 @@ const CLIENT_URL = process.env.CLIENT_URL;
 const isProduction = process.env.NODE_ENV === "production";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+assertS3Configuration({
+  required: isProduction,
+});
 
 function normalizeOrigin(origin) {
   return origin?.replace(/\/$/, "");
@@ -56,7 +61,9 @@ app.use(
     origin: corsOrigin,
   })
 );
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+if (!isProduction) {
+  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+}
 
 app.use("/api", healthRouter);
 app.use("/api/admin/media", adminMediaRouter);

@@ -20,10 +20,11 @@ CLIENT_URL=https://FRONTEND_URL.vercel.app
 DATABASE_URL=Neon connection string
 TELEGRAM_BOT_TOKEN=BotFather token
 ADMIN_TELEGRAM_IDS=your_telegram_id
-MEDIA_STORAGE_PROVIDER=cloudinary
-CLOUDINARY_CLOUD_NAME=Cloudinary cloud name
-CLOUDINARY_API_KEY=Cloudinary API key
-CLOUDINARY_API_SECRET=Cloudinary API secret
+S3_ENDPOINT=https://s3.twcstorage.ru
+S3_REGION=ru-1
+S3_BUCKET=Timeweb public bucket name
+S3_ACCESS_KEY=Timeweb S3 access key
+S3_SECRET_KEY=Timeweb S3 secret key
 ```
 
 `PORT` can usually be omitted because Render provides it. The server still
@@ -42,17 +43,17 @@ should receive the `ADMIN` role when they sign in through Telegram. Do not
 commit real ids if you do not want them public; set them in Render environment
 variables instead.
 
-Media uploads use `server/src/services/storage.service.js`. For production on
-Render, set `MEDIA_STORAGE_PROVIDER=cloudinary` and fill the Cloudinary env
-variables. Uploaded images and audio will be stored in Cloudinary folders under
-`hayi/`.
+Media uploads use `server/src/services/storage.service.js`. In production the
+backend always uploads file buffers to the configured Timeweb S3 bucket and
+stores permanent public HTTPS URLs such as
+`https://s3.twcstorage.ru/<bucket>/audio/<object>.mp3`. The bucket must be public
+for lesson media to open without signed URLs. Never expose `S3_ACCESS_KEY` or
+`S3_SECRET_KEY` in the frontend.
 
-For local development without Cloudinary, use `MEDIA_STORAGE_PROVIDER=local`.
-Local uploads are saved under `server/uploads`, and the database stores relative
-paths such as `/uploads/audio/file.mp3`. The frontend turns those paths into
-absolute URLs using `REACT_APP_API_URL`. Render's filesystem is not persistent
-across redeploys/restarts unless a persistent disk is explicitly configured, so
-do not use local storage as the final production media provider.
+For local development without S3 credentials, use
+`MEDIA_STORAGE_PROVIDER=local`. Local uploads are saved under `server/uploads`
+and served only when `NODE_ENV` is not `production`. This compatibility mode is
+not used by the production App Platform deployment.
 
 ## Frontend: Vercel
 

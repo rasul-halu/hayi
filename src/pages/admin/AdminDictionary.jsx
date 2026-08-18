@@ -393,13 +393,13 @@ export default function AdminDictionary() {
               label="audioUrl"
               value={form.audioUrl}
               onChange={value => updateForm("audioUrl", value)}
-              placeholder="/uploads/audio/salam.mp3"
+              placeholder="https://s3.twcstorage.ru/bucket/audio/file.mp3"
             />
             <Field
               label="imageUrl"
               value={form.imageUrl}
               onChange={value => updateForm("imageUrl", value)}
-              placeholder="/uploads/images/salam.png"
+              placeholder="https://s3.twcstorage.ru/bucket/images/file.png"
             />
 
             <label

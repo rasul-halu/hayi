@@ -56,6 +56,10 @@ function normalizeNullableMediaUrl(value, fieldName) {
   const trimmedValue = normalizedValue.trim();
 
   if (trimmedValue.startsWith("/uploads/")) {
+    if (process.env.NODE_ENV === "production") {
+      throw createHttpError(400, `${fieldName} must be a public HTTPS URL`);
+    }
+
     return trimmedValue;
   }
 
