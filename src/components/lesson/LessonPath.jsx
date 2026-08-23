@@ -1,14 +1,20 @@
 import LessonNode from "./LessonNode";
+import {
+  getCourseLessonProgress,
+  getLessonState
+} from "../../utils/lessonProgress";
 
-export default function LessonPath() {
-
-  const lessons = [
-    { id: 1, active: false },
-    { id: 2, active: false },
-    { id: 3, active: true },
-    { id: 4, locked: true },
-    { id: 5, locked: true }
-  ];
+export default function LessonPath({
+  lessons = [],
+  completedLessonIds = [],
+  isLoading = false,
+  onLessonAttempt
+}) {
+  const progress = getCourseLessonProgress({
+    lessons,
+    completedLessonIds,
+    isLoading
+  });
 
   return (
     <div
@@ -30,8 +36,9 @@ export default function LessonPath() {
           }}
         >
           <LessonNode
-            active={lesson.active}
-            locked={lesson.locked}
+            lesson={lesson}
+            state={getLessonState(progress, lesson.id)}
+            onLessonAttempt={onLessonAttempt}
           />
         </div>
 

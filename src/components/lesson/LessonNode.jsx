@@ -4,38 +4,41 @@ import {
   Play
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LESSON_STATE } from "../../utils/lessonProgress";
 import AppIcon from "../ui/AppIcon";
 
 export default function LessonNode({
   lesson,
-  unlocked,
-  completed,
+  state = LESSON_STATE.LOCKED,
   onLessonAttempt
 }) {
   const navigate = useNavigate();
+  const completed = state === LESSON_STATE.COMPLETED;
+  const available = state === LESSON_STATE.AVAILABLE;
+  const canOpen = completed || available;
 
   const background = completed
     ? "#58CC02"
-    : unlocked
+    : available
       ? "#FFD43B"
       : "#777";
 
   const shadow = completed
     ? "#46A400"
-    : unlocked
+    : available
       ? "#E0B900"
       : "#555";
 
   const Icon = completed
     ? Check
-    : unlocked
+    : available
       ? Play
       : Lock;
 
   return (
     <button
       onClick={() => {
-        if (unlocked) {
+        if (canOpen) {
           if (onLessonAttempt) {
             void onLessonAttempt(lesson.id);
             return;
@@ -44,6 +47,8 @@ export default function LessonNode({
           navigate(`/lesson/${lesson.id}`);
         }
       }}
+      disabled={!canOpen}
+      type="button"
       style={{
         width: 82,
         height: 82,
@@ -54,15 +59,15 @@ export default function LessonNode({
         alignItems: "center",
         justifyContent: "center",
         cursor:
-          unlocked
+          canOpen
             ? "pointer"
             : "default",
-        color: completed || !unlocked
+        color: completed || !available
           ? "#FFFFFF"
           : "#4B4B4B",
         boxShadow: `0 7px 0 ${shadow}`
       }}
-      aria-label={lesson.title}
+      aria-label={lesson?.title || "Урок"}
     >
       <AppIcon
         icon={Icon}

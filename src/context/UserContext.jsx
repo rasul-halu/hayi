@@ -16,7 +16,6 @@ import {
   recordCorrectAnswer,
   recordWrongAnswer
 } from "../api/apiClient";
-import { getNextLessonId } from "../data/courseHelpers";
 import {
   calculateCurrentStreak,
   calculateLongestStreak,
@@ -466,6 +465,11 @@ export function UserProvider({ children }) {
       : "guest"
   );
   const [authError, setAuthError] = useState("");
+  const [progressStatus, setProgressStatus] = useState(
+    () => hasTelegramAuthData()
+      ? "loading"
+      : "ready"
+  );
   const [user, setUser] = useState(getInitialUser);
   const userRef = useRef(user);
 
@@ -634,36 +638,39 @@ export function UserProvider({ children }) {
 
   const loadProgressFromServer = useCallback(async () => {
     if (!hasTelegramAuthData()) {
+      setProgressStatus("ready");
       return null;
     }
 
-    const data = await getProgress();
-    const completedLessonIds = (data.progress || [])
-      .filter(item => item.completed)
-      .map(item => Number(item.lessonId))
-      .filter(item =>
-        Number.isInteger(item) &&
-        item > 0
+    setProgressStatus("loading");
+    setUser(prev => {
+      return {
+        ...prev,
+        completedLessonIds: [],
+        completedLessons: 0
+      };
+    });
+
+    try {
+      const data = await getProgress();
+      const completedLessonIds = normalizeIdList(
+        (data.progress || [])
+          .filter(item => item.completed)
+          .map(item => item.lessonId)
       );
 
-    if (completedLessonIds.length > 0) {
-      setUser(prev => {
-        const nextCompletedLessonIds = [
-          ...new Set([
-            ...normalizeIdList(prev.completedLessonIds),
-            ...completedLessonIds
-          ])
-        ];
+      setUser(prev => ({
+        ...prev,
+        completedLessonIds,
+        completedLessons: completedLessonIds.length
+      }));
+      setProgressStatus("ready");
 
-        return {
-          ...prev,
-          completedLessonIds: nextCompletedLessonIds,
-          completedLessons: nextCompletedLessonIds.length
-        };
-      });
+      return data.progress;
+    } catch (error) {
+      setProgressStatus("error");
+      throw error;
     }
-
-    return data.progress;
   }, []);
 
   const loginWithTelegramUser = useCallback((telegramUser) => {
@@ -673,7 +680,9 @@ export function UserProvider({ children }) {
     setUser(prev => ({
       ...prev,
       ...appUser,
-      avatarUrl: appUser.avatarUrl || prev.avatarUrl || ""
+      avatarUrl: appUser.avatarUrl || prev.avatarUrl || "",
+      completedLessonIds: [],
+      completedLessons: 0
     }));
     setAuthStatus("authenticated");
     setAuthError("");
@@ -798,11 +807,6 @@ export function UserProvider({ children }) {
         prev.completedLessonIds
       );
 
-      const unlockedLessonIds = normalizeIdList(
-        prev.unlockedLessonIds,
-        DEFAULT_USER.unlockedLessonIds
-      );
-
       if (completedLessonIds.includes(safeLessonId)) {
         return {
           ...prev,
@@ -817,31 +821,14 @@ export function UserProvider({ children }) {
             DEFAULT_USER.longestStreak
           ),
           completedLessonIds,
-          unlockedLessonIds,
           completedLessons: completedLessonIds.length,
-          unlockedLessons: unlockedLessonIds.length
         };
       }
-
-      const nextLessonId =
-        typeof safeLessonId === "number"
-          ? getNextLessonId(safeLessonId)
-          : undefined;
 
       const nextCompletedLessonIds = [
         ...completedLessonIds,
         safeLessonId
       ];
-
-      const nextUnlockedLessonIds =
-        nextLessonId
-          ? [
-              ...new Set([
-                ...unlockedLessonIds,
-                nextLessonId
-              ])
-            ]
-          : unlockedLessonIds;
 
       return {
         ...prev,
@@ -859,12 +846,8 @@ export function UserProvider({ children }) {
         ),
         completedLessonIds:
           nextCompletedLessonIds,
-        unlockedLessonIds:
-          nextUnlockedLessonIds,
         completedLessons:
           nextCompletedLessonIds.length,
-        unlockedLessons:
-          nextUnlockedLessonIds.length
       };
     });
   }, []);
@@ -880,45 +863,23 @@ export function UserProvider({ children }) {
       const completedLessonIds = normalizeIdList(
         prev.completedLessonIds
       );
-      const unlockedLessonIds = normalizeIdList(
-        prev.unlockedLessonIds,
-        DEFAULT_USER.unlockedLessonIds
-      );
-
       if (completedLessonIds.includes(safeLessonId)) {
         return {
           ...prev,
           completedLessonIds,
-          unlockedLessonIds,
           completedLessons: completedLessonIds.length,
-          unlockedLessons: unlockedLessonIds.length
         };
       }
 
-      const nextLessonId =
-        typeof safeLessonId === "number"
-          ? getNextLessonId(safeLessonId)
-          : undefined;
       const nextCompletedLessonIds = [
         ...completedLessonIds,
         safeLessonId
       ];
-      const nextUnlockedLessonIds =
-        nextLessonId
-          ? [
-              ...new Set([
-                ...unlockedLessonIds,
-                nextLessonId
-              ])
-            ]
-          : unlockedLessonIds;
 
       return {
         ...prev,
         completedLessonIds: nextCompletedLessonIds,
-        unlockedLessonIds: nextUnlockedLessonIds,
         completedLessons: nextCompletedLessonIds.length,
-        unlockedLessons: nextUnlockedLessonIds.length
       };
     });
   }, []);
@@ -1200,9 +1161,10 @@ export function UserProvider({ children }) {
         lessonId: String(lessonId)
       });
 
-      cacheCompletedLessonById(lessonId);
+      if (data.progress?.completed) {
+        cacheCompletedLessonById(lessonId);
+      }
       syncStatsFromServer(data.stats);
-      markLessonCompletedToday();
 
       return data;
     } catch (error) {
@@ -1217,9 +1179,6 @@ export function UserProvider({ children }) {
           error.message
         );
       }
-
-      completeLessonById(lessonId, xpReward);
-      markLessonCompletedToday();
 
       return null;
     }
@@ -1265,6 +1224,7 @@ export function UserProvider({ children }) {
         setUser,
         authStatus,
         authError,
+        progressStatus,
         login,
         loginWithTelegramUser,
         authenticateTelegramUser,

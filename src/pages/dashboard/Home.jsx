@@ -25,42 +25,20 @@ import { useUser } from "../../context/UserContext";
 import { getCourseChapters } from "../../data/courseHelpers";
 import { mapApiCourseToFrontendCourse } from "../../utils/courseApiAdapters";
 import { getUserInitials } from "../../utils/userAvatar";
+import {
+  getCourseLessonProgress,
+  getLessonState,
+  LESSON_STATE
+} from "../../utils/lessonProgress";
 import mainMascot from "../../assets/mascot/thing.png";
 
-function normalizeLessonId(id) {
-  const numericId = Number(id);
-
-  if (Number.isInteger(numericId) && numericId > 0) {
-    return numericId;
-  }
-
-  if (typeof id === "string" && id.trim().length > 0) {
-    return id.trim();
-  }
-
-  return undefined;
-}
-
-function lessonIdListIncludes(list, lessonId) {
-  const normalizedLessonId = normalizeLessonId(lessonId);
-
-  return normalizedLessonId !== undefined &&
-    list.some(id => normalizeLessonId(id) === normalizedLessonId);
-}
-
 export default function Home() {
-  const { user, refreshHearts } = useUser();
+  const { user, refreshHearts, progressStatus } = useUser();
   const navigate = useNavigate();
   const [chapters, setChapters] = useState([]);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [courseError, setCourseError] = useState("");
   const [isNoHeartsModalOpen, setIsNoHeartsModalOpen] = useState(false);
-  const unlockedLessonIds = useMemo(
-    () => Array.isArray(user.unlockedLessonIds)
-      ? user.unlockedLessonIds
-      : [],
-    [user.unlockedLessonIds]
-  );
   const completedLessonIds = useMemo(
     () => Array.isArray(user.completedLessonIds)
       ? user.completedLessonIds
@@ -78,20 +56,24 @@ export default function Home() {
     () => chapters.flatMap(chapter => chapter.lessons || []),
     [chapters]
   );
+  const isProgressLoading =
+    user.authProvider === "telegram" &&
+    progressStatus === "loading";
+  const isHomeLoading = isCourseLoading || isProgressLoading;
+  const courseProgress = useMemo(
+    () => getCourseLessonProgress({
+      lessons: allLessons,
+      completedLessonIds,
+      isLoading: isHomeLoading
+    }),
+    [allLessons, completedLessonIds, isHomeLoading]
+  );
 
   const nextLesson = useMemo(() => {
-    return allLessons.find(lesson => {
-      const lessonId = normalizeLessonId(lesson.id);
-      return (
-        lessonIdListIncludes(unlockedLessonIds, lessonId) &&
-        !lessonIdListIncludes(completedLessonIds, lessonId)
-      );
-    }) ||
-      allLessons.find(lesson =>
-        lessonIdListIncludes(unlockedLessonIds, lesson.id)
-      ) ||
-      allLessons[0];
-  }, [allLessons, completedLessonIds, unlockedLessonIds]);
+    return allLessons.find(lesson =>
+      getLessonState(courseProgress, lesson.id) === LESSON_STATE.AVAILABLE
+    ) || null;
+  }, [allLessons, courseProgress]);
 
   const currentChapter = useMemo(() => {
     if (chapters.length === 0) {
@@ -100,10 +82,10 @@ export default function Home() {
 
     return chapters.find(chapter =>
       (chapter.lessons || []).some(lesson =>
-        !lessonIdListIncludes(completedLessonIds, lesson.id)
+        getLessonState(courseProgress, lesson.id) !== LESSON_STATE.COMPLETED
       )
     ) || chapters[chapters.length - 1];
-  }, [chapters, completedLessonIds]);
+  }, [chapters, courseProgress]);
 
   const currentChapterIndex = Math.max(
     chapters.findIndex(chapter => chapter.id === currentChapter?.id),
@@ -111,24 +93,16 @@ export default function Home() {
   );
   const currentChapterLessons = currentChapter?.lessons || [];
   const completedLessonsInChapter = currentChapterLessons.filter(lesson =>
-    lessonIdListIncludes(completedLessonIds, lesson.id)
+    getLessonState(courseProgress, lesson.id) === LESSON_STATE.COMPLETED
   ).length;
   const totalLessonsInChapter = currentChapterLessons.length;
   const chapterProgressPercent = totalLessonsInChapter > 0
     ? Math.round((completedLessonsInChapter / totalLessonsInChapter) * 100)
     : 0;
-  const isCourseComplete =
-    allLessons.length > 0 &&
-    completedLessonIds.length >= allLessons.length;
-  const continueLesson =
-    currentChapterLessons.find(lesson =>
-      !lessonIdListIncludes(completedLessonIds, lesson.id) &&
-      lessonIdListIncludes(unlockedLessonIds, lesson.id)
-    ) ||
-    currentChapterLessons.find(lesson =>
-      !lessonIdListIncludes(completedLessonIds, lesson.id)
-    ) ||
-    nextLesson;
+  const isCourseComplete = courseProgress.isCourseComplete;
+  const continueLesson = isCourseComplete
+    ? allLessons[0] || null
+    : nextLesson;
 
   const loadCourse = useCallback(async () => {
     setIsCourseLoading(true);
@@ -192,7 +166,7 @@ export default function Home() {
     setIsNoHeartsModalOpen(true);
   }, [navigate, refreshHearts, user.hearts]);
 
-  const shouldShowCourseContent = !isCourseLoading && !courseError;
+  const shouldShowCourseContent = !isHomeLoading && !courseError;
 
   return (
     <PageContainer
@@ -342,7 +316,7 @@ export default function Home() {
             >
               Текущий курс
             </p>
-            {isCourseLoading ? (
+            {isHomeLoading ? (
               <>
                 <h2
                   style={{
@@ -439,7 +413,7 @@ export default function Home() {
         >
           <div
             style={{
-              width: isCourseLoading
+              width: isHomeLoading
                 ? "34%"
                 : `${Math.min(chapterProgressPercent, 100)}%`,
               height: "100%",
@@ -449,7 +423,7 @@ export default function Home() {
           />
         </div>
 
-        {!isCourseLoading ? (
+        {!isHomeLoading && courseProgress.totalPublishedLessons > 0 ? (
           <AppButton
             onClick={() => {
               if (continueLesson) {
@@ -506,8 +480,8 @@ export default function Home() {
 
           <div style={{ marginTop: 20 }}>
             {chapter.lessons.map((lesson, index) => {
-              const unlocked = lessonIdListIncludes(unlockedLessonIds, lesson.id);
-              const completed = lessonIdListIncludes(completedLessonIds, lesson.id);
+              const lessonState = getLessonState(courseProgress, lesson.id);
+              const canOpen = lessonState !== LESSON_STATE.LOCKED;
 
               return (
                 <div
@@ -529,15 +503,14 @@ export default function Home() {
                   >
                     <LessonNode
                       lesson={lesson}
-                      unlocked={unlocked}
-                      completed={completed}
+                      state={lessonState}
                       onLessonAttempt={handleLessonAttempt}
                     />
 
                     <div
                       style={{
                         marginTop: 10,
-                        color: unlocked ? "#2D2D2D" : "#8A8A8A",
+                        color: canOpen ? "#2D2D2D" : "#8A8A8A",
                         fontSize: 14,
                         fontWeight: 900,
                         textAlign: index % 2 === 0 ? "left" : "right",
