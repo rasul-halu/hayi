@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { highlightNewWords } from "../../utils/highlightNewWords";
+import {
+  createMatchLayout,
+  getMatchCompletionValue
+} from "../../utils/matchQuestion";
 
 const WRONG_PAIR_TIMEOUT = 650;
 const CORRECT_PAIR_TIMEOUT = 650;
@@ -11,38 +15,28 @@ export default function MatchQuestion({
 }) {
   const setSelectedRef = useRef(setSelected);
   const correctPairTimeoutRef = useRef(null);
-  const [activeWord, setActiveWord] = useState(null);
-  const [matches, setMatches] = useState({});
+  const layoutRef = useRef(null);
+  const [activeLeftId, setActiveLeftId] = useState(null);
+  const [matchedPairIds, setMatchedPairIds] = useState([]);
   const [wrongPair, setWrongPair] = useState(null);
-  const [recentlyMatchedPair, setRecentlyMatchedPair] = useState(null);
+  const [recentlyMatchedPairId, setRecentlyMatchedPairId] = useState(null);
 
   useEffect(() => {
     setSelectedRef.current = setSelected;
   }, [setSelected]);
 
-  const pairs = useMemo(
-    () => question?.pairs || [],
-    [question?.pairs]
-  );
+  const layoutKey = question?.id ?? question;
 
-  const translations = useMemo(
-    () => question?.translations || pairs.map(pair => pair.translation),
-    [question?.translations, pairs]
-  );
+  if (!layoutRef.current || layoutRef.current.key !== layoutKey) {
+    layoutRef.current = {
+      key: layoutKey,
+      value: createMatchLayout(question)
+    };
+  }
 
-  const correctByWord = useMemo(
-    () =>
-      pairs.reduce((result, pair) => ({
-        ...result,
-        [pair.word]: pair.translation
-      }), {}),
-    [pairs]
-  );
-
-  const matchedTranslations = useMemo(
-    () => Object.values(matches),
-    [matches]
-  );
+  const layout = layoutRef.current.value;
+  const { pairs, leftItems, rightItems } = layout;
+  const completionValue = getMatchCompletionValue(question);
 
   useEffect(() => {
     if (correctPairTimeoutRef.current) {
@@ -50,38 +44,31 @@ export default function MatchQuestion({
       correctPairTimeoutRef.current = null;
     }
 
-    setActiveWord(null);
-    setMatches({});
+    setActiveLeftId(null);
+    setMatchedPairIds([]);
     setWrongPair(null);
-    setRecentlyMatchedPair(null);
+    setRecentlyMatchedPairId(null);
     setSelectedRef.current(null);
-  }, [question?.id]);
+  }, [layoutKey]);
 
-  useEffect(() => {
-    return () => {
-      if (correctPairTimeoutRef.current) {
-        clearTimeout(correctPairTimeoutRef.current);
-      }
-    };
+  useEffect(() => () => {
+    if (correctPairTimeoutRef.current) {
+      clearTimeout(correctPairTimeoutRef.current);
+    }
   }, []);
 
   useEffect(() => {
     const isComplete =
       pairs.length > 0 &&
-      pairs.every(pair => matches[pair.word] === pair.translation);
+      pairs.every(pair => matchedPairIds.includes(pair.id));
 
-    if (!isComplete || recentlyMatchedPair) {
+    if (!isComplete || recentlyMatchedPairId) {
       setSelectedRef.current(null);
       return;
     }
 
-    setSelectedRef.current(
-      question?.correct ||
-        pairs
-          .map(pair => `${pair.word}:${matches[pair.word]}`)
-          .join("|")
-    );
-  }, [matches, pairs, question?.correct, recentlyMatchedPair]);
+    setSelectedRef.current(completionValue);
+  }, [completionValue, matchedPairIds, pairs, recentlyMatchedPairId]);
 
   useEffect(() => {
     if (!wrongPair) {
@@ -110,29 +97,33 @@ export default function MatchQuestion({
     );
   }
 
-  const chooseWord = (word) => {
-    if (disabled || matches[word]) {
+  const chooseLeft = (item) => {
+    if (disabled || matchedPairIds.includes(item.pairId)) {
       return;
     }
 
-    setActiveWord(word);
+    setActiveLeftId(item.id);
   };
 
-  const chooseTranslation = (translation) => {
-    if (disabled || !activeWord || matchedTranslations.includes(translation)) {
+  const chooseRight = (item) => {
+    const activeLeft = leftItems.find(leftItem => leftItem.id === activeLeftId);
+
+    if (
+      disabled ||
+      !activeLeft ||
+      matchedPairIds.includes(item.pairId)
+    ) {
       return;
     }
 
-    if (correctByWord[activeWord] === translation) {
-      setMatches(prev => ({
-        ...prev,
-        [activeWord]: translation
-      }));
-      setRecentlyMatchedPair({
-        word: activeWord,
-        translation
-      });
-      setActiveWord(null);
+    if (activeLeft.pairId === item.pairId) {
+      setMatchedPairIds(current => (
+        current.includes(item.pairId)
+          ? current
+          : [...current, item.pairId]
+      ));
+      setRecentlyMatchedPairId(item.pairId);
+      setActiveLeftId(null);
       setWrongPair(null);
 
       if (correctPairTimeoutRef.current) {
@@ -140,7 +131,7 @@ export default function MatchQuestion({
       }
 
       correctPairTimeoutRef.current = setTimeout(() => {
-        setRecentlyMatchedPair(null);
+        setRecentlyMatchedPairId(null);
         correctPairTimeoutRef.current = null;
       }, CORRECT_PAIR_TIMEOUT);
 
@@ -148,17 +139,55 @@ export default function MatchQuestion({
     }
 
     setWrongPair({
-      word: activeWord,
-      translation
+      leftId: activeLeft.id,
+      rightId: item.id
     });
-    setActiveWord(null);
+    setActiveLeftId(null);
   };
 
-  const isWrongWord = (word) => wrongPair?.word === word;
-  const isWrongTranslation = (translation) => wrongPair?.translation === translation;
-  const isRecentlyMatchedWord = (word) => recentlyMatchedPair?.word === word;
-  const isRecentlyMatchedTranslation = (translation) =>
-    recentlyMatchedPair?.translation === translation;
+  function getItemStyle({ active, wrong, correctFlash, matched }) {
+    const matchedDisabled = matched && !correctFlash;
+
+    return {
+      width: "100%",
+      minHeight: 58,
+      padding: "12px 10px",
+      marginBottom: 10,
+      borderRadius: 16,
+      border: wrong
+        ? "3px solid #F06A6A"
+        : correctFlash
+          ? "3px solid #46A400"
+          : active
+            ? "3px solid #58CC02"
+            : matchedDisabled
+              ? "2px solid #D9D9D9"
+              : "2px solid #E6E6E6",
+      background: wrong
+        ? "#FFF0F0"
+        : correctFlash
+          ? "#E9F8DD"
+          : matchedDisabled
+            ? "#EFEFEF"
+            : "#FFFFFF",
+      color: matchedDisabled ? "#8A8A8A" : "#4B4B4B",
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: matched || disabled ? "default" : "pointer",
+      boxShadow: wrong
+        ? "0 5px 0 #E6A0A0"
+        : correctFlash
+          ? "0 5px 0 #46A400"
+          : active
+            ? "0 5px 0 #58CC02"
+            : matchedDisabled
+              ? "0 5px 0 #CFCFCF"
+              : "0 5px 0 #D9D9D9",
+      opacity: matchedDisabled ? 0.72 : 1,
+      transition:
+        "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease"
+    };
+  }
 
   return (
     <>
@@ -184,113 +213,46 @@ export default function MatchQuestion({
         }}
       >
         <div>
-          {pairs.map(pair => {
-            const matched = Boolean(matches[pair.word]);
-            const active = activeWord === pair.word;
-            const wrong = isWrongWord(pair.word);
-            const correctFlash = isRecentlyMatchedWord(pair.word);
-            const matchedDisabled = matched && !correctFlash;
+          {leftItems.map(item => {
+            const matched = matchedPairIds.includes(item.pairId);
 
             return (
               <button
-                key={pair.word}
+                key={item.id}
+                type="button"
                 disabled={matched || disabled}
-                onClick={() => chooseWord(pair.word)}
-                style={{
-                  width: "100%",
-                  minHeight: 58,
-                  padding: "12px 10px",
-                  marginBottom: 10,
-                  borderRadius: 16,
-                  border: wrong
-                    ? "3px solid #F06A6A"
-                    : correctFlash
-                      ? "3px solid #46A400"
-                      : active
-                        ? "3px solid #58CC02"
-                        : matchedDisabled
-                          ? "2px solid #D9D9D9"
-                          : "2px solid #E6E6E6",
-                  background: wrong
-                    ? "#FFF0F0"
-                    : correctFlash
-                      ? "#E9F8DD"
-                      : matchedDisabled
-                        ? "#EFEFEF"
-                        : "#FFFFFF",
-                  color: matchedDisabled ? "#8A8A8A" : "#4B4B4B",
-                  fontSize: 15,
-                  fontWeight: 900,
-                  cursor: matched || disabled ? "default" : "pointer",
-                  boxShadow: wrong
-                    ? "0 5px 0 #E6A0A0"
-                    : correctFlash
-                      ? "0 5px 0 #46A400"
-                      : active
-                        ? "0 5px 0 #58CC02"
-                        : matchedDisabled
-                          ? "0 5px 0 #CFCFCF"
-                          : "0 5px 0 #D9D9D9",
-                  opacity: matchedDisabled ? 0.72 : 1,
-                  transition:
-                    "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease"
-                }}
+                onClick={() => chooseLeft(item)}
+                style={getItemStyle({
+                  active: activeLeftId === item.id,
+                  wrong: wrongPair?.leftId === item.id,
+                  correctFlash: recentlyMatchedPairId === item.pairId,
+                  matched
+                })}
               >
-                {highlightNewWords(pair.word, question)}
+                {highlightNewWords(item.text, question)}
               </button>
             );
           })}
         </div>
 
         <div>
-          {translations.map(translation => {
-            const matched = matchedTranslations.includes(translation);
-            const wrong = isWrongTranslation(translation);
-            const correctFlash = isRecentlyMatchedTranslation(translation);
-            const matchedDisabled = matched && !correctFlash;
+          {rightItems.map(item => {
+            const matched = matchedPairIds.includes(item.pairId);
 
             return (
               <button
-                key={translation}
+                key={item.id}
+                type="button"
                 disabled={matched || disabled}
-                onClick={() => chooseTranslation(translation)}
-                style={{
-                  width: "100%",
-                  minHeight: 58,
-                  padding: "12px 10px",
-                  marginBottom: 10,
-                  borderRadius: 16,
-                  border: wrong
-                    ? "3px solid #F06A6A"
-                    : correctFlash
-                      ? "3px solid #46A400"
-                      : matchedDisabled
-                        ? "2px solid #D9D9D9"
-                        : "2px solid #E6E6E6",
-                  background: wrong
-                    ? "#FFF0F0"
-                    : correctFlash
-                      ? "#E9F8DD"
-                      : matchedDisabled
-                        ? "#EFEFEF"
-                        : "#FFFFFF",
-                  color: matchedDisabled ? "#8A8A8A" : "#4B4B4B",
-                  fontSize: 15,
-                  fontWeight: 900,
-                  cursor: activeWord && !matched && !disabled ? "pointer" : "default",
-                  boxShadow: wrong
-                    ? "0 5px 0 #E6A0A0"
-                    : correctFlash
-                      ? "0 5px 0 #46A400"
-                      : matchedDisabled
-                        ? "0 5px 0 #CFCFCF"
-                        : "0 5px 0 #D9D9D9",
-                  opacity: matchedDisabled ? 0.72 : 1,
-                  transition:
-                    "background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease"
-                }}
+                onClick={() => chooseRight(item)}
+                style={getItemStyle({
+                  active: false,
+                  wrong: wrongPair?.rightId === item.id,
+                  correctFlash: recentlyMatchedPairId === item.pairId,
+                  matched
+                })}
               >
-                {highlightNewWords(translation, question)}
+                {highlightNewWords(item.text, question)}
               </button>
             );
           })}

@@ -225,7 +225,9 @@ function formToPayload(form) {
       : Number(form.order),
     prompt: cleanString(form.prompt),
     translation: cleanString(form.translation),
-    correctAnswer: cleanString(form.correctAnswer),
+    correctAnswer: form.type === "match"
+      ? null
+      : cleanString(form.correctAnswer),
     audioUrl: cleanString(form.audioUrl),
     characterImage: cleanString(form.characterImage),
     explanation: cleanString(form.explanation),
@@ -605,7 +607,9 @@ export default function AdminLessonEditor() {
                   </div>
 
                   <div style={{ color: "#2D2D2D", fontWeight: 800, fontSize: 13 }}>
-                    Ответ: {question.correctAnswer || "не задан"}
+                    {question.type === "match"
+                      ? `Правильные соответствия: ${(question.pairs || []).length} пар`
+                      : `Ответ: ${question.correctAnswer || "не задан"}`}
                   </div>
 
                   <div
@@ -1032,11 +1036,13 @@ function QuestionForm({ form, setForm }) {
         />
       ) : null}
 
-      <FormInput
-        label="Правильный ответ"
-        value={form.correctAnswer}
-        onChange={value => update("correctAnswer", value)}
-      />
+      {form.type !== "match" ? (
+        <FormInput
+          label="Правильный ответ"
+          value={form.correctAnswer}
+          onChange={value => update("correctAnswer", value)}
+        />
+      ) : null}
 
       <FormTextarea
         label="Translation"
@@ -1217,6 +1223,9 @@ function PairsEditor({ pairs, setPairs }) {
   return (
     <div style={{ display: "grid", gap: 8 }}>
       <div style={{ fontWeight: 900 }}>Пары</div>
+      <div style={{ color: "#6F746B", fontSize: 13, fontWeight: 800 }}>
+        Каждая строка задаёт правильное соответствие. Отдельный правильный ответ не нужен.
+      </div>
       {normalizedPairs.map((pair, index) => (
         <div key={index} style={{ display: "grid", gap: 8 }}>
           <input
@@ -1445,7 +1454,9 @@ function QuestionPreview({ form }) {
           fontSize: 13
         }}
       >
-        Admin hint: {payload.correctAnswer || "правильный ответ не задан"}
+        {form.type === "match"
+          ? `Правильные соответствия заданы парами: ${(payload.pairs || []).length}`
+          : `Admin hint: ${payload.correctAnswer || "правильный ответ не задан"}`}
       </div>
 
       {payload.newWords?.length > 0 ? (

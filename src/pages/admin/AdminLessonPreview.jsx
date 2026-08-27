@@ -24,6 +24,7 @@ import {
   hasTelegramAuthData
 } from "../../api/apiClient";
 import { normalizeNewWords } from "../../utils/highlightNewWords";
+import { isMatchAnswerCorrect } from "../../utils/matchQuestion";
 
 const QUESTION_COMPONENTS = {
   translate: TranslateQuestion,
@@ -204,7 +205,11 @@ export default function AdminLessonPreview() {
       return;
     }
 
-    if (selected === question.correct) {
+    const isCorrect = question.type === "match"
+      ? isMatchAnswerCorrect(question, selected)
+      : selected === question.correct;
+
+    if (isCorrect) {
       setFeedbackStatus("correct");
       setHint("Верно. В preview прогресс не сохраняется.");
       correctTimerRef.current = setTimeout(goNext, 520);

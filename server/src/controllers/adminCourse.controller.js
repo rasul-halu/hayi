@@ -175,6 +175,31 @@ function assertJsonArray(value, fieldName) {
   }
 }
 
+function assertMatchPairs(pairs) {
+  if (!Array.isArray(pairs) || pairs.length < 2) {
+    throw createHttpError(400, "match pairs must contain at least two pairs");
+  }
+
+  const invalidPair = pairs.find(pair => {
+    if (!isPlainObject(pair)) {
+      return true;
+    }
+
+    const left = pair.word ?? pair.left;
+    const right = pair.translation ?? pair.right;
+
+    return typeof left !== "string" || left.trim() === "" ||
+      typeof right !== "string" || right.trim() === "";
+  });
+
+  if (invalidPair) {
+    throw createHttpError(
+      400,
+      "each match pair must contain non-empty left and right values"
+    );
+  }
+}
+
 function validateQuestionPayload(data) {
   if (!QUESTION_TYPES.has(data.type)) {
     throw createHttpError(400, "Unknown question type");
@@ -190,7 +215,7 @@ function validateQuestionPayload(data) {
   }
 
   if (data.type === "match") {
-    assertJsonArray(data.pairs, "pairs");
+    assertMatchPairs(data.pairs);
   }
 
   if (data.type === "buildSentence") {

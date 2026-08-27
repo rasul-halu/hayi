@@ -28,6 +28,7 @@ import {
   playWrongSound
 } from "../../utils/soundEffects";
 import { normalizeNewWords } from "../../utils/highlightNewWords";
+import { isMatchAnswerCorrect } from "../../utils/matchQuestion";
 
 const QUESTION_COMPONENTS = {
   translate: TranslateQuestion,
@@ -394,7 +395,11 @@ export default function Lesson() {
       return;
     }
 
-    if (selected === question.correct) {
+    const isCorrect = question.type === "match"
+      ? isMatchAnswerCorrect(question, selected)
+      : selected === question.correct;
+
+    if (isCorrect) {
       void handleCorrectAnswer();
       setFeedbackStatus("correct");
       setHint("Верно!");
