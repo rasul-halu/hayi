@@ -449,6 +449,251 @@ export async function duplicateAdminQuestion(questionId) {
   return serializeQuestion(question);
 }
 
+function createConflictError(message) {
+  const error = new Error(message);
+  error.statusCode = 409;
+  error.expose = true;
+  return error;
+}
+
+function getLessonHistoryIds(lesson) {
+  return [...new Set([lesson.id, lesson.legacyId].filter(Boolean))];
+}
+
+async function assertLessonsHaveNoHistory(lessons, tx, message) {
+  const lessonIds = lessons.flatMap(getLessonHistoryIds);
+
+  if (lessonIds.length === 0) {
+    return;
+  }
+
+  const [progressCount, xpEventCount] = await Promise.all([
+    tx.lessonProgress.count({
+      where: {
+        lessonId: {
+          in: lessonIds,
+        },
+      },
+    }),
+    tx.xpEvent.count({
+      where: {
+        lessonId: {
+          in: lessonIds,
+        },
+      },
+    }),
+  ]);
+
+  if (progressCount > 0 || xpEventCount > 0) {
+    throw createConflictError(message);
+  }
+}
+
+async function normalizeQuestionOrder(lessonId, tx) {
+  const questions = await tx.question.findMany({
+    where: {
+      lessonId,
+    },
+    orderBy: {
+      order: "asc",
+    },
+    select: {
+      id: true,
+      order: true,
+    },
+  });
+
+  for (const [index, question] of questions.entries()) {
+    const order = index + 1;
+
+    if (question.order !== order) {
+      await tx.question.update({
+        where: {
+          id: question.id,
+        },
+        data: {
+          order,
+        },
+      });
+    }
+  }
+}
+
+async function normalizeLessonOrder(chapterId, tx) {
+  const lessons = await tx.lesson.findMany({
+    where: {
+      chapterId,
+    },
+    orderBy: {
+      order: "asc",
+    },
+    select: {
+      id: true,
+      order: true,
+    },
+  });
+
+  for (const [index, lesson] of lessons.entries()) {
+    const order = index + 1;
+
+    if (lesson.order !== order) {
+      await tx.lesson.update({
+        where: {
+          id: lesson.id,
+        },
+        data: {
+          order,
+        },
+      });
+    }
+  }
+}
+
+async function normalizeChapterOrder(courseId, tx) {
+  const chapters = await tx.chapter.findMany({
+    where: {
+      courseId,
+    },
+    orderBy: {
+      order: "asc",
+    },
+    select: {
+      id: true,
+      order: true,
+    },
+  });
+
+  for (const [index, chapter] of chapters.entries()) {
+    const order = index + 1;
+
+    if (chapter.order !== order) {
+      await tx.chapter.update({
+        where: {
+          id: chapter.id,
+        },
+        data: {
+          order,
+        },
+      });
+    }
+  }
+}
+
+export async function deleteAdminQuestion(questionId) {
+  return prisma.$transaction(async tx => {
+    const question = await tx.question.findUniqueOrThrow({
+      where: {
+        id: questionId,
+      },
+      select: {
+        id: true,
+        lessonId: true,
+      },
+    });
+
+    await tx.question.delete({
+      where: {
+        id: question.id,
+      },
+    });
+    await normalizeQuestionOrder(question.lessonId, tx);
+
+    return question;
+  });
+}
+
+export async function deleteAdminLesson(lessonId) {
+  return prisma.$transaction(async tx => {
+    const lesson = await tx.lesson.findUniqueOrThrow({
+      where: {
+        id: lessonId,
+      },
+      select: {
+        id: true,
+        legacyId: true,
+        chapterId: true,
+      },
+    });
+
+    await assertLessonsHaveNoHistory(
+      [lesson],
+      tx,
+      "Урок уже проходили пользователи, поэтому удалить его нельзя. Его можно снять с публикации."
+    );
+
+    await tx.question.deleteMany({
+      where: {
+        lessonId: lesson.id,
+      },
+    });
+    await tx.lesson.delete({
+      where: {
+        id: lesson.id,
+      },
+    });
+    await normalizeLessonOrder(lesson.chapterId, tx);
+
+    return lesson;
+  });
+}
+
+export async function deleteAdminChapter(chapterId) {
+  return prisma.$transaction(async tx => {
+    const chapter = await tx.chapter.findUniqueOrThrow({
+      where: {
+        id: chapterId,
+      },
+      select: {
+        id: true,
+        courseId: true,
+        lessons: {
+          select: {
+            id: true,
+            legacyId: true,
+          },
+        },
+      },
+    });
+
+    await assertLessonsHaveNoHistory(
+      chapter.lessons,
+      tx,
+      "В главе есть уроки с пользовательским прогрессом, поэтому удалить её нельзя. Снимите такие уроки с публикации."
+    );
+
+    const lessonIds = chapter.lessons.map(lesson => lesson.id);
+
+    if (lessonIds.length > 0) {
+      await tx.question.deleteMany({
+        where: {
+          lessonId: {
+            in: lessonIds,
+          },
+        },
+      });
+      await tx.lesson.deleteMany({
+        where: {
+          id: {
+            in: lessonIds,
+          },
+        },
+      });
+    }
+
+    await tx.chapter.delete({
+      where: {
+        id: chapter.id,
+      },
+    });
+    await normalizeChapterOrder(chapter.courseId, tx);
+
+    return {
+      id: chapter.id,
+      courseId: chapter.courseId,
+    };
+  });
+}
+
 async function getNextChapterOrder(courseId, tx = prisma) {
   const result = await tx.chapter.aggregate({
     where: {

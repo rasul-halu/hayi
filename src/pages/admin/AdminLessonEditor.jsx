@@ -12,6 +12,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createAdminQuestion,
+  deleteAdminLesson,
+  deleteAdminQuestion,
   duplicateAdminQuestion,
   getAdminLesson,
   hasTelegramAuthData,
@@ -19,29 +21,22 @@ import {
   updateAdminQuestion
 } from "../../api/apiClient";
 import MediaUploader from "../../components/admin/MediaUploader";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
 import PageContainer from "../../components/ui/PageContainer";
 import SectionTitle from "../../components/ui/SectionTitle";
+import {
+  ADMIN_QUESTION_TYPES,
+  isChoiceQuestionType,
+  normalizeQuestionType,
+  QUESTION_TYPE_LABELS,
+  QUESTION_TYPES
+} from "../../utils/questionTypes";
 
-const QUESTION_TYPES = [
-  "translate",
-  "multiple-choice",
-  "listening",
-  "fillBlank",
-  "match",
-  "buildSentence"
-];
-
-const TYPE_LABELS = {
-  translate: "Перевод",
-  "multiple-choice": "Выбор ответа",
-  listening: "Аудирование",
-  fillBlank: "Пропуск",
-  match: "Сопоставление",
-  buildSentence: "Собрать предложение"
-};
+const TYPE_LABELS = QUESTION_TYPE_LABELS;
+const QUESTION_TYPE_VALUES = ADMIN_QUESTION_TYPES.map(type => type.value);
 
 const cardStyle = {
   background: "#FFFFFF",
@@ -75,7 +70,7 @@ function sortQuestions(questions) {
 
 function createEmptyQuestionForm() {
   return {
-    type: "translate",
+    type: QUESTION_TYPES.MULTIPLE_CHOICE,
     order: "",
     prompt: "Что означает:",
     questionText: "",
@@ -100,7 +95,9 @@ function questionToForm(question) {
   const metadata = question?.metadata || {};
 
   return {
-    type: question?.type || "translate",
+    type: normalizeQuestionType(
+      question?.type || QUESTION_TYPES.MULTIPLE_CHOICE
+    ),
     order: question?.order || "",
     prompt: question?.prompt || "",
     questionText: metadata.question || question?.translation || "",
@@ -169,6 +166,7 @@ function cleanStringArray(values) {
 }
 
 function formToPayload(form) {
+  const type = normalizeQuestionType(form.type);
   const metadata = {
     ...(form.metadata || {})
   };
@@ -185,11 +183,11 @@ function formToPayload(form) {
     delete metadata.sentence;
   }
 
-  if (form.type === "buildSentence" && form.correctAnswer.trim()) {
+  if (type === QUESTION_TYPES.BUILD_SENTENCE && form.correctAnswer.trim()) {
     metadata.targetSentence = form.correctAnswer.trim();
   }
 
-  const pairs = form.type === "match"
+  const pairs = type === QUESTION_TYPES.MATCH
     ? form.pairs
         .map(pair => ({
           word: pair.word.trim(),
@@ -198,16 +196,14 @@ function formToPayload(form) {
         .filter(pair => pair.word && pair.translation)
     : null;
 
-  const words = form.type === "buildSentence"
+  const words = type === QUESTION_TYPES.BUILD_SENTENCE
     ? cleanStringArray(form.words)
     : null;
 
-  const options = [
-    "translate",
-    "multiple-choice",
-    "listening",
-    "fillBlank"
-  ].includes(form.type)
+  const options = (
+    isChoiceQuestionType(type) ||
+    [QUESTION_TYPES.LISTENING, QUESTION_TYPES.FILL_BLANK].includes(type)
+  )
     ? cleanStringArray(form.options)
     : null;
 
@@ -219,13 +215,13 @@ function formToPayload(form) {
     .filter(word => word.text);
 
   return {
-    type: form.type,
+    type,
     order: form.order === "" || form.order === null
       ? null
       : Number(form.order),
     prompt: cleanString(form.prompt),
     translation: cleanString(form.translation),
-    correctAnswer: form.type === "match"
+    correctAnswer: type === QUESTION_TYPES.MATCH
       ? null
       : cleanString(form.correctAnswer),
     audioUrl: cleanString(form.audioUrl),
@@ -244,16 +240,20 @@ function formToPayload(form) {
 function validateQuestionForm(form) {
   const errors = [];
   const payload = formToPayload(form);
+  const type = normalizeQuestionType(form.type);
 
-  if (!QUESTION_TYPES.includes(form.type)) {
+  if (!QUESTION_TYPE_VALUES.includes(type)) {
     errors.push("Выберите тип вопроса.");
   }
 
-  if (["translate", "multiple-choice", "listening", "fillBlank", "buildSentence"].includes(form.type) && !payload.correctAnswer) {
+  if (type !== QUESTION_TYPES.MATCH && !payload.correctAnswer) {
     errors.push("Укажите правильный ответ.");
   }
 
-  if (["translate", "multiple-choice", "listening", "fillBlank"].includes(form.type)) {
+  if (
+    isChoiceQuestionType(type) ||
+    [QUESTION_TYPES.LISTENING, QUESTION_TYPES.FILL_BLANK].includes(type)
+  ) {
     if (!Array.isArray(payload.options) || payload.options.length < 2) {
       errors.push("Добавьте минимум два варианта ответа.");
     }
@@ -263,23 +263,37 @@ function validateQuestionForm(form) {
     }
   }
 
-  if (form.type === "listening" && !payload.audioUrl) {
+  if (type === QUESTION_TYPES.LISTENING && !payload.audioUrl) {
     errors.push("Аудио пока не указано. Сохранить можно, но в уроке будет placeholder.");
   }
 
-  if (form.type === "fillBlank") {
+  if (type === QUESTION_TYPES.FILL_BLANK) {
     if (!form.sentence.includes("___")) {
       errors.push("Предложение должно содержать пропуск: ___.");
     }
   }
 
-  if (form.type === "match") {
+  if (type === QUESTION_TYPES.LISTENING_AND_TYPE) {
+    const blankCount = (form.sentence.match(/___/g) || []).length;
+
+    if (!form.sentence.trim()) {
+      errors.push("Укажите предложение с пропуском.");
+    } else if (blankCount !== 1) {
+      errors.push("Предложение должно содержать ровно один пропуск: ___.");
+    }
+
+    if (!payload.audioUrl) {
+      errors.push("Добавьте аудио для задания «Прослушивание + ввод».");
+    }
+  }
+
+  if (type === QUESTION_TYPES.MATCH) {
     if (!Array.isArray(payload.pairs) || payload.pairs.length < 2) {
       errors.push("Добавьте минимум две пары для сопоставления.");
     }
   }
 
-  if (form.type === "buildSentence") {
+  if (type === QUESTION_TYPES.BUILD_SENTENCE) {
     if (!Array.isArray(payload.words) || payload.words.length === 0) {
       errors.push("Добавьте слова для сборки предложения.");
     }
@@ -292,27 +306,39 @@ function validateQuestionForm(form) {
 }
 
 function applyTypeTemplate(form, nextType) {
+  const normalizedType = normalizeQuestionType(nextType);
   const nextForm = {
     ...form,
-    type: nextType
+    type: normalizedType
   };
 
-  if (nextType === "listening" && !nextForm.prompt) {
+  if (normalizedType === QUESTION_TYPES.LISTENING && !nextForm.prompt) {
     nextForm.prompt = "Что ты слышишь?";
   }
 
-  if (nextType === "fillBlank" && !nextForm.sentence) {
+  if (normalizedType === QUESTION_TYPES.LISTENING_AND_TYPE) {
+    if (!nextForm.prompt || nextForm.prompt === "Что означает:") {
+      nextForm.prompt = "Прослушайте и впишите пропущенное слово";
+    }
+    nextForm.sentence = nextForm.sentence || "Ви ___ гьикI я?";
+  }
+
+  if (normalizedType === QUESTION_TYPES.FILL_BLANK && !nextForm.sentence) {
     nextForm.sentence = "Салам, ___!";
   }
 
-  if (nextType === "match" && nextForm.pairs.length < 2) {
+  if (normalizedType === QUESTION_TYPES.MATCH && nextForm.pairs.length < 2) {
     nextForm.pairs = [
       { word: "", translation: "" },
       { word: "", translation: "" }
     ];
   }
 
-  if (nextType === "buildSentence" && nextForm.words.length === 0 && nextForm.correctAnswer) {
+  if (
+    normalizedType === QUESTION_TYPES.BUILD_SENTENCE &&
+    nextForm.words.length === 0 &&
+    nextForm.correctAnswer
+  ) {
     nextForm.words = nextForm.correctAnswer.split(/\s+/).filter(Boolean);
   }
 
@@ -340,6 +366,9 @@ export default function AdminLessonEditor() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [isCreatingQuestion, setIsCreatingQuestion] = useState(false);
   const [savingQuestionId, setSavingQuestionId] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const sortedQuestions = useMemo(
     () => sortQuestions(lesson?.questions),
@@ -478,6 +507,59 @@ export default function AdminLessonEditor() {
     }
   }
 
+  function requestDelete(target) {
+    setDeleteTarget(target);
+    setDeleteError("");
+  }
+
+  function closeDeleteDialog() {
+    if (!isDeleting) {
+      setDeleteTarget(null);
+      setDeleteError("");
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      if (deleteTarget.kind === "question") {
+        await deleteAdminQuestion(deleteTarget.id);
+        setLesson(currentLesson => ({
+          ...currentLesson,
+          questions: (currentLesson.questions || [])
+            .filter(question => question.id !== deleteTarget.id)
+            .map((question, index) => ({
+              ...question,
+              order: index + 1
+            }))
+        }));
+        setEditingQuestion(current =>
+          current?.id === deleteTarget.id ? null : current
+        );
+        setSuccessMessage("Задание удалено.");
+        setDeleteTarget(null);
+        return;
+      }
+
+      await deleteAdminLesson(deleteTarget.id);
+      navigate("/admin/courses", {
+        replace: true
+      });
+    } catch (deleteErrorValue) {
+      setDeleteError(
+        deleteErrorValue.message || "Не удалось удалить элемент."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   if (!isTelegramMode) {
     return (
       <PageContainer style={{ background: "#F4F7F2", color: "#2D2D2D" }}>
@@ -548,6 +630,12 @@ export default function AdminLessonEditor() {
             isSaving={isSavingLesson}
             onSave={saveLesson}
             onPreview={() => navigate(`/admin/lessons/${lesson.id}/preview`)}
+            onDelete={() => requestDelete({
+              kind: "lesson",
+              id: lesson.id,
+              title: `Удалить урок «${lesson.title}»?`,
+              description: "Все задания этого урока будут удалены. Если урок уже проходили пользователи, удаление будет заблокировано."
+            })}
           />
 
           <SectionTitle
@@ -598,7 +686,7 @@ export default function AdminLessonEditor() {
                   >
                     <div>
                       <div style={{ fontWeight: 900 }}>
-                        {question.order}. {TYPE_LABELS[question.type] || question.type}
+                        {question.order}. {TYPE_LABELS[normalizeQuestionType(question.type)] || question.type}
                       </div>
                       <div style={{ color: "#6F746B", fontWeight: 800, marginTop: 4 }}>
                         {question.prompt || "Без prompt"}
@@ -615,7 +703,7 @@ export default function AdminLessonEditor() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
+                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                       gap: 8
                     }}
                   >
@@ -640,6 +728,24 @@ export default function AdminLessonEditor() {
                         Дублировать
                       </span>
                     </AppButton>
+                    <AppButton
+                      onClick={() => requestDelete({
+                        kind: "question",
+                        id: question.id,
+                        title: "Удалить задание?",
+                        description: "Это действие нельзя отменить."
+                      })}
+                      variant="secondary"
+                      style={{
+                        ...compactButtonStyle,
+                        color: "#D93025",
+                        borderColor: "#F2C8C8",
+                        boxShadow: "0 4px 0 #F2C8C8"
+                      }}
+                      aria-label="Удалить задание"
+                    >
+                      <AppIcon icon={Trash2} size={17} />
+                    </AppButton>
                   </div>
                 </div>
 
@@ -658,6 +764,16 @@ export default function AdminLessonEditor() {
           </div>
         </>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={deleteTarget?.title || "Подтвердите удаление"}
+        description={deleteTarget?.description || "Это действие нельзя отменить."}
+        isLoading={isDeleting}
+        error={deleteError}
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+      />
     </PageContainer>
   );
 }
@@ -669,7 +785,8 @@ function LessonSettingsCard({
   error,
   isSaving,
   onSave,
-  onPreview
+  onPreview,
+  onDelete
 }) {
   return (
     <AppCard style={{ ...cardStyle, marginTop: 18 }}>
@@ -785,6 +902,36 @@ function LessonSettingsCard({
             Предпросмотр урока
           </span>
         </AppButton>
+
+        <div
+          style={{
+            marginTop: 8,
+            paddingTop: 16,
+            borderTop: "1px solid #ECEDE9"
+          }}
+        >
+          <div style={{ fontWeight: 900, color: "#4B4B4B" }}>
+            Опасная зона
+          </div>
+          <div style={{ marginTop: 4, color: "#6F746B", fontSize: 13, lineHeight: 1.4 }}>
+            Удаление урока необратимо и доступно только пока у него нет пользовательской истории.
+          </div>
+          <AppButton
+            onClick={onDelete}
+            variant="secondary"
+            style={{
+              marginTop: 12,
+              color: "#D93025",
+              borderColor: "#F2C8C8",
+              boxShadow: "0 5px 0 #F2C8C8"
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <AppIcon icon={Trash2} size={18} />
+              Удалить урок
+            </span>
+          </AppButton>
+        </div>
       </div>
     </AppCard>
   );
@@ -809,6 +956,7 @@ function QuestionEditor({
     )
   );
   const [editorError, setEditorError] = useState("");
+  const [showValidation, setShowValidation] = useState(false);
 
   function openJsonMode() {
     setJsonValue(JSON.stringify(formToPayload(form), null, 2));
@@ -817,6 +965,7 @@ function QuestionEditor({
   }
 
   async function saveFromForm() {
+    setShowValidation(true);
     const { errors, payload } = validateQuestionForm(form);
     const blockingErrors = errors.filter(error =>
       !error.startsWith("Аудио пока")
@@ -828,16 +977,32 @@ function QuestionEditor({
     }
 
     setEditorError("");
-    await onSave(payload);
+    try {
+      await onSave(payload);
+    } catch (saveErrorValue) {
+      setEditorError(
+        saveErrorValue.message || "Не удалось сохранить вопрос."
+      );
+    }
   }
 
   async function saveFromJson() {
+    let parsed;
+
     try {
-      const parsed = JSON.parse(jsonValue);
-      setEditorError("");
-      await onSave(parsed);
+      parsed = JSON.parse(jsonValue);
     } catch {
       setEditorError("JSON невалидный. Проверьте запятые, кавычки и скобки.");
+      return;
+    }
+
+    try {
+      setEditorError("");
+      await onSave(parsed);
+    } catch (saveErrorValue) {
+      setEditorError(
+        saveErrorValue.message || "Не удалось сохранить вопрос."
+      );
     }
   }
 
@@ -882,7 +1047,11 @@ function QuestionEditor({
 
       {mode === "form" ? (
         <>
-          <QuestionForm form={form} setForm={setForm} />
+          <QuestionForm
+            form={form}
+            setForm={setForm}
+            showValidation={showValidation}
+          />
           {warnings.map(warning => (
             <div
               key={warning}
@@ -978,7 +1147,27 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
-function QuestionForm({ form, setForm }) {
+function QuestionForm({ form, setForm, showValidation }) {
+  const type = normalizeQuestionType(form.type);
+  const isChoice = isChoiceQuestionType(type);
+  const blankCount = (form.sentence.match(/___/g) || []).length;
+  const sentenceError = type === QUESTION_TYPES.LISTENING_AND_TYPE && showValidation
+    ? !form.sentence.trim()
+      ? "Укажите предложение с пропуском."
+      : blankCount !== 1
+        ? "Нужен ровно один маркер ___."
+        : ""
+    : "";
+  const answerError = type === QUESTION_TYPES.LISTENING_AND_TYPE &&
+    showValidation &&
+    !form.correctAnswer.trim()
+    ? "Укажите правильное слово."
+    : "";
+  const audioError = type === QUESTION_TYPES.LISTENING_AND_TYPE &&
+    showValidation &&
+    !form.audioUrl.trim()
+    ? "Добавьте аудио полного предложения."
+    : "";
   const update = (field, value) => {
     setForm(current => ({
       ...current,
@@ -997,9 +1186,9 @@ function QuestionForm({ form, setForm }) {
           }
           style={inputStyle}
         >
-          {QUESTION_TYPES.map(type => (
-            <option key={type} value={type}>
-              {TYPE_LABELS[type]}
+          {ADMIN_QUESTION_TYPES.map(questionType => (
+            <option key={questionType.value} value={questionType.value}>
+              {questionType.label}
             </option>
           ))}
         </select>
@@ -1018,7 +1207,7 @@ function QuestionForm({ form, setForm }) {
         onChange={value => update("prompt", value)}
       />
 
-      {["translate", "multiple-choice", "buildSentence"].includes(form.type) ? (
+      {isChoice || type === QUESTION_TYPES.BUILD_SENTENCE ? (
         <FormInput
           label="Текст вопроса"
           value={form.questionText}
@@ -1027,20 +1216,28 @@ function QuestionForm({ form, setForm }) {
         />
       ) : null}
 
-      {form.type === "fillBlank" ? (
+      {[QUESTION_TYPES.FILL_BLANK, QUESTION_TYPES.LISTENING_AND_TYPE].includes(type) ? (
         <FormTextarea
           label="Предложение с пропуском"
           value={form.sentence}
           onChange={value => update("sentence", value)}
-          placeholder="Салам, ___!"
+          helperText="Используйте ___ в месте пропущенного слова."
+          errorText={sentenceError}
+          placeholder={type === QUESTION_TYPES.LISTENING_AND_TYPE
+            ? "Например: Ви ___ гьикI я?"
+            : "Салам, ___!"}
         />
       ) : null}
 
-      {form.type !== "match" ? (
+      {type !== QUESTION_TYPES.MATCH ? (
         <FormInput
           label="Правильный ответ"
           value={form.correctAnswer}
           onChange={value => update("correctAnswer", value)}
+          placeholder={type === QUESTION_TYPES.LISTENING_AND_TYPE
+            ? "Например: къене"
+            : ""}
+          errorText={answerError}
         />
       ) : null}
 
@@ -1056,18 +1253,29 @@ function QuestionForm({ form, setForm }) {
         onChange={value => update("explanation", value)}
       />
 
-      {["listening", "buildSentence"].includes(form.type) ? (
-        <MediaUploader
-          type="audio"
-          label={form.type === "buildSentence"
-            ? "Озвучка предложения"
-            : "Аудио вопроса"}
-          helperText={form.type === "buildSentence"
-            ? "Загрузите запись правильного предложения целиком"
-            : "Загрузите запись для задания на аудирование"}
-          value={form.audioUrl}
-          onChange={value => update("audioUrl", value)}
-        />
+      {[
+        QUESTION_TYPES.LISTENING,
+        QUESTION_TYPES.LISTENING_AND_TYPE,
+        QUESTION_TYPES.BUILD_SENTENCE
+      ].includes(type) ? (
+        <div>
+          <MediaUploader
+            type="audio"
+            label={type === QUESTION_TYPES.BUILD_SENTENCE
+              ? "Озвучка предложения"
+              : type === QUESTION_TYPES.LISTENING_AND_TYPE
+                ? "Аудио полного предложения"
+                : "Аудио вопроса"}
+            helperText={type === QUESTION_TYPES.BUILD_SENTENCE
+              ? "Загрузите запись правильного предложения целиком"
+              : type === QUESTION_TYPES.LISTENING_AND_TYPE
+                ? "Загрузите запись предложения целиком."
+                : "Загрузите запись для задания на аудирование"}
+            value={form.audioUrl}
+            onChange={value => update("audioUrl", value)}
+          />
+          {audioError ? <FieldError>{audioError}</FieldError> : null}
+        </div>
       ) : null}
 
       <MediaUploader
@@ -1077,7 +1285,10 @@ function QuestionForm({ form, setForm }) {
         onChange={value => update("characterImage", value)}
       />
 
-      {["translate", "multiple-choice", "listening", "fillBlank"].includes(form.type) ? (
+      {(
+        isChoice ||
+        [QUESTION_TYPES.LISTENING, QUESTION_TYPES.FILL_BLANK].includes(type)
+      ) ? (
         <OptionsEditor
           options={form.options}
           correctAnswer={form.correctAnswer}
@@ -1086,14 +1297,14 @@ function QuestionForm({ form, setForm }) {
         />
       ) : null}
 
-      {form.type === "match" ? (
+      {type === QUESTION_TYPES.MATCH ? (
         <PairsEditor
           pairs={form.pairs}
           setPairs={pairs => update("pairs", pairs)}
         />
       ) : null}
 
-      {form.type === "buildSentence" ? (
+      {type === QUESTION_TYPES.BUILD_SENTENCE ? (
         <WordsEditor
           words={form.words}
           correctAnswer={form.correctAnswer}
@@ -1109,7 +1320,14 @@ function QuestionForm({ form, setForm }) {
   );
 }
 
-function FormInput({ label, value, onChange, type = "text", placeholder = "" }) {
+function FormInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder = "",
+  errorText = ""
+}) {
   return (
     <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
       {label}
@@ -1120,11 +1338,19 @@ function FormInput({ label, value, onChange, type = "text", placeholder = "" }) 
         style={inputStyle}
         placeholder={placeholder}
       />
+      {errorText ? <FieldError>{errorText}</FieldError> : null}
     </label>
   );
 }
 
-function FormTextarea({ label, value, onChange, placeholder = "" }) {
+function FormTextarea({
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  helperText = "",
+  errorText = ""
+}) {
   return (
     <label style={{ display: "grid", gap: 6, fontWeight: 900 }}>
       {label}
@@ -1134,7 +1360,21 @@ function FormTextarea({ label, value, onChange, placeholder = "" }) {
         style={{ ...inputStyle, minHeight: 82, resize: "vertical" }}
         placeholder={placeholder}
       />
+      {helperText ? (
+        <span style={{ color: "#6F746B", fontSize: 13, fontWeight: 700 }}>
+          {helperText}
+        </span>
+      ) : null}
+      {errorText ? <FieldError>{errorText}</FieldError> : null}
     </label>
+  );
+}
+
+function FieldError({ children }) {
+  return (
+    <span style={{ color: "#D93025", fontSize: 13, fontWeight: 800 }}>
+      {children}
+    </span>
   );
 }
 
@@ -1379,6 +1619,7 @@ const iconButtonStyle = {
 
 function QuestionPreview({ form }) {
   const payload = formToPayload(form);
+  const type = normalizeQuestionType(form.type);
 
   return (
     <div
@@ -1390,34 +1631,49 @@ function QuestionPreview({ form }) {
       }}
     >
       <div style={{ color: "#6F746B", fontWeight: 900, marginBottom: 8 }}>
-        {TYPE_LABELS[form.type] || form.type}
+        {TYPE_LABELS[type] || type}
       </div>
       <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 12 }}>
         {payload.prompt || "Без prompt"}
       </div>
 
-      {["translate", "multiple-choice"].includes(form.type) ? (
+      {isChoiceQuestionType(type) ? (
         <>
           <PreviewMainText>{form.questionText || payload.translation || "Текст вопроса"}</PreviewMainText>
           <PreviewOptions options={payload.options} />
         </>
       ) : null}
 
-      {form.type === "listening" ? (
+      {type === QUESTION_TYPES.LISTENING ? (
         <>
           <PreviewMainText>{payload.audioUrl ? "Аудио указано" : "Аудио placeholder"}</PreviewMainText>
           <PreviewOptions options={payload.options} />
         </>
       ) : null}
 
-      {form.type === "fillBlank" ? (
+      {type === QUESTION_TYPES.LISTENING_AND_TYPE ? (
+        <>
+          <PreviewMainText>
+            {payload.audioUrl ? "Аудио указано" : "Добавьте обязательное аудио"}
+          </PreviewMainText>
+          <PreviewMainText>{form.sentence || "Предложение с ___"}</PreviewMainText>
+          <input
+            type="text"
+            disabled
+            placeholder="Пропущенное слово"
+            style={inputStyle}
+          />
+        </>
+      ) : null}
+
+      {type === QUESTION_TYPES.FILL_BLANK ? (
         <>
           <PreviewMainText>{form.sentence || "Предложение с ___"}</PreviewMainText>
           <PreviewOptions options={payload.options} />
         </>
       ) : null}
 
-      {form.type === "match" ? (
+      {type === QUESTION_TYPES.MATCH ? (
         <div style={{ display: "grid", gap: 8 }}>
           {(payload.pairs || []).map((pair, index) => (
             <div
@@ -1435,7 +1691,7 @@ function QuestionPreview({ form }) {
         </div>
       ) : null}
 
-      {form.type === "buildSentence" ? (
+      {type === QUESTION_TYPES.BUILD_SENTENCE ? (
         <>
           <PreviewMainText>{form.questionText || "Фраза для перевода"}</PreviewMainText>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1454,7 +1710,7 @@ function QuestionPreview({ form }) {
           fontSize: 13
         }}
       >
-        {form.type === "match"
+        {type === QUESTION_TYPES.MATCH
           ? `Правильные соответствия заданы парами: ${(payload.pairs || []).length}`
           : `Admin hint: ${payload.correctAnswer || "правильный ответ не задан"}`}
       </div>

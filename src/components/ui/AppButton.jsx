@@ -4,7 +4,8 @@ export default function AppButton({
   type = "button",
   variant = "primary",
   disabled = false,
-  style = {}
+  style = {},
+  ...buttonProps
 }) {
   const variants = {
     primary: {
@@ -38,6 +39,7 @@ export default function AppButton({
 
   return (
     <button
+      {...buttonProps}
       type={type}
       disabled={disabled}
       onClick={onClick}

@@ -445,6 +445,24 @@ export async function duplicateAdminQuestion(questionId) {
   });
 }
 
+export async function deleteAdminQuestion(questionId) {
+  return adminJsonRequest(`/admin/questions/${questionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteAdminLesson(lessonId) {
+  return adminJsonRequest(`/admin/lessons/${lessonId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteAdminChapter(chapterId) {
+  return adminJsonRequest(`/admin/chapters/${chapterId}`, {
+    method: "DELETE",
+  });
+}
+
 async function adminUploadRequest(path, file) {
   const formData = new FormData();
   formData.append("file", file);

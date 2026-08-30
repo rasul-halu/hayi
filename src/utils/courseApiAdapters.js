@@ -12,6 +12,10 @@ export function mapApiQuestionToFrontendQuestion(question = {}) {
     sentence: question.sentence,
     answers: question.answers || question.options || [],
     correct: question.correct || question.correctAnswer,
+    correctAnswer: question.correctAnswer || question.correct,
+    acceptedAnswers: question.acceptedAnswers ||
+      question.metadata?.acceptedAnswers ||
+      [],
     pairs: question.pairs || [],
     translations: question.translations,
     words: question.words || [],

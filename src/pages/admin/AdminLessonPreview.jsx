@@ -9,11 +9,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BuildSentenceQuestion from "../../components/lesson/BuildSentenceQuestion";
 import CharacterImage from "../../components/lesson/CharacterImage";
+import ChoiceQuestion from "../../components/lesson/ChoiceQuestion";
 import FillBlankQuestion from "../../components/lesson/FillBlankQuestion";
 import MatchQuestion from "../../components/lesson/MatchQuestion";
+import ListeningAndTypeQuestion from "../../components/lesson/ListeningAndTypeQuestion";
 import ListeningQuestion from "../../components/lesson/ListeningQuestion";
 import QuestionImage from "../../components/lesson/QuestionImage";
-import TranslateQuestion from "../../components/lesson/TranslateQuestion";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
@@ -25,15 +26,19 @@ import {
 } from "../../api/apiClient";
 import { normalizeNewWords } from "../../utils/highlightNewWords";
 import { isMatchAnswerCorrect } from "../../utils/matchQuestion";
+import {
+  isListeningAndTypeAnswerCorrect,
+  normalizeQuestionType,
+  QUESTION_TYPES
+} from "../../utils/questionTypes";
 
 const QUESTION_COMPONENTS = {
-  translate: TranslateQuestion,
-  "multiple-choice": TranslateQuestion,
-  multipleChoice: TranslateQuestion,
-  match: MatchQuestion,
-  listening: ListeningQuestion,
-  fillBlank: FillBlankQuestion,
-  buildSentence: BuildSentenceQuestion
+  [QUESTION_TYPES.MULTIPLE_CHOICE]: ChoiceQuestion,
+  [QUESTION_TYPES.MATCH]: MatchQuestion,
+  [QUESTION_TYPES.LISTENING]: ListeningQuestion,
+  [QUESTION_TYPES.LISTENING_AND_TYPE]: ListeningAndTypeQuestion,
+  [QUESTION_TYPES.FILL_BLANK]: FillBlankQuestion,
+  [QUESTION_TYPES.BUILD_SENTENCE]: BuildSentenceQuestion
 };
 
 function normalizePreviewQuestion(question) {
@@ -169,12 +174,19 @@ export default function AdminLessonPreview() {
 
   const questions = lesson?.questions || [];
   const question = questions[questionIndex];
-  const QuestionComponent = question ? QUESTION_COMPONENTS[question.type] : null;
+  const normalizedQuestionType = normalizeQuestionType(question?.type);
+  const QuestionComponent = question
+    ? QUESTION_COMPONENTS[normalizedQuestionType]
+    : null;
   const progress = questions.length > 0
     ? (questionIndex / questions.length) * 100
     : 0;
   const feedbackLocked = feedbackStatus !== "idle";
-  const checkDisabled = feedbackLocked || isEmptyAnswer(selected);
+  const checkDisabled = feedbackLocked || isEmptyAnswer(selected) || (
+    normalizedQuestionType === QUESTION_TYPES.LISTENING_AND_TYPE &&
+    typeof selected === "string" &&
+    selected.trim().length === 0
+  );
   const correctAnswerText = getCorrectAnswerText(question);
   const newWords = useMemo(
     () => normalizeNewWords(question),
@@ -205,9 +217,11 @@ export default function AdminLessonPreview() {
       return;
     }
 
-    const isCorrect = question.type === "match"
+    const isCorrect = normalizedQuestionType === QUESTION_TYPES.MATCH
       ? isMatchAnswerCorrect(question, selected)
-      : selected === question.correct;
+      : normalizedQuestionType === QUESTION_TYPES.LISTENING_AND_TYPE
+        ? isListeningAndTypeAnswerCorrect(question, selected)
+        : selected === question.correct;
 
     if (isCorrect) {
       setFeedbackStatus("correct");

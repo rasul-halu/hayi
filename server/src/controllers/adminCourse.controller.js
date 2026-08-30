@@ -3,6 +3,9 @@ import {
   createAdminChapter,
   createAdminLesson,
   createAdminQuestion,
+  deleteAdminChapter,
+  deleteAdminLesson,
+  deleteAdminQuestion,
   duplicateAdminLesson,
   duplicateAdminQuestion,
   getAdminChapterById,
@@ -164,6 +167,7 @@ const QUESTION_TYPES = new Set([
   "multiple-choice",
   "multipleChoice",
   "listening",
+  "listeningAndType",
   "fillBlank",
   "match",
   "buildSentence",
@@ -220,6 +224,47 @@ function validateQuestionPayload(data) {
 
   if (data.type === "buildSentence") {
     assertJsonArray(data.words, "words");
+  }
+
+  if (data.type === "listeningAndType") {
+    const metadata = data.metadata;
+
+    if (!isPlainObject(metadata)) {
+      throw createHttpError(400, "metadata with sentence is required");
+    }
+
+    const sentence = metadata.sentence;
+    const blankCount = typeof sentence === "string"
+      ? (sentence.match(/___/g) || []).length
+      : 0;
+
+    if (typeof sentence !== "string" || sentence.trim() === "") {
+      throw createHttpError(400, "sentence is required for listeningAndType");
+    }
+
+    if (blankCount !== 1) {
+      throw createHttpError(
+        400,
+        "sentence must contain exactly one ___ placeholder"
+      );
+    }
+
+    if (typeof data.correctAnswer !== "string" || data.correctAnswer.trim() === "") {
+      throw createHttpError(400, "correctAnswer is required for listeningAndType");
+    }
+
+    if (typeof data.audioUrl !== "string" || data.audioUrl.trim() === "") {
+      throw createHttpError(400, "audioUrl is required for listeningAndType");
+    }
+
+    if (metadata.acceptedAnswers !== undefined) {
+      if (!Array.isArray(metadata.acceptedAnswers) ||
+        metadata.acceptedAnswers.some(answer =>
+          typeof answer !== "string" || answer.trim() === ""
+        )) {
+        throw createHttpError(400, "acceptedAnswers must contain non-empty strings");
+      }
+    }
   }
 
   return data;
@@ -639,6 +684,45 @@ export async function postDuplicateAdminQuestion(req, res, next) {
     return res.status(201).json({
       duplicated: true,
       question,
+    });
+  } catch (error) {
+    return handleAdminError(error, next);
+  }
+}
+
+export async function removeAdminQuestion(req, res, next) {
+  try {
+    const question = await deleteAdminQuestion(req.params.questionId);
+
+    return res.json({
+      deleted: true,
+      question,
+    });
+  } catch (error) {
+    return handleAdminError(error, next);
+  }
+}
+
+export async function removeAdminLesson(req, res, next) {
+  try {
+    const lesson = await deleteAdminLesson(req.params.lessonId);
+
+    return res.json({
+      deleted: true,
+      lesson,
+    });
+  } catch (error) {
+    return handleAdminError(error, next);
+  }
+}
+
+export async function removeAdminChapter(req, res, next) {
+  try {
+    const chapter = await deleteAdminChapter(req.params.chapterId);
+
+    return res.json({
+      deleted: true,
+      chapter,
     });
   } catch (error) {
     return handleAdminError(error, next);

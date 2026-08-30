@@ -7,7 +7,8 @@ import {
   Eye,
   EyeOff,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +16,8 @@ import {
   createAdminChapter,
   createAdminCourse,
   createAdminLesson,
+  deleteAdminChapter,
+  deleteAdminLesson,
   duplicateAdminLesson,
   getAdminCourses,
   hasTelegramAuthData,
@@ -22,6 +25,7 @@ import {
   updateAdminCourse,
   updateAdminLesson
 } from "../../api/apiClient";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
@@ -129,6 +133,9 @@ export default function AdminCourses() {
   const [saveError, setSaveError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [savingAction, setSavingAction] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const loadCourses = useCallback(async () => {
     if (!isTelegramMode) {
@@ -375,6 +382,46 @@ export default function AdminCourses() {
       setSaveError(saveErrorValue.message || "Не удалось изменить публикацию.");
     } finally {
       setSavingAction("");
+    }
+  }
+
+  function requestDelete(target) {
+    setDeleteTarget(target);
+    setDeleteError("");
+  }
+
+  function closeDeleteDialog() {
+    if (!isDeleting) {
+      setDeleteTarget(null);
+      setDeleteError("");
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      if (deleteTarget.kind === "lesson") {
+        await deleteAdminLesson(deleteTarget.id);
+        setActionMessage("Урок удалён.");
+      } else {
+        await deleteAdminChapter(deleteTarget.id);
+        setActionMessage("Глава удалена.");
+      }
+
+      setDeleteTarget(null);
+      await loadCourses();
+    } catch (deleteErrorValue) {
+      setDeleteError(
+        deleteErrorValue.message || "Не удалось удалить элемент."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -724,6 +771,26 @@ export default function AdminCourses() {
                     >
                       <AppIcon icon={Edit3} size={18} />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => requestDelete({
+                        kind: "chapter",
+                        id: chapter.id,
+                        title: `Удалить главу «${chapter.title}»?`,
+                        description: "Все уроки и задания внутри неё также будут удалены, если у них нет пользовательского прогресса."
+                      })}
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 12,
+                        border: "2px solid #F2C8C8",
+                        background: "#FFFFFF",
+                        color: "#D93025"
+                      }}
+                      aria-label="Удалить главу"
+                    >
+                      <AppIcon icon={Trash2} size={18} />
+                    </button>
                   </div>
 
                   <AppButton
@@ -884,7 +951,7 @@ export default function AdminCourses() {
                           <div
                             style={{
                               display: "grid",
-                              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                               gap: 8
                             }}
                           >
@@ -911,6 +978,24 @@ export default function AdminCourses() {
                             >
                               <AppIcon icon={lesson.isPublished ? EyeOff : Eye} size={16} />
                             </AppButton>
+                            <AppButton
+                              onClick={() => requestDelete({
+                                kind: "lesson",
+                                id: lesson.id,
+                                title: `Удалить урок «${lesson.title}»?`,
+                                description: "Все задания этого урока будут удалены. Если урок уже проходили пользователи, удаление будет заблокировано."
+                              })}
+                              variant="secondary"
+                              style={{
+                                ...smallButtonStyle,
+                                color: "#D93025",
+                                borderColor: "#F2C8C8",
+                                boxShadow: "0 4px 0 #F2C8C8"
+                              }}
+                              aria-label="Удалить урок"
+                            >
+                              <AppIcon icon={Trash2} size={16} />
+                            </AppButton>
                           </div>
                         </div>
                       </div>
@@ -936,6 +1021,16 @@ export default function AdminCourses() {
           </div>
         </AppCard>
       ))}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={deleteTarget?.title || "Подтвердите удаление"}
+        description={deleteTarget?.description || "Это действие нельзя отменить."}
+        isLoading={isDeleting}
+        error={deleteError}
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+      />
     </PageContainer>
   );
 }

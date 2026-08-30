@@ -9,11 +9,12 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import BuildSentenceQuestion from "../../components/lesson/BuildSentenceQuestion";
 import CharacterImage from "../../components/lesson/CharacterImage";
+import ChoiceQuestion from "../../components/lesson/ChoiceQuestion";
 import MatchQuestion from "../../components/lesson/MatchQuestion";
 import FillBlankQuestion from "../../components/lesson/FillBlankQuestion";
+import ListeningAndTypeQuestion from "../../components/lesson/ListeningAndTypeQuestion";
 import ListeningQuestion from "../../components/lesson/ListeningQuestion";
 import QuestionImage from "../../components/lesson/QuestionImage";
-import TranslateQuestion from "../../components/lesson/TranslateQuestion";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppIcon from "../../components/ui/AppIcon";
@@ -29,15 +30,19 @@ import {
 } from "../../utils/soundEffects";
 import { normalizeNewWords } from "../../utils/highlightNewWords";
 import { isMatchAnswerCorrect } from "../../utils/matchQuestion";
+import {
+  isListeningAndTypeAnswerCorrect,
+  normalizeQuestionType,
+  QUESTION_TYPES
+} from "../../utils/questionTypes";
 
 const QUESTION_COMPONENTS = {
-  translate: TranslateQuestion,
-  "multiple-choice": TranslateQuestion,
-  multipleChoice: TranslateQuestion,
-  match: MatchQuestion,
-  listening: ListeningQuestion,
-  fillBlank: FillBlankQuestion,
-  buildSentence: BuildSentenceQuestion
+  [QUESTION_TYPES.MULTIPLE_CHOICE]: ChoiceQuestion,
+  [QUESTION_TYPES.MATCH]: MatchQuestion,
+  [QUESTION_TYPES.LISTENING]: ListeningQuestion,
+  [QUESTION_TYPES.LISTENING_AND_TYPE]: ListeningAndTypeQuestion,
+  [QUESTION_TYPES.FILL_BLANK]: FillBlankQuestion,
+  [QUESTION_TYPES.BUILD_SENTENCE]: BuildSentenceQuestion
 };
 
 const CORRECT_FEEDBACK_DELAY = 520;
@@ -297,13 +302,20 @@ export default function Lesson() {
 
   const originalQuestionsCount = lesson.questions.length;
   const question = questionQueue[0];
-  const QuestionComponent = question ? QUESTION_COMPONENTS[question.type] : null;
+  const normalizedQuestionType = normalizeQuestionType(question?.type);
+  const QuestionComponent = question
+    ? QUESTION_COMPONENTS[normalizedQuestionType]
+    : null;
   const progress =
     originalQuestionsCount > 0
       ? (completedCorrect / originalQuestionsCount) * 100
       : 0;
   const feedbackLocked = feedbackStatus !== "idle";
-  const checkDisabled = feedbackLocked || isEmptyAnswer(selected);
+  const checkDisabled = feedbackLocked || isEmptyAnswer(selected) || (
+    normalizedQuestionType === QUESTION_TYPES.LISTENING_AND_TYPE &&
+    typeof selected === "string" &&
+    selected.trim().length === 0
+  );
   const newWords = normalizeNewWords(question);
   const correctAnswerText = getCorrectAnswerText(question);
 
@@ -388,16 +400,18 @@ export default function Lesson() {
 
     if (isEmptyAnswer(selected)) {
       setHint(
-        question.type === "match"
+        normalizedQuestionType === QUESTION_TYPES.MATCH
           ? "Завершите сопоставление"
           : "Выберите ответ"
       );
       return;
     }
 
-    const isCorrect = question.type === "match"
+    const isCorrect = normalizedQuestionType === QUESTION_TYPES.MATCH
       ? isMatchAnswerCorrect(question, selected)
-      : selected === question.correct;
+      : normalizedQuestionType === QUESTION_TYPES.LISTENING_AND_TYPE
+        ? isListeningAndTypeAnswerCorrect(question, selected)
+        : selected === question.correct;
 
     if (isCorrect) {
       void handleCorrectAnswer();

@@ -29,6 +29,9 @@ import {
   postAdminQuestion,
   postDuplicateAdminLesson,
   postDuplicateAdminQuestion,
+  removeAdminChapter,
+  removeAdminLesson,
+  removeAdminQuestion,
 } from "../controllers/adminCourse.controller.js";
 import requireAdmin from "../middleware/requireAdmin.js";
 import requireTelegramAuth from "../middleware/requireTelegramAuth.js";
@@ -56,17 +59,20 @@ router.post("/courses/:courseId/chapters", postAdminChapter);
 
 router.get("/chapters/:chapterId", getAdminChapter);
 router.patch("/chapters/:chapterId", patchAdminChapter);
+router.delete("/chapters/:chapterId", removeAdminChapter);
 router.post("/chapters/:chapterId/lessons", postAdminLesson);
 
 router.get("/lessons", listAdminLessons);
 router.get("/lessons/:lessonId/preview", getAdminLessonPreview);
 router.get("/lessons/:lessonId", getAdminLesson);
 router.patch("/lessons/:lessonId", patchAdminLesson);
+router.delete("/lessons/:lessonId", removeAdminLesson);
 router.post("/lessons/:lessonId/duplicate", postDuplicateAdminLesson);
 router.post("/lessons/:lessonId/questions", postAdminQuestion);
 
 router.get("/questions/:questionId", getAdminQuestion);
 router.patch("/questions/:questionId", patchAdminQuestion);
+router.delete("/questions/:questionId", removeAdminQuestion);
 router.post("/questions/:questionId/duplicate", postDuplicateAdminQuestion);
 
 export default router;
