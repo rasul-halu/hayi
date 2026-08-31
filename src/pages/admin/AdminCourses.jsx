@@ -417,9 +417,13 @@ export default function AdminCourses() {
       setDeleteTarget(null);
       await loadCourses();
     } catch (deleteErrorValue) {
-      setDeleteError(
-        deleteErrorValue.message || "Не удалось удалить элемент."
-      );
+      if (deleteErrorValue.code === "CONTENT_HAS_HISTORY") {
+        setDeleteError(deleteErrorValue.message);
+      } else if (deleteTarget.kind === "lesson") {
+        setDeleteError("Не удалось удалить урок. Попробуйте ещё раз.");
+      } else {
+        setDeleteError("Не удалось удалить главу. Попробуйте ещё раз.");
+      }
     } finally {
       setIsDeleting(false);
     }

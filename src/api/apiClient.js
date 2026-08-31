@@ -319,6 +319,7 @@ async function adminJsonRequest(path, {
   if (!response.ok) {
     const error = new Error(data.error || "Admin request failed");
     error.status = response.status;
+    error.code = data.code || null;
     throw error;
   }
 

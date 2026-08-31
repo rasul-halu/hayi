@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma.js";
+import { normalizeOrderInTwoPhases } from "../utils/orderNormalization.js";
 
 function serializeQuestion(question) {
   return {
@@ -453,6 +454,7 @@ function createConflictError(message) {
   const error = new Error(message);
   error.statusCode = 409;
   error.expose = true;
+  error.clientCode = "CONTENT_HAS_HISTORY";
   return error;
 }
 
@@ -503,20 +505,16 @@ async function normalizeQuestionOrder(lessonId, tx) {
     },
   });
 
-  for (const [index, question] of questions.entries()) {
-    const order = index + 1;
-
-    if (question.order !== order) {
-      await tx.question.update({
-        where: {
-          id: question.id,
-        },
-        data: {
-          order,
-        },
-      });
-    }
-  }
+  await normalizeOrderInTwoPhases(questions, (id, order) =>
+    tx.question.update({
+      where: {
+        id,
+      },
+      data: {
+        order,
+      },
+    })
+  );
 }
 
 async function normalizeLessonOrder(chapterId, tx) {
@@ -533,20 +531,16 @@ async function normalizeLessonOrder(chapterId, tx) {
     },
   });
 
-  for (const [index, lesson] of lessons.entries()) {
-    const order = index + 1;
-
-    if (lesson.order !== order) {
-      await tx.lesson.update({
-        where: {
-          id: lesson.id,
-        },
-        data: {
-          order,
-        },
-      });
-    }
-  }
+  await normalizeOrderInTwoPhases(lessons, (id, order) =>
+    tx.lesson.update({
+      where: {
+        id,
+      },
+      data: {
+        order,
+      },
+    })
+  );
 }
 
 async function normalizeChapterOrder(courseId, tx) {
@@ -563,20 +557,16 @@ async function normalizeChapterOrder(courseId, tx) {
     },
   });
 
-  for (const [index, chapter] of chapters.entries()) {
-    const order = index + 1;
-
-    if (chapter.order !== order) {
-      await tx.chapter.update({
-        where: {
-          id: chapter.id,
-        },
-        data: {
-          order,
-        },
-      });
-    }
-  }
+  await normalizeOrderInTwoPhases(chapters, (id, order) =>
+    tx.chapter.update({
+      where: {
+        id,
+      },
+      data: {
+        order,
+      },
+    })
+  );
 }
 
 export async function deleteAdminQuestion(questionId) {

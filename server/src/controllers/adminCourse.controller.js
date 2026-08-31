@@ -27,6 +27,22 @@ function createHttpError(statusCode, message) {
   return error;
 }
 
+function getPrismaErrorTarget(error) {
+  return error.meta?.target ||
+    error.meta?.driverAdapterError?.cause?.constraint?.fields ||
+    null;
+}
+
+function logAdminOperationError(operation, error) {
+  console.error(`Admin ${operation} failed`, {
+    name: error.name,
+    code: error.code || error.clientCode || null,
+    target: getPrismaErrorTarget(error),
+    message: error.message,
+  });
+  error.adminOperationLogged = true;
+}
+
 function isPlainObject(value) {
   return Boolean(value) &&
     typeof value === "object" &&
@@ -419,7 +435,11 @@ function handleAdminError(error, next) {
   }
 
   if (error.code === "P2002") {
-    return next(createHttpError(400, "Order or unique field already exists"));
+    if (!error.adminOperationLogged) {
+      logAdminOperationError("content unique constraint check", error);
+    }
+
+    return next(createHttpError(409, "Order or unique field already exists"));
   }
 
   return next(error);
@@ -699,6 +719,7 @@ export async function removeAdminQuestion(req, res, next) {
       question,
     });
   } catch (error) {
+    logAdminOperationError("question delete", error);
     return handleAdminError(error, next);
   }
 }
@@ -712,6 +733,7 @@ export async function removeAdminLesson(req, res, next) {
       lesson,
     });
   } catch (error) {
+    logAdminOperationError("lesson delete", error);
     return handleAdminError(error, next);
   }
 }
@@ -725,6 +747,7 @@ export async function removeAdminChapter(req, res, next) {
       chapter,
     });
   } catch (error) {
+    logAdminOperationError("chapter delete", error);
     return handleAdminError(error, next);
   }
 }

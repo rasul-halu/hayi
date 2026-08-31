@@ -189,15 +189,142 @@ export const course = {
     {
       id: 2,
       title: "Глава 2",
-      description: "Темы для практики",
+      description: "Рассказывайте о семье",
 
       lessons: [
         {
           id: 3,
-          title: "Семья",
-          description: "Заготовка будущего урока о семье.",
+          title: "Это мой брат",
+          description: "Рассказывайте о семье.",
           xpReward: 10,
-          questions: []
+          questions: [
+            {
+              id: "lesson-3-q-1",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "стха",
+              answers: ["брат", "друг", "отец", "парень"],
+              correct: "брат",
+              newWord: {
+                text: "стха",
+                translation: "брат"
+              }
+            },
+            {
+              id: "lesson-3-q-2",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Вун гьикI ава, стха?",
+              answers: [
+                "Как твои дела, брат?",
+                "Как зовут твоего брата?",
+                "Откуда ты, брат?",
+                "Это мой брат."
+              ],
+              correct: "Как твои дела, брат?"
+            },
+            {
+              id: "lesson-3-q-3",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "зи стха",
+              answers: ["мой брат", "твой брат", "мой друг", "брат Али"],
+              correct: "мой брат",
+              newWord: {
+                text: "зи",
+                translation: "мой / моя / моё"
+              }
+            },
+            {
+              id: "lesson-3-q-4",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Мой брат",
+              targetSentence: "зи стха",
+              words: ["стха", "вун", "зи", "я", "зун"],
+              correct: "зи стха"
+            },
+            {
+              id: "lesson-3-q-5",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "зи вах",
+              answers: ["моя сестра", "мой брат", "твоя сестра", "моя мама"],
+              correct: "моя сестра",
+              newWord: {
+                text: "вах",
+                translation: "сестра"
+              }
+            },
+            {
+              id: "lesson-3-q-6",
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово:",
+              sentence: "Им зи ____ я.",
+              answers: ["вах", "вун", "им", "я"],
+              correct: "вах"
+            },
+            {
+              id: "lesson-3-q-7",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им зи стха я.",
+              answers: [
+                "Это мой брат.",
+                "Это моя сестра.",
+                "Я твой брат.",
+                "Мой брат из Махачкалы."
+              ],
+              correct: "Это мой брат.",
+              newWord: {
+                text: "им",
+                translation: "это"
+              }
+            },
+            {
+              id: "lesson-3-q-8",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Это моя сестра.",
+              targetSentence: "Им зи вах я.",
+              words: ["Им", "вун", "вах", "зи", "стха", "я"],
+              correct: "Им зи вах я."
+            },
+            {
+              id: "lesson-3-q-9",
+              type: "listening",
+              prompt: "Выберите правильный ответ:",
+              question: "Им зи стха я.",
+              answers: [
+                "Это мой брат.",
+                "Это моя сестра.",
+                "Мой брат здесь.",
+                "Меня зовут Али."
+              ],
+              correct: "Это мой брат."
+            },
+            {
+              id: "lesson-3-q-10",
+              type: "listeningAndType",
+              prompt: "Прослушайте и напишите пропущенное слово.",
+              question: "Им зи вах я.",
+              sentence: "Им зи ___ я.",
+              correct: "вах"
+            },
+            {
+              id: "lesson-3-q-11",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Зи тIвар Али я. Им зи стха я.",
+              answers: [
+                "Меня зовут Али. Это мой брат.",
+                "Меня зовут Али. Это моя сестра.",
+                "Это Али. Это мой брат.",
+                "Я из Махачкалы. Это мой брат."
+              ],
+              correct: "Меня зовут Али. Это мой брат."
+            }
+          ]
         },
         {
           id: 4,

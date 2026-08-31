@@ -552,9 +552,13 @@ export default function AdminLessonEditor() {
         replace: true
       });
     } catch (deleteErrorValue) {
-      setDeleteError(
-        deleteErrorValue.message || "Не удалось удалить элемент."
-      );
+      if (deleteErrorValue.code === "CONTENT_HAS_HISTORY") {
+        setDeleteError(deleteErrorValue.message);
+      } else if (deleteTarget.kind === "question") {
+        setDeleteError("Не удалось удалить задание. Попробуйте ещё раз.");
+      } else {
+        setDeleteError("Не удалось удалить урок. Попробуйте ещё раз.");
+      }
     } finally {
       setIsDeleting(false);
     }

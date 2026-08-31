@@ -8,5 +8,6 @@ export default function errorHandler(err, req, res, next) {
     error: isDevelopment || isSafeClientError || isExplicitlySafe
       ? err.message
       : "Internal server error",
+    ...(err.clientCode ? { code: err.clientCode } : {}),
   });
 }
