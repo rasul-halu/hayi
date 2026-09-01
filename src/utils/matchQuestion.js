@@ -1,3 +1,5 @@
+import { shuffleItems } from "./shuffle";
+
 const MATCH_COMPLETE_PREFIX = "__match_complete__";
 
 function getPairValue(pair, primaryField, fallbackField) {
@@ -22,19 +24,7 @@ export function normalizeMatchPairs(question) {
     .filter(pair => pair.left && pair.right);
 }
 
-export function shuffleMatchItems(items, random = Math.random) {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [
-      shuffled[randomIndex],
-      shuffled[index]
-    ];
-  }
-
-  return shuffled;
-}
+export const shuffleMatchItems = shuffleItems;
 
 function separateAlignedItems(leftItems, rightItems) {
   if (leftItems.length <= 1) {

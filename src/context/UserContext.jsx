@@ -23,6 +23,10 @@ import {
   isActivityToday,
   normalizeActivityDateKeys
 } from "../utils/streakUtils";
+import {
+  getCorrectAnswerHeartState,
+  getWrongAnswerHeartState
+} from "../utils/answerHeartState";
 import { getTelegramInitData } from "../utils/telegram";
 import { mapBackendUserToAppUser } from "../utils/userMapping";
 
@@ -30,7 +34,6 @@ const UserContext = createContext();
 
 const MAX_HEARTS = 5;
 const HEART_RESTORE_INTERVAL_MS = 60 * 60 * 1000;
-const HEART_REWARD_STREAK = 3;
 const LEGACY_USER_KEY = "haiyi-user";
 const GUEST_USER_KEY = "hayi-guest-user";
 const TELEGRAM_USER_KEY = "hayi-telegram-user";
@@ -103,6 +106,58 @@ function normalizeMaxHearts(value) {
     1,
     MAX_HEARTS
   );
+}
+
+function getCorrectAnswerUserUpdate(user, now = new Date()) {
+  const result = getCorrectAnswerHeartState(user);
+
+  return {
+    result,
+    patch: {
+      hearts: result.hearts,
+      maxHearts: result.maxHearts,
+      correctAnswerStreak: result.correctAnswerStreak,
+      nextHeartAt:
+        result.hearts >= result.maxHearts
+          ? null
+          : user.nextHeartAt,
+      lastHeartRefillAt:
+        result.heartRestored && result.hearts >= result.maxHearts
+          ? now.toISOString()
+          : user.lastHeartRefillAt
+    }
+  };
+}
+
+function getWrongAnswerUserUpdate(user, now = new Date()) {
+  const result = getWrongAnswerHeartState(user);
+  const currentHearts = normalizeHearts(
+    user.hearts,
+    result.maxHearts
+  );
+  const shouldStartTimer =
+    currentHearts >= result.maxHearts &&
+    result.hearts < result.maxHearts;
+  const lastHeartRefillAt = shouldStartTimer
+    ? now.toISOString()
+    : user.lastHeartRefillAt || now.toISOString();
+  const nextHeartAt = result.hearts >= result.maxHearts
+    ? null
+    : new Date(
+        new Date(lastHeartRefillAt).getTime() +
+        HEART_RESTORE_INTERVAL_MS
+      ).toISOString();
+
+  return {
+    result,
+    patch: {
+      hearts: result.hearts,
+      maxHearts: result.maxHearts,
+      correctAnswerStreak: result.correctAnswerStreak,
+      nextHeartAt,
+      lastHeartRefillAt
+    }
+  };
 }
 
 function createSequentialIds(count) {
@@ -472,6 +527,8 @@ export function UserProvider({ children }) {
   );
   const [user, setUser] = useState(getInitialUser);
   const userRef = useRef(user);
+  const answerStatsQueueRef = useRef(Promise.resolve());
+  const answerStatsSequenceRef = useRef(0);
 
   useEffect(() => {
     userRef.current = user;
@@ -949,45 +1006,21 @@ export function UserProvider({ children }) {
     }));
   }, []);
 
-  const loseHeart = () => {
+  const loseHeart = useCallback(() => {
+    const now = new Date();
+    const optimistic = getWrongAnswerUserUpdate(userRef.current, now);
 
-    setUser(prev => {
-      const maxHearts = normalizeMaxHearts(prev.maxHearts);
-      const currentHearts = normalizeHearts(
-        prev.hearts,
-        maxHearts
-      );
-      const nextHearts = clamp(
-        currentHearts - 1,
-        0,
-        maxHearts
-      );
-      const now = new Date();
-      const shouldStartTimer =
-        currentHearts >= maxHearts &&
-        nextHearts < maxHearts;
-      const lastHeartRefillAt =
-        shouldStartTimer
-          ? now.toISOString()
-          : prev.lastHeartRefillAt ||
-            now.toISOString();
-      const nextHeartAt =
-        nextHearts >= maxHearts
-          ? null
-          : new Date(
-              new Date(lastHeartRefillAt).getTime() +
-              HEART_RESTORE_INTERVAL_MS
-            ).toISOString();
+    userRef.current = {
+      ...userRef.current,
+      ...optimistic.patch
+    };
+    setUser(prev => ({
+      ...prev,
+      ...getWrongAnswerUserUpdate(prev, now).patch
+    }));
 
-      return {
-        ...prev,
-        hearts: nextHearts,
-        maxHearts,
-        nextHeartAt,
-        lastHeartRefillAt
-      };
-    });
-  };
+    return optimistic.result;
+  }, []);
 
   const resetHearts = () => {
 
@@ -1042,60 +1075,46 @@ export function UserProvider({ children }) {
   const restoreOneHeart = () => restoreHeart(1);
 
   const registerCorrectAnswer = useCallback(() => {
-    let heartWasRestored = false;
+    const now = new Date();
+    const optimistic = getCorrectAnswerUserUpdate(userRef.current, now);
 
-    setUser(prev => {
-      const maxHearts = normalizeMaxHearts(prev.maxHearts);
-      const currentHearts = normalizeHearts(
-        prev.hearts,
-        maxHearts
-      );
-      const nextCorrectAnswerStreak =
-        toNumber(prev.correctAnswerStreak, 0) + 1;
+    userRef.current = {
+      ...userRef.current,
+      ...optimistic.patch
+    };
+    setUser(prev => ({
+      ...prev,
+      ...getCorrectAnswerUserUpdate(prev, now).patch
+    }));
 
-      if (nextCorrectAnswerStreak < HEART_REWARD_STREAK) {
-        return {
-          ...prev,
-          correctAnswerStreak:
-            nextCorrectAnswerStreak,
-          hearts: currentHearts,
-          maxHearts
-        };
-      }
-
-      const nextHearts = Math.min(
-        maxHearts,
-        currentHearts + 1
-      );
-      heartWasRestored = nextHearts > currentHearts;
-
-      return {
-        ...prev,
-        correctAnswerStreak: 0,
-        hearts: nextHearts,
-        maxHearts,
-        nextHeartAt:
-          nextHearts >= maxHearts
-            ? null
-            : prev.nextHeartAt,
-        lastHeartRefillAt:
-          nextHearts >= maxHearts
-            ? new Date().toISOString()
-            : prev.lastHeartRefillAt
-      };
-    });
-
-    return heartWasRestored;
+    return optimistic.result.heartRestored;
   }, []);
 
   const handleCorrectAnswer = useCallback(async () => {
+    const heartWasRestored = registerCorrectAnswer();
+
     if (!hasTelegramAuthData()) {
-      return registerCorrectAnswer();
+      return heartWasRestored;
     }
 
+    const sequence = answerStatsSequenceRef.current + 1;
+    answerStatsSequenceRef.current = sequence;
+    const request = answerStatsQueueRef.current.then(async () => {
+      const data = await recordCorrectAnswer({
+        restoreHeart: heartWasRestored
+      });
+
+      if (sequence === answerStatsSequenceRef.current) {
+        syncStatsFromServer(data.stats);
+      }
+
+      return data.heartRestored ?? heartWasRestored;
+    });
+
+    answerStatsQueueRef.current = request.catch(() => undefined);
+
     try {
-      const data = await recordCorrectAnswer();
-      syncStatsFromServer(data.stats);
+      return await request;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
@@ -1103,16 +1122,19 @@ export function UserProvider({ children }) {
           error.message
         );
       }
-    }
 
-    return registerCorrectAnswer();
+      return heartWasRestored;
+    }
   }, [
     registerCorrectAnswer,
     syncStatsFromServer
   ]);
 
   const resetCorrectAnswerStreak = () => {
-
+    userRef.current = {
+      ...userRef.current,
+      correctAnswerStreak: 0
+    };
     setUser(prev => ({
       ...prev,
       correctAnswerStreak: 0
@@ -1120,20 +1142,28 @@ export function UserProvider({ children }) {
   };
 
   const handleWrongAnswer = useCallback(async () => {
+    loseHeart();
+
     if (!hasTelegramAuthData()) {
-      resetCorrectAnswerStreak();
-      loseHeart();
       return;
     }
 
-    setUser(prev => ({
-      ...prev,
-      correctAnswerStreak: 0
-    }));
+    const sequence = answerStatsSequenceRef.current + 1;
+    answerStatsSequenceRef.current = sequence;
+    const request = answerStatsQueueRef.current.then(async () => {
+      const data = await recordWrongAnswer();
+
+      if (sequence === answerStatsSequenceRef.current) {
+        syncStatsFromServer(data.stats);
+      }
+
+      return data;
+    });
+
+    answerStatsQueueRef.current = request.catch(() => undefined);
 
     try {
-      const data = await recordWrongAnswer();
-      syncStatsFromServer(data.stats);
+      await request;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
@@ -1141,10 +1171,8 @@ export function UserProvider({ children }) {
           error.message
         );
       }
-
-      loseHeart();
     }
-  }, [syncStatsFromServer]);
+  }, [loseHeart, syncStatsFromServer]);
 
   const completeLessonWithSync = useCallback(async (
     lessonId,

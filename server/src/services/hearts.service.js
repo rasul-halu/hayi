@@ -89,6 +89,19 @@ export function getNextHeartAt(user) {
   return getRegeneratedHeartState(user).nextHeartAt;
 }
 
+export function getRewardedHeartState(user, amount = 1) {
+  const maxHearts = clampHeartCount(user?.maxHearts, MAX_HEARTS);
+  const currentHearts = clampHeartCount(user?.hearts, maxHearts);
+  const safeAmount = Math.max(0, Math.floor(Number(amount) || 0));
+  const hearts = Math.min(currentHearts + safeAmount, maxHearts);
+
+  return {
+    hearts,
+    maxHearts,
+    heartRestored: hearts > currentHearts,
+  };
+}
+
 export function toHeartStateResponse(user) {
   const state = getRegeneratedHeartState(user);
 
@@ -134,6 +147,39 @@ export async function applyHeartRegeneration(userId) {
   return {
     user: updatedUser,
     heartState: toHeartStateResponse(updatedUser),
+  };
+}
+
+export async function restoreHeartForUser(userId, amount = 1) {
+  const { user } = await applyHeartRegeneration(userId);
+  const reward = getRewardedHeartState(user, amount);
+
+  if (!reward.heartRestored) {
+    return {
+      user,
+      heartState: toHeartStateResponse(user),
+      heartRestored: false,
+    };
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      hearts: reward.hearts,
+      ...(reward.hearts >= reward.maxHearts
+        ? {
+            lastHeartRefillAt: new Date(),
+          }
+        : {}),
+    },
+  });
+
+  return {
+    user: updatedUser,
+    heartState: toHeartStateResponse(updatedUser),
+    heartRestored: true,
   };
 }
 

@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import AnswerButton, {
   getOptionLabel,
   getOptionValue
 } from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
 import { formatChoiceOptionLabel } from "../../utils/questionTypes";
+import { shuffleItems } from "../../utils/shuffle";
 
 export default function ChoiceQuestion({
   question,
@@ -12,6 +14,18 @@ export default function ChoiceQuestion({
   disabled = false,
   feedbackStatus = "idle"
 }) {
+  const optionsRef = useRef(null);
+  const questionKey = question?.id ?? question;
+
+  if (!optionsRef.current || optionsRef.current.key !== questionKey) {
+    optionsRef.current = {
+      key: questionKey,
+      options: shuffleItems(question?.answers)
+    };
+  }
+
+  const shuffledAnswers = optionsRef.current.options;
+
   return (
     <>
       <h2
@@ -45,7 +59,7 @@ export default function ChoiceQuestion({
         {highlightNewWords(question.question || question.translation, question)}
       </div>
 
-      {(question.answers || []).map(answer => {
+      {shuffledAnswers.map(answer => {
         const answerLabel = formatChoiceOptionLabel(getOptionLabel(answer));
         const answerValue = getOptionValue(answer);
 

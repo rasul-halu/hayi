@@ -7,6 +7,7 @@ import {
   applyHeartRegeneration,
   getRegeneratedHeartState,
   loseHeartForUser,
+  restoreHeartForUser,
 } from "./hearts.service.js";
 import {
   getEffectiveStreakStats,
@@ -91,8 +92,13 @@ export async function recordWrongAnswer(userId) {
   );
 }
 
-export async function recordCorrectAnswer(userId) {
-  const { user: heartUser } = await applyHeartRegeneration(userId);
+export async function recordCorrectAnswer(
+  userId,
+  { restoreHeart = false } = {}
+) {
+  const heartResult = restoreHeart
+    ? await restoreHeartForUser(userId)
+    : await applyHeartRegeneration(userId);
   const updatedUser = await prisma.user.update({
     where: {
       id: userId,
@@ -104,20 +110,18 @@ export async function recordCorrectAnswer(userId) {
     },
   });
 
-  const responseUser = {
-    ...updatedUser,
-    hearts: heartUser.hearts,
-    lastHeartRefillAt: heartUser.lastHeartRefillAt,
-  };
   const activityDateKeys = await getUserActivityDateKeys(userId);
 
-  return toStatsResponse(
-    responseUser,
-    getEffectiveStreakStats({
-      user: responseUser,
-      activityDateKeys,
-    })
-  );
+  return {
+    stats: toStatsResponse(
+      updatedUser,
+      getEffectiveStreakStats({
+        user: updatedUser,
+        activityDateKeys,
+      })
+    ),
+    heartRestored: Boolean(heartResult.heartRestored),
+  };
 }
 
 export async function completeLessonAndUpdateStats({

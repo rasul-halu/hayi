@@ -39,11 +39,14 @@ export async function getHearts(req, res) {
 
 export async function saveCorrectAnswer(req, res) {
   try {
-    const stats = await recordCorrectAnswer(req.user.id);
+    const result = await recordCorrectAnswer(req.user.id, {
+      restoreHeart: req.body?.restoreHeart === true,
+    });
 
     return res.json({
       saved: true,
-      stats,
+      stats: result.stats,
+      heartRestored: result.heartRestored,
     });
   } catch (error) {
     return handleStatsError(res, error, "Correct answer stats error:");

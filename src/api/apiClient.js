@@ -128,10 +128,16 @@ export async function getUserHearts() {
   return data;
 }
 
-export async function recordCorrectAnswer() {
+export async function recordCorrectAnswer({ restoreHeart = false } = {}) {
   const response = await fetch(`${API_URL}/stats/correct-answer`, {
     method: "POST",
-    headers: requireTelegramAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+      ...requireTelegramAuthHeaders(),
+    },
+    body: JSON.stringify({
+      restoreHeart: restoreHeart === true,
+    }),
   });
 
   const data = await response.json();
