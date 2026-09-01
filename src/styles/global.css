@@ -115,10 +115,12 @@ a {
 .listening-type-blank {
   display: inline-block;
   min-width: 72px;
+  height: 0.85em;
   margin: 0 5px;
   color: #46a400;
   border-bottom: 3px solid #58cc02;
   text-align: center;
+  vertical-align: baseline;
 }
 
 .listening-type-field {

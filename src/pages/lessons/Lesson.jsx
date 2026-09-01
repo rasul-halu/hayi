@@ -31,6 +31,7 @@ import {
 import { normalizeNewWords } from "../../utils/highlightNewWords";
 import { isMatchAnswerCorrect } from "../../utils/matchQuestion";
 import {
+  isBuildSentenceAnswerCorrect,
   isListeningAndTypeAnswerCorrect,
   normalizeQuestionType,
   QUESTION_TYPES
@@ -409,6 +410,8 @@ export default function Lesson() {
 
     const isCorrect = normalizedQuestionType === QUESTION_TYPES.MATCH
       ? isMatchAnswerCorrect(question, selected)
+      : normalizedQuestionType === QUESTION_TYPES.BUILD_SENTENCE
+        ? isBuildSentenceAnswerCorrect(question, selected)
       : normalizedQuestionType === QUESTION_TYPES.LISTENING_AND_TYPE
         ? isListeningAndTypeAnswerCorrect(question, selected)
         : selected === question.correct;

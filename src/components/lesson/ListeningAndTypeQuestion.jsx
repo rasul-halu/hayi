@@ -2,12 +2,20 @@ import AudioPlayButton from "../audio/AudioPlayButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
 
 function renderSentence(sentence, question) {
-  const [before = "", after = ""] = String(sentence || "").split("___");
+  const text = String(sentence || "");
+  const placeholder = text.match(/_{3,}/);
+
+  if (!placeholder || placeholder.index === undefined) {
+    return highlightNewWords(text, question);
+  }
+
+  const before = text.slice(0, placeholder.index);
+  const after = text.slice(placeholder.index + placeholder[0].length);
 
   return (
     <>
       {highlightNewWords(before, question)}
-      <span className="listening-type-blank" aria-hidden="true">___</span>
+      <span className="listening-type-blank" aria-hidden="true" />
       {highlightNewWords(after, question)}
     </>
   );

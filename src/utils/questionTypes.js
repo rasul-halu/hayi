@@ -40,6 +40,34 @@ export function normalizeTextAnswer(value) {
     : "";
 }
 
+export function normalizeBuildSentenceAnswer(value) {
+  return typeof value === "string"
+    ? value
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/[.!?]+$/u, "")
+        .trimEnd()
+    : "";
+}
+
+export function isBuildSentenceAnswerCorrect(question, answer) {
+  const correctAnswer =
+    question?.targetSentence ||
+    question?.correct ||
+    question?.correctAnswer ||
+    "";
+  const normalizedAnswer = normalizeBuildSentenceAnswer(answer);
+
+  return normalizedAnswer.length > 0 &&
+    normalizedAnswer === normalizeBuildSentenceAnswer(correctAnswer);
+}
+
+export function formatChoiceOptionLabel(value) {
+  return typeof value === "string"
+    ? value.trimEnd().replace(/[.!?]+$/u, "").trimEnd()
+    : value;
+}
+
 export function isListeningAndTypeAnswerCorrect(question, answer) {
   const acceptedAnswers = Array.isArray(question?.acceptedAnswers)
     ? question.acceptedAnswers

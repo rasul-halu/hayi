@@ -3,6 +3,7 @@ import AnswerButton, {
   getOptionValue
 } from "./AnswerButton";
 import { highlightNewWords } from "../../utils/highlightNewWords";
+import { formatChoiceOptionLabel } from "../../utils/questionTypes";
 
 export default function ChoiceQuestion({
   question,
@@ -45,7 +46,7 @@ export default function ChoiceQuestion({
       </div>
 
       {(question.answers || []).map(answer => {
-        const answerLabel = getOptionLabel(answer);
+        const answerLabel = formatChoiceOptionLabel(getOptionLabel(answer));
         const answerValue = getOptionValue(answer);
 
         return (

@@ -11,11 +11,11 @@ jest.mock("../audio/AudioPlayButton", () => function MockAudioPlayButton({
 test("renders the blank, shared audio control and typed answer", () => {
   const setSelected = jest.fn();
 
-  render(
+  const { container } = render(
     <ListeningAndTypeQuestion
       question={{
         prompt: "Прослушайте и впишите пропущенное слово",
-        sentence: "Ви ___ гьикI я?",
+        sentence: "Им зи ____ я.",
         audioUrl: "https://cdn.example.com/sentence.mp3"
       }}
       selected=""
@@ -23,7 +23,13 @@ test("renders the blank, shared audio control and typed answer", () => {
     />
   );
 
-  expect(screen.getByText("___")).not.toBeNull();
+  const sentence = container.querySelector(".listening-type-sentence");
+  const blanks = container.querySelectorAll(".listening-type-blank");
+
+  expect(blanks).toHaveLength(1);
+  expect(blanks[0].textContent).toBe("");
+  expect(sentence.textContent).toBe("Им зи  я.");
+  expect(sentence.textContent).not.toContain("_");
   expect(screen.getByRole("button", {
     name: "Прослушать предложение"
   }).getAttribute("data-src")).toBe("https://cdn.example.com/sentence.mp3");
