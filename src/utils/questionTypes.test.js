@@ -51,6 +51,29 @@ test("checks build sentence without accepting wrong words or word order", () => 
   expect(isBuildSentenceAnswerCorrect(question, "Им зи стха я")).toBe(false);
 });
 
+test("checks Russian and multiword-token build sentences without language assumptions", () => {
+  expect(isBuildSentenceAnswerCorrect(
+    { targetSentence: "Как дела у твоего брата" },
+    ["Как", "дела", "у", "твоего", "брата"].join(" ")
+  )).toBe(true);
+  expect(isBuildSentenceAnswerCorrect(
+    { targetSentence: "Это твоя сестра" },
+    ["Это", "твоя", "сестра"].join(" ")
+  )).toBe(true);
+  expect(isBuildSentenceAnswerCorrect(
+    { targetSentence: "Как зовут твою маму" },
+    ["Как", "зовут", "твою", "маму"].join(" ")
+  )).toBe(true);
+  expect(isBuildSentenceAnswerCorrect(
+    { targetSentence: "У меня одна сестра" },
+    ["У", "меня", "одна", "сестра"].join(" ")
+  )).toBe(true);
+  expect(isBuildSentenceAnswerCorrect(
+    { targetSentence: "Салам алейкум Вун гьикI ава?" },
+    ["Салам алейкум", "Вун", "гьикI", "ава"].join(" ")
+  )).toBe(true);
+});
+
 test("formats only trailing punctuation in choice option labels", () => {
   expect(formatChoiceOptionLabel("Это мой брат.")).toBe("Это мой брат");
   expect(formatChoiceOptionLabel("Как твои дела, брат?")).toBe("Как твои дела, брат");

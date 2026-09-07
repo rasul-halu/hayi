@@ -8,6 +8,7 @@ export default function LessonPath({
   lessons = [],
   completedLessonIds = [],
   isLoading = false,
+  theme,
   onLessonAttempt
 }) {
   const progress = getCourseLessonProgress({
@@ -38,6 +39,7 @@ export default function LessonPath({
           <LessonNode
             lesson={lesson}
             state={getLessonState(progress, lesson.id)}
+            theme={theme}
             onLessonAttempt={onLessonAttempt}
           />
         </div>

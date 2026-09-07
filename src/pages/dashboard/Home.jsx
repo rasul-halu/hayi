@@ -14,6 +14,7 @@ import { getCourse } from "../../api/apiClient";
 import PracticeCard from "../../components/dashboard/PracticeCard";
 import NoHeartsModal from "../../components/hearts/NoHeartsModal";
 import BottomNav from "../../components/layout/BottomNav";
+import ChapterHeader from "../../components/lesson/ChapterHeader";
 import LessonNode from "../../components/lesson/LessonNode";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
@@ -30,6 +31,10 @@ import {
   getLessonState,
   LESSON_STATE
 } from "../../utils/lessonProgress";
+import {
+  getChapterPresentation,
+  getChapterTheme
+} from "../../utils/chapterTheme";
 import mainMascot from "../../assets/mascot/thing.png";
 
 export default function Home() {
@@ -91,6 +96,9 @@ export default function Home() {
     chapters.findIndex(chapter => chapter.id === currentChapter?.id),
     0
   );
+  const currentChapterPresentation = currentChapter
+    ? getChapterPresentation(currentChapter, currentChapterIndex)
+    : null;
   const currentChapterLessons = currentChapter?.lessons || [];
   const completedLessonsInChapter = currentChapterLessons.filter(lesson =>
     getLessonState(courseProgress, lesson.id) === LESSON_STATE.COMPLETED
@@ -349,7 +357,7 @@ export default function Home() {
                 >
                   Лезгинский язык
                 </h2>
-                {currentChapter ? (
+                {currentChapterPresentation ? (
                   <div
                     style={{
                       display: "inline-flex",
@@ -361,10 +369,11 @@ export default function Home() {
                       color: "#46A400",
                       fontSize: 13,
                       fontWeight: 900,
-                      lineHeight: 1.2
+                      lineHeight: 1.2,
+                      overflowWrap: "anywhere"
                     }}
                   >
-                    Глава {currentChapterIndex + 1}: {currentChapter.title}
+                    {currentChapterPresentation.label}: {currentChapterPresentation.title}
                   </div>
                 ) : null}
                 <p
@@ -462,70 +471,82 @@ export default function Home() {
         </AppCard>
       ) : null}
 
-      {shouldShowCourseContent && chapters.map((chapter, chapterIndex) => (
-        <AppCard
-          key={chapter.id}
-          style={{
-            marginTop: chapterIndex === 0 ? 0 : 22,
-            background: "#FFFFFF",
-            color: "#2D2D2D",
-            border: "2px solid #E6E6E6",
-            boxShadow: "0 7px 0 #D9D9D9"
-          }}
-        >
-          <SectionTitle
-            title={chapter.title}
-            subtitle={chapter.description}
-          />
+      {shouldShowCourseContent && chapters.map((chapter, chapterIndex) => {
+        const theme = getChapterTheme(chapter.order, chapterIndex);
+        const presentation = getChapterPresentation(chapter, chapterIndex);
 
-          <div style={{ marginTop: 20 }}>
-            {chapter.lessons.map((lesson, index) => {
-              const lessonState = getLessonState(courseProgress, lesson.id);
-              const canOpen = lessonState !== LESSON_STATE.LOCKED;
+        return (
+          <section
+            key={chapter.id}
+            style={{
+              marginTop: chapterIndex === 0 ? 0 : 42,
+              marginBottom: 10
+            }}
+          >
+            <ChapterHeader
+              label={presentation.label}
+              title={presentation.title}
+              theme={theme}
+            />
 
-              return (
-                <div
-                  key={lesson.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: index % 2 === 0 ? "flex-start" : "flex-end",
-                    marginBottom: 18
-                  }}
-                >
+            <div
+              style={{
+                marginTop: 34,
+                padding: "0 10px"
+              }}
+            >
+              {chapter.lessons.map((lesson, index) => {
+                const lessonState = getLessonState(courseProgress, lesson.id);
+                const canOpen = lessonState !== LESSON_STATE.LOCKED;
+
+                return (
                   <div
+                    key={lesson.id}
                     style={{
-                      width: "62%",
                       display: "flex",
-                      flexDirection: "column",
-                      alignItems: index % 2 === 0 ? "flex-start" : "flex-end"
+                      alignItems: "center",
+                      justifyContent: index % 2 === 0 ? "flex-start" : "flex-end",
+                      marginBottom: 24
                     }}
                   >
-                    <LessonNode
-                      lesson={lesson}
-                      state={lessonState}
-                      onLessonAttempt={handleLessonAttempt}
-                    />
-
                     <div
                       style={{
-                        marginTop: 10,
-                        color: canOpen ? "#2D2D2D" : "#8A8A8A",
-                        fontSize: 14,
-                        fontWeight: 900,
-                        textAlign: index % 2 === 0 ? "left" : "right",
-                        lineHeight: 1.2
+                        width: "62%",
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: index % 2 === 0 ? "flex-start" : "flex-end"
                       }}
                     >
-                      {lesson.title}
+                      <LessonNode
+                        lesson={lesson}
+                        state={lessonState}
+                        theme={theme}
+                        onLessonAttempt={handleLessonAttempt}
+                      />
+
+                      <div
+                        style={{
+                          maxWidth: "100%",
+                          marginTop: 10,
+                          color: canOpen ? "#2D2D2D" : "#8A8A8A",
+                          fontSize: 14,
+                          fontWeight: 900,
+                          textAlign: index % 2 === 0 ? "left" : "right",
+                          lineHeight: 1.25,
+                          overflowWrap: "anywhere"
+                        }}
+                      >
+                        {lesson.title}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </AppCard>
-      ))}
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
 
       <SectionTitle
         title="Практика"

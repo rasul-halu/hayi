@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../ui/AppButton";
 import PageDots from "./PageDots";
+import StartupLoadingScreen from "./StartupLoadingScreen";
 import { useUser } from "../../context/UserContext";
 import { isTelegramWebApp } from "../../utils/telegram";
 
@@ -41,6 +42,10 @@ export default function OnboardingShell({
   ]);
 
   if (isTelegramMode) {
+    if (authStatus !== "error") {
+      return <StartupLoadingScreen />;
+    }
+
     return (
       <main
         style={{
@@ -78,43 +83,19 @@ export default function OnboardingShell({
               fontWeight: 900
             }}
           >
-            Подготавливаем Хайи...
+            Не удалось загрузить профиль
           </h1>
 
-          <div
-            aria-hidden="true"
+          <AppButton
+            onClick={() => {
+              void authenticateTelegramUser().catch(() => {});
+            }}
             style={{
-              width: 160,
-              height: 12,
-              margin: "18px auto 0",
-              borderRadius: 999,
-              background: "#E2E7DE",
-              overflow: "hidden"
+              marginTop: 22
             }}
           >
-            <div
-              className="startup-progress-bar"
-              style={{
-                width: 58,
-                height: "100%",
-                borderRadius: 999,
-                background: "#58CC02"
-              }}
-            />
-          </div>
-
-          {authStatus === "error" ? (
-            <AppButton
-              onClick={() => {
-                void authenticateTelegramUser().catch(() => {});
-              }}
-              style={{
-                marginTop: 22
-              }}
-            >
-              Повторить
-            </AppButton>
-          ) : null}
+            Повторить
+          </AppButton>
         </div>
       </main>
     );

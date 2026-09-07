@@ -10,24 +10,34 @@ import AppIcon from "../ui/AppIcon";
 export default function LessonNode({
   lesson,
   state = LESSON_STATE.LOCKED,
+  theme,
   onLessonAttempt
 }) {
   const navigate = useNavigate();
   const completed = state === LESSON_STATE.COMPLETED;
   const available = state === LESSON_STATE.AVAILABLE;
   const canOpen = completed || available;
+  const availableMain = theme?.main || "#3D8614";
+  const availableDepth = theme?.depth || "#2F6810";
+  const availableSoft = theme?.soft || "#EAF7DF";
 
   const background = completed
-    ? "#58CC02"
-    : available
-      ? "#FFD43B"
-      : "#777";
-
-  const shadow = completed
     ? "#46A400"
     : available
-      ? "#E0B900"
-      : "#555";
+      ? availableMain
+      : "#777A76";
+
+  const shadow = completed
+    ? "#347A00"
+    : available
+      ? availableDepth
+      : "#565956";
+
+  const ring = completed
+    ? "#DDF2CE"
+    : available
+      ? availableSoft
+      : "#E1E4DF";
 
   const Icon = completed
     ? Check
@@ -54,7 +64,8 @@ export default function LessonNode({
         height: 82,
         borderRadius: "50%",
         background,
-        border: "none",
+        border: `4px solid ${ring}`,
+        boxSizing: "border-box",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -62,9 +73,7 @@ export default function LessonNode({
           canOpen
             ? "pointer"
             : "default",
-        color: completed || !available
-          ? "#FFFFFF"
-          : "#4B4B4B",
+        color: "#FFFFFF",
         boxShadow: `0 7px 0 ${shadow}`
       }}
       aria-label={lesson?.title || "Урок"}

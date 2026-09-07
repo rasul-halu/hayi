@@ -328,17 +328,715 @@ export const course = {
         },
         {
           id: 4,
-          title: "Еда",
-          description: "Заготовка будущего урока о еде.",
+          title: "Моя семья",
+          description: "Рассказывайте о своей семье.",
           xpReward: 10,
-          questions: []
+          questions: [
+            {
+              id: "lesson-4-q-1",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им зи диде я.",
+              answers: [
+                "Это моя мама",
+                "Это моя сестра",
+                "Это мой брат",
+                "Это мой папа"
+              ],
+              correct: "Это моя мама",
+              newWord: {
+                text: "диде",
+                translation: "мама / мать"
+              }
+            },
+            {
+              id: "lesson-4-q-2",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Это моя мама.",
+              targetSentence: "Им зи диде я",
+              words: ["Им", "диде", "зи", "я"],
+              correct: "Им зи диде я"
+            },
+            {
+              id: "lesson-4-q-3",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Как сказать «Это мой папа»?",
+              answers: [
+                "Им зи буба я",
+                "Им зи диде я",
+                "Им зи стха я",
+                "Им зи вах я"
+              ],
+              correct: "Им зи буба я",
+              newWord: {
+                text: "буба",
+                translation: "папа / отец"
+              }
+            },
+            {
+              id: "lesson-4-q-4",
+              type: "match",
+              prompt: "Сопоставьте слова.",
+              pairs: [
+                { word: "стха", translation: "брат" },
+                { word: "вах", translation: "сестра" },
+                { word: "диде", translation: "мама" },
+                { word: "буба", translation: "папа" }
+              ]
+            },
+            {
+              id: "lesson-4-q-5",
+              type: "listening",
+              prompt: "Выберите правильный ответ:",
+              question: "Им зи буба я.",
+              answers: [
+                "Это мой папа",
+                "Это мой брат",
+                "Это моя мама",
+                "Это моя сестра"
+              ],
+              correct: "Это мой папа"
+            },
+            {
+              id: "lesson-4-q-6",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им зи хзан я.",
+              answers: [
+                "Это моя семья",
+                "Это моя мама",
+                "Это моя сестра",
+                "Это мой дом"
+              ],
+              correct: "Это моя семья",
+              newWord: {
+                text: "хзан",
+                translation: "семья"
+              }
+            },
+            {
+              id: "lesson-4-q-7",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Это моя семья.",
+              targetSentence: "Им зи хзан я",
+              words: ["зи", "хзан", "я", "Им", "стха"],
+              correct: "Им зи хзан я"
+            },
+            {
+              id: "lesson-4-q-8",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Что означает «диде-буба»?",
+              answers: ["родители", "семья", "брат и сестра", "мама"],
+              correct: "родители",
+              newWord: {
+                text: "диде-буба",
+                translation: "родители"
+              }
+            },
+            {
+              id: "lesson-4-q-9",
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово:",
+              sentence: "Им зи хзан ____.",
+              answers: ["я", "зи", "вун", "им"],
+              correct: "я"
+            },
+            {
+              id: "lesson-4-q-10",
+              type: "listeningAndType",
+              prompt: "Прослушайте и напишите пропущенное слово.",
+              question: "Им зи диде я.",
+              sentence: "Им зи ___ я.",
+              correct: "диде"
+            },
+            {
+              id: "lesson-4-q-11",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Выберите фразу о семье:",
+              answers: [
+                "Им зи хзан я",
+                "Им зи стха я",
+                "Зи тIвар Али я",
+                "Зун Дагъустандай я"
+              ],
+              correct: "Им зи хзан я"
+            },
+            {
+              id: "lesson-4-q-12",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Салам алейкум, стха!",
+              answers: [
+                "Здравствуй, брат",
+                "Здравствуй, папа",
+                "Как дела, брат",
+                "Это мой брат"
+              ],
+              correct: "Здравствуй, брат"
+            },
+            {
+              id: "lesson-4-q-13",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Как твои дела, брат?",
+              targetSentence: "Вун гьикI ава стха",
+              words: ["гьикI", "стха", "Вун", "ава", "зи"],
+              correct: "Вун гьикI ава стха"
+            }
+          ]
         },
         {
           id: 5,
-          title: "Путешествия",
-          description: "Заготовка будущего урока о путешествиях.",
+          title: "Кто это?",
+          description: "Спрашивайте о близких и говорите о семье.",
           xpReward: 10,
-          questions: []
+          questions: [
+            {
+              id: "lesson-5-q-1",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им ви стха я.",
+              answers: [
+                "Это твой брат",
+                "Это мой брат",
+                "Это твой папа",
+                "Это моя сестра"
+              ],
+              correct: "Это твой брат",
+              newWord: {
+                text: "ви",
+                translation: "твой / твоя / твоё"
+              }
+            },
+            {
+              id: "lesson-5-q-2",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Ви стха гьикI ава?",
+              targetSentence: "Как дела у твоего брата",
+              words: ["Как", "дела", "у", "твоего", "брата"],
+              correct: "Как дела у твоего брата"
+            },
+            {
+              id: "lesson-5-q-3",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Как сказать «твоя сестра»?",
+              answers: ["ви вах", "зи вах", "ви стха", "зи стха"],
+              correct: "ви вах"
+            },
+            {
+              id: "lesson-5-q-4",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им вуж я?",
+              answers: ["Кто это", "Как его зовут", "Откуда он", "Это твой брат"],
+              correct: "Кто это",
+              newWord: {
+                text: "вуж",
+                translation: "кто"
+              }
+            },
+            {
+              id: "lesson-5-q-5",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Кто это?",
+              targetSentence: "Им вуж я",
+              words: ["вуж", "я", "Им", "зи"],
+              correct: "Им вуж я"
+            },
+            {
+              id: "lesson-5-q-6",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им вуж я? — Им зи диде я.",
+              answers: [
+                "Кто это? — Это моя мама",
+                "Кто это? — Это мой брат",
+                "Как дела? — Это моя мама",
+                "Это твоя мама? — Да"
+              ],
+              correct: "Кто это? — Это моя мама"
+            },
+            {
+              id: "lesson-5-q-7",
+              type: "listening",
+              prompt: "Выберите правильный ответ:",
+              question: "Салам алейкум! Им вуж я?",
+              answers: [
+                "Здравствуй! Кто это",
+                "Здравствуй! Как твои дела",
+                "Кто твой брат",
+                "Это моя семья"
+              ],
+              correct: "Здравствуй! Кто это"
+            },
+            {
+              id: "lesson-5-q-8",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Это твоя мама.",
+              answers: [
+                "Им ви диде я",
+                "Им зи диде я",
+                "Им ви буба я",
+                "Им зи вах я"
+              ],
+              correct: "Им ви диде я"
+            },
+            {
+              id: "lesson-5-q-9",
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово:",
+              sentence: "Им ____ стха я.",
+              answers: ["ви", "вуж", "я", "им"],
+              correct: "ви"
+            },
+            {
+              id: "lesson-5-q-10",
+              type: "match",
+              prompt: "Сопоставьте слова.",
+              pairs: [
+                { word: "зи", translation: "мой / моя" },
+                { word: "ви", translation: "твой / твоя" },
+                { word: "стха", translation: "брат" },
+                { word: "вах", translation: "сестра" }
+              ]
+            },
+            {
+              id: "lesson-5-q-11",
+              type: "listeningAndType",
+              prompt: "Прослушайте и напишите пропущенное слово.",
+              question: "Им ви буба я.",
+              sentence: "Им ___ буба я.",
+              correct: "ви"
+            },
+            {
+              id: "lesson-5-q-12",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Им ви вах я.",
+              targetSentence: "Это твоя сестра",
+              words: ["Это", "твоя", "сестра", "моя"],
+              correct: "Это твоя сестра"
+            },
+            {
+              id: "lesson-5-q-13",
+              type: "multipleChoice",
+              prompt: "Выберите логичный ответ:",
+              question: "Им вуж я?",
+              answers: [
+                "Им зи буба я",
+                "Зун Дагъустандай я",
+                "Вун гьикI ава",
+                "Зи тIвар Али я"
+              ],
+              correct: "Им зи буба я"
+            },
+            {
+              id: "lesson-5-q-14",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Здравствуй! Как твои дела?",
+              targetSentence: "Салам алейкум Вун гьикI ава",
+              words: ["Салам алейкум", "Вун", "гьикI", "ава"],
+              correct: "Салам алейкум Вун гьикI ава"
+            }
+          ]
+        },
+        {
+          id: 6,
+          title: "У меня есть брат",
+          description: "Говорите о близких, которые у вас есть.",
+          xpReward: 10,
+          questions: [
+            {
+              id: "lesson-6-q-1",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Заз стха ава.",
+              answers: [
+                "У меня есть брат",
+                "Это мой брат",
+                "У тебя есть брат",
+                "У меня есть сестра"
+              ],
+              correct: "У меня есть брат",
+              newWords: [
+                { text: "заз", translation: "у меня / мне" },
+                { text: "ава", translation: "есть, имеется" }
+              ]
+            },
+            {
+              id: "lesson-6-q-2",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Как сказать «Как зовут твоего брата?»?",
+              answers: [
+                "Ви стхадин тIвар вуж я",
+                "Им ви стха я",
+                "Ваз стха ава",
+                "Ви стха гьикI ава"
+              ],
+              correct: "Ви стхадин тIвар вуж я"
+            },
+            {
+              id: "lesson-6-q-3",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Моего брата зовут Аслан.",
+              targetSentence: "Зи стхадин тIвар Аслан я",
+              words: ["Зи", "стхадин", "тIвар", "Аслан", "я", "ви"],
+              correct: "Зи стхадин тIвар Аслан я"
+            },
+            {
+              id: "lesson-6-q-4",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Ваз вах ава.",
+              answers: [
+                "У тебя есть сестра",
+                "У меня есть сестра",
+                "Это твоя сестра",
+                "Как дела у твоей сестры"
+              ],
+              correct: "У тебя есть сестра",
+              newWord: {
+                text: "ваз",
+                translation: "у тебя / тебе"
+              }
+            },
+            {
+              id: "lesson-6-q-5",
+              type: "listening",
+              prompt: "Выберите правильный ответ:",
+              question: "Ви вах гьикI ава?",
+              answers: [
+                "Как дела у твоей сестры",
+                "У тебя есть сестра",
+                "Это твоя сестра",
+                "Как зовут твою сестру"
+              ],
+              correct: "Как дела у твоей сестры"
+            },
+            {
+              id: "lesson-6-q-6",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Ваз стха авани?",
+              answers: [
+                "У тебя есть брат",
+                "У меня есть брат",
+                "Это твой брат",
+                "Как зовут твоего брата"
+              ],
+              correct: "У тебя есть брат",
+              newWord: {
+                text: "авани?",
+                translation: "есть ли?"
+              }
+            },
+            {
+              id: "lesson-6-q-7",
+              type: "multipleChoice",
+              prompt: "Выберите логичный ответ:",
+              question: "Ваз стха авани?",
+              answers: [
+                "Эхь, заз стха ава",
+                "Им зи диде я",
+                "Зи тIвар Али я",
+                "Зун Дагъустандай я"
+              ],
+              correct: "Эхь, заз стха ава"
+            },
+            {
+              id: "lesson-6-q-8",
+              type: "match",
+              prompt: "Сопоставьте слова.",
+              pairs: [
+                { word: "зи", translation: "мой / моя" },
+                { word: "ви", translation: "твой / твоя" },
+                { word: "заз", translation: "у меня" },
+                { word: "ваз", translation: "у тебя" }
+              ]
+            },
+            {
+              id: "lesson-6-q-9",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им вуж я? — Им зи буба я.",
+              answers: [
+                "Кто это? — Это мой папа",
+                "Кто это? — Это мой брат",
+                "Как дела? — Это мой папа",
+                "У тебя есть папа? — Да"
+              ],
+              correct: "Кто это? — Это мой папа"
+            },
+            {
+              id: "lesson-6-q-10",
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово:",
+              sentence: "Ваз ____ авани?",
+              answers: ["стха", "вуж", "зи", "я"],
+              correct: "стха"
+            },
+            {
+              id: "lesson-6-q-11",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Салам алейкум, Аслан! Ви стха гьикI ава?",
+              answers: [
+                "Здравствуй, Аслан! Как дела у твоего брата",
+                "Здравствуй, Аслан! У тебя есть брат",
+                "Как тебя зовут, Аслан",
+                "Это твой брат, Аслан"
+              ],
+              correct: "Здравствуй, Аслан! Как дела у твоего брата"
+            },
+            {
+              id: "lesson-6-q-12",
+              type: "listeningAndType",
+              prompt: "Прослушайте и напишите пропущенное слово.",
+              question: "Зи стхадин тIвар Аслан я.",
+              sentence: "Зи ___ тIвар Аслан я.",
+              correct: "стхадин"
+            },
+            {
+              id: "lesson-6-q-13",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Им зи дуст я.",
+              answers: [
+                "Это мой друг",
+                "Это мой брат",
+                "Это мой отец",
+                "Это моя семья"
+              ],
+              correct: "Это мой друг",
+              newWord: {
+                text: "дуст",
+                translation: "друг"
+              }
+            },
+            {
+              id: "lesson-6-q-14",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Ви дидедин тIвар вуж я?",
+              targetSentence: "Как зовут твою маму",
+              words: ["Как", "зовут", "твою", "маму", "сестру"],
+              correct: "Как зовут твою маму"
+            },
+            {
+              id: "lesson-6-q-15",
+              type: "multipleChoice",
+              prompt: "Выберите логичный ответ:",
+              question: "— Им вуж я?\n— Им зи стха я.\n— Ви стхадин тIвар вуж я?",
+              answers: [
+                "Зи стхадин тIвар Аслан я",
+                "Эхь, заз вах ава",
+                "Вун гьикI ава",
+                "Им зи хзан я"
+              ],
+              correct: "Зи стхадин тIвар Аслан я"
+            }
+          ]
+        },
+        {
+          id: 7,
+          title: "Сколько у тебя братьев?",
+          description: "Говорите о количестве родственников.",
+          xpReward: 10,
+          questions: [
+            {
+              id: "lesson-7-q-1",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Ваз шумуд стха ава?",
+              answers: [
+                "Сколько у тебя братьев",
+                "У тебя есть брат",
+                "Как зовут твоего брата",
+                "Как дела у твоего брата"
+              ],
+              correct: "Сколько у тебя братьев",
+              newWord: { text: "шумуд", translation: "сколько" }
+            },
+            {
+              id: "lesson-7-q-2",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "У меня один брат.",
+              targetSentence: "Заз са стха ава",
+              words: ["Заз", "са", "стха", "ава", "ви"],
+              correct: "Заз са стха ава",
+              newWord: { text: "са", translation: "один / одна" }
+            },
+            {
+              id: "lesson-7-q-3",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Ви шумуд йис я?",
+              answers: [
+                "Сколько тебе лет",
+                "Как тебя зовут",
+                "Сколько у тебя братьев",
+                "Откуда ты"
+              ],
+              correct: "Сколько тебе лет",
+              newWord: { text: "йис", translation: "год / лет" }
+            },
+            {
+              id: "lesson-7-q-4",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "У меня две сестры.",
+              answers: [
+                "Заз кьве вах ава",
+                "Заз са вах ава",
+                "Ваз кьве вах ава",
+                "Заз кьве стха ава"
+              ],
+              correct: "Заз кьве вах ава",
+              newWord: { text: "кьве", translation: "два / две" }
+            },
+            {
+              id: "lesson-7-q-5",
+              type: "match",
+              prompt: "Сопоставьте слова.",
+              pairs: [
+                { word: "стха", translation: "брат" },
+                { word: "стхаяр", translation: "братья" },
+                { word: "вах", translation: "сестра" },
+                { word: "вахар", translation: "сёстры" }
+              ],
+              newWords: [
+                { text: "стхаяр", translation: "братья" },
+                { text: "вахар", translation: "сёстры" }
+              ]
+            },
+            {
+              id: "lesson-7-q-6",
+              type: "listening",
+              prompt: "Выберите правильный ответ:",
+              question: "Заз кьве стха ава.",
+              answers: [
+                "У меня два брата",
+                "У меня один брат",
+                "У тебя два брата",
+                "У меня две сестры"
+              ],
+              correct: "У меня два брата"
+            },
+            {
+              id: "lesson-7-q-7",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Заз пуд вах ава.",
+              answers: [
+                "У меня три сестры",
+                "У меня две сестры",
+                "У тебя три сестры",
+                "У меня три брата"
+              ],
+              correct: "У меня три сестры",
+              newWord: { text: "пуд", translation: "три" }
+            },
+            {
+              id: "lesson-7-q-8",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "Заз са вах ава.",
+              targetSentence: "У меня одна сестра",
+              words: ["У", "меня", "одна", "сестра", "брат"],
+              correct: "У меня одна сестра"
+            },
+            {
+              id: "lesson-7-q-9",
+              type: "multipleChoice",
+              prompt: "Выберите логичный ответ:",
+              question: "— Им вуж я?\n— Им зи стха я.\n— Ви стхадин тIвар вуж я?",
+              answers: [
+                "Зи стхадин тIвар Аслан я",
+                "Заз кьве стха ава",
+                "Вун гьикI ава",
+                "Им зи буба я"
+              ],
+              correct: "Зи стхадин тIвар Аслан я"
+            },
+            {
+              id: "lesson-7-q-10",
+              type: "fillBlank",
+              prompt: "Вставьте пропущенное слово:",
+              sentence: "Ваз шумуд ____ ава?",
+              answers: ["стха", "вуж", "зи", "я"],
+              correct: "стха"
+            },
+            {
+              id: "lesson-7-q-11",
+              type: "listeningAndType",
+              prompt: "Прослушайте и напишите пропущенное слово.",
+              question: "Заз кьве вах ава.",
+              sentence: "Заз ___ вах ава.",
+              correct: "кьве"
+            },
+            {
+              id: "lesson-7-q-12",
+              type: "multipleChoice",
+              prompt: "Выберите правильный ответ:",
+              question: "Как спросить «Сколько у тебя братьев?»?",
+              answers: [
+                "Ваз шумуд стха ава",
+                "Ваз стха авани",
+                "Ви стхадин тIвар вуж я",
+                "Ви стха гьикI ава"
+              ],
+              correct: "Ваз шумуд стха ава"
+            },
+            {
+              id: "lesson-7-q-13",
+              type: "buildSentence",
+              prompt: "Соберите:",
+              question: "У меня три брата.",
+              targetSentence: "Заз пуд стха ава",
+              words: ["Заз", "пуд", "стха", "ава", "кьве"],
+              correct: "Заз пуд стха ава"
+            },
+            {
+              id: "lesson-7-q-14",
+              type: "multipleChoice",
+              prompt: "Выберите правильный перевод:",
+              question: "Заз са стха ва кьве вах ава.",
+              answers: [
+                "У меня один брат и две сестры",
+                "У меня два брата и одна сестра",
+                "У тебя один брат и две сестры",
+                "У меня три брата"
+              ],
+              correct: "У меня один брат и две сестры",
+              newWord: { text: "ва", translation: "и" }
+            },
+            {
+              id: "lesson-7-q-15",
+              type: "multipleChoice",
+              prompt: "Выберите логичную следующую реплику:",
+              question: "— Салам алейкум, Аслан! Вун гьикI ава?\n— Хъсан я.\n— Ваз шумуд стха ава?",
+              answers: [
+                "Заз кьве стха ава",
+                "Им зи стха я",
+                "Зи стхадин тIвар Аслан я",
+                "Зун Дагъустандай я"
+              ],
+              correct: "Заз кьве стха ава"
+            }
+          ]
         }
       ]
     }

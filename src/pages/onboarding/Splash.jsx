@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../../components/ui/AppButton";
 import AppIcon from "../../components/ui/AppIcon";
+import StartupLoadingScreen from "../../components/onboarding/StartupLoadingScreen";
 import { useUser } from "../../context/UserContext";
 import mascot from "../../assets/mascot/main-mascot.png";
 import { isTelegramWebApp } from "../../utils/telegram";
@@ -47,6 +48,10 @@ function StartupLoading({
   onRetry
 }) {
   const hasError = authStatus === "error";
+
+  if (!hasError) {
+    return <StartupLoadingScreen />;
+  }
 
   return (
     <main
@@ -89,7 +94,6 @@ function StartupLoading({
           }}
         >
           <img
-            className={hasError ? undefined : "startup-mascot-pulse"}
             src={mascot}
             alt="Маскот Хайи"
             style={{
@@ -123,51 +127,25 @@ function StartupLoading({
               fontWeight: 900
             }}
           >
-            {hasError ? "Не удалось загрузить профиль" : "Подготавливаем Хайи..."}
+            Не удалось загрузить профиль
           </p>
         </div>
 
-        {!hasError ? (
-          <div
-            aria-hidden="true"
-            style={{
-              width: 172,
-              height: 12,
-              margin: "0 auto",
-              borderRadius: 999,
-              background: "#E2E7DE",
-              overflow: "hidden"
-            }}
-          >
-            <div
-              className="startup-progress-bar"
-              style={{
-                width: 64,
-                height: "100%",
-                borderRadius: 999,
-                background: "#58CC02"
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            <p
-              style={{
-                margin: 0,
-                color: "#D93B3B",
-                fontSize: 14,
-                lineHeight: 1.4,
-                fontWeight: 800
-              }}
-            >
-              {authError}
-            </p>
+        <p
+          style={{
+            margin: 0,
+            color: "#D93B3B",
+            fontSize: 14,
+            lineHeight: 1.4,
+            fontWeight: 800
+          }}
+        >
+          {authError}
+        </p>
 
-            <AppButton onClick={onRetry}>
-              Повторить
-            </AppButton>
-          </>
-        )}
+        <AppButton onClick={onRetry}>
+          Повторить
+        </AppButton>
       </div>
     </main>
   );
