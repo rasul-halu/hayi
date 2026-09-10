@@ -24,6 +24,9 @@ server/.env
 server/*.log
 server/*-test.*.log
 /server/uploads
+/server/.dictionary-tools/
+/server/data/dictionaries/*.pdf
+/server/data/dictionaries/*.json
 *.tmp
 *.temp
 

@@ -1,0 +1,97 @@
+.lesson-complete {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: calc(32px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
+  background: #f7f9f4;
+  color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.lesson-complete__content { width: 100%; max-width: 390px; min-width: 0; }
+
+.lesson-complete__mascot {
+  display: block;
+  width: clamp(150px, 44vw, 190px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  margin: 0 auto 20px;
+  animation: lessonCompleteMascotEnter 650ms ease-out both;
+}
+
+.lesson-complete__label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  color: #628052;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.lesson-complete__title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.lesson-complete__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.lesson-complete__stat {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 12px 8px;
+  border: 1px solid #e4e9df;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lesson-complete__context {
+  margin: 20px 0 32px;
+  min-height: 42px;
+  color: #737b6d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lesson-complete__continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@keyframes lessonCompleteMascotEnter {
+  0% { opacity: 0; transform: translateY(22px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(-5px) scale(1.04); }
+  82% { transform: translateY(2px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-height: 650px) {
+  .lesson-complete { padding-top: 20px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .lesson-complete__mascot { width: 150px; margin-bottom: 12px; }
+  .lesson-complete__stats { margin-top: 20px; }
+  .lesson-complete__context { margin-bottom: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-complete__mascot { animation: none; }
+}

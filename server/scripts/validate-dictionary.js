@@ -1,0 +1,12 @@
+import fs from "node:fs";
+import { parseDictionary } from "../src/dictionary/parseRussianLezginDictionary.js";
+import { validateDictionary } from "../src/dictionary/validateDictionary.js";
+const input = JSON.parse(fs.readFileSync(new URL("../data/dictionaries/russian-lezgin.extracted.json", import.meta.url)));
+const result = parseDictionary(input.pages);
+const sampleWords = ["БРАТ", "СЕСТРА", "ЗАМОК", "КОСА", "АБАЖУР", "АБРИКОС", "АВОСЬ", "ЯЩИК", "ДОКАЗЫВАТЬ", "ЛЮБОВНЫЙ", "Я", "А"];
+const samples = result.entries.filter(x => sampleWords.includes(x.headword));
+const validation = validateDictionary(result);
+const report = { ...validation, sha256: input.sha256, pages: input.pages.length, articles: result.entries.length, warnings: result.warnings, empty: result.entries.filter(x=>!x.rawBody), longest: [...result.entries].sort((a,b)=>b.rawBody.length-a.rawBody.length).slice(0,5), samples };
+fs.writeFileSync(new URL("../data/dictionaries/validation-report.json", import.meta.url), JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ valid: report.valid, pages: report.pages, articles: report.articles, issues: report.issues.length, samples: samples.map(({headword, homonymIndex, sourcePage}) => ({headword, homonymIndex, sourcePage})), report: "server/data/dictionaries/validation-report.json" }, null, 2));
+if (!validation.valid) process.exitCode = 1;
