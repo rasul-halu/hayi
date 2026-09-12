@@ -8,6 +8,7 @@
   "scripts": {
     "dictionary:extract": "python scripts/extract-dictionary.py",
     "dictionary:validate": "node scripts/validate-dictionary.js",
+    "dictionary:import": "node scripts/import-dictionary.js",
     "test:dictionary": "node --test src/dictionary/*.test.js",
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",

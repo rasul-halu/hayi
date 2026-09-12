@@ -261,6 +261,19 @@ export async function getPublicDictionary() {
   return data;
 }
 
+export async function searchReferenceDictionary({ q = "", page = 1, signal } = {}) {
+  const params = new URLSearchParams({ q, page: String(page), limit: "20" });
+  const response = await fetch(`${API_URL}/dictionary/search?${params}`, { signal, headers: getTelegramAuthHeaders() });
+  if (!response.ok) throw new Error("Не удалось загрузить словарь");
+  return response.json();
+}
+
+export async function getReferenceDictionaryEntry(id, { signal } = {}) {
+  const response = await fetch(`${API_URL}/dictionary/entries/${encodeURIComponent(id)}`, { signal, headers: getTelegramAuthHeaders() });
+  if (!response.ok) throw new Error("Не удалось загрузить статью");
+  return response.json();
+}
+
 export async function getPublicAlphabet() {
   const response = await fetch(`${API_URL}/alphabet`, {
     headers: getTelegramAuthHeaders(),

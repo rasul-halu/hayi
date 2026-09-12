@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseDictionary, normalizeSearch } from "./parseRussianLezginDictionary.js";
+import { parseDictionary, normalizeSearch, readHeading } from "./parseRussianLezginDictionary.js";
 import { validateDictionary } from "./validateDictionary.js";
 
 const line = (text, bold = true) => ({ text, bold });
@@ -55,4 +55,27 @@ test("truncated alphabet heading is reported", () => {
 
 test("missing start marker fails instead of importing introductory text", () => {
   assert.throws(() => parseDictionary([{ page: 1, lines: [line("СЛОВАРЬ текст")] }]), /start marker/);
+});
+
+const span = (text, color = 0, size = 12, flags = 0) => ({ text, color, size, flags });
+const pdfLine = (...spans) => ({ text: spans.map(s => s.text).join(""), spans });
+test("PDF color and superscript separate homonym from numbered senses", () => {
+  const heading = readHeading(pdfLine(span("3A", 12603469), span("1", 0, 8, 1), span(" предлог 1. текст. 2. пример.")));
+  assert.equal(heading.headword, "ЗА");
+  assert.equal(heading.rawHeadword, "3A");
+  assert.equal(heading.homonymIndex, 1);
+  assert.equal(heading.body, "предлог 1. текст. 2. пример.");
+});
+test("ЖЮРИ does not absorb ЗА across page boundary", () => {
+  const result = parseDictionary([
+    { page: 200, lines: [line("А1 союз ва"), pdfLine(span("ЖЮРИ", 12603469), span(" ср нескл. жюри."))] },
+    { page: 201, lines: [pdfLine(span("3A", 12603469), span("1", 0, 8), span(" предлог за дверью")), pdfLine(span("ЗА", 12603469), span("2.", 0, 8), span(" что за"))] },
+  ]);
+  assert.equal(result.entries[1].rawBody, "ср нескл. жюри.");
+  assert.deepEqual(result.entries.slice(2).map(x => [x.headword, x.homonymIndex]), [["ЗА", 1], ["ЗА", 2]]);
+});
+test("colored grammatical label is retained in body, not headword", () => {
+  const result = readHeading(pdfLine(span("ВЕРФЬ ж", 12603469), span(" перевод")));
+  assert.equal(result.headword, "ВЕРФЬ");
+  assert.equal(result.body, "ж перевод");
 });

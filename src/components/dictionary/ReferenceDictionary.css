@@ -1,0 +1,22 @@
+.dictionary-tabs { display: flex; gap: 20px; margin: 20px 0; border-bottom: 1px solid #dce3d7; }
+.dictionary-tabs button { min-height: 44px; background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 0; color: #66705f; font: inherit; font-weight: 600; cursor: pointer; }
+.dictionary-tabs button[aria-selected="true"] { color: #367e08; border-bottom-color: #58cc02; }
+.reference-dictionary { min-width: 0; }
+.reference-source { font-size: 13px; line-height: 1.6; color: #677160; margin: 12px 0 20px; }
+.reference-search { display: flex; align-items: center; gap: 12px; border: 1px solid #dce3d7; border-radius: 8px; padding: 0 12px; background: white; color: #697362; }
+.reference-search input { width: 100%; min-width: 0; height: 48px; background: transparent; border: 0; color: #2d2d2d; font: inherit; font-size: 16px; }
+.reference-search:focus-within { outline: 2px solid #58cc02; }
+.reference-search input:focus { outline: none; }
+.reference-results { list-style: none; padding: 0; margin: 20px 0; }
+.reference-results li { border-bottom: 1px solid #e0e5db; }
+.reference-results button { position: relative; display: block; width: 100%; border: 0; background: transparent; padding: 16px 28px 16px 0; text-align: left; font: inherit; color: #2d2d2d; cursor: pointer; }
+.reference-results strong { display: block; font-size: 17px; margin-bottom: 6px; overflow-wrap: anywhere; }
+.reference-results span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; color: #64705b; overflow-wrap: anywhere; }
+.reference-chevron { position: absolute; right: 0; top: 24px; color: #6a775e; }
+.reference-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.reference-pagination button, .reference-back, .reference-error button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; border: 1px solid #dce3d7; border-radius: 8px; background: white; color: #367e08; font: inherit; cursor: pointer; padding: 8px; }
+.reference-pagination button:disabled { opacity: .4; cursor: default; }
+.reference-loading, .reference-error { padding: 24px 0; color: #64705b; }
+.reference-dictionary h2 { font-size: 24px; margin: 24px 0 16px; overflow-wrap: anywhere; }
+.reference-body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 17px; line-height: 1.8; }
+.reference-dictionary sup { font-size: .65em; padding-left: 3px; }

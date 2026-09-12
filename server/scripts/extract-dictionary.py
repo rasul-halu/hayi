@@ -20,9 +20,11 @@ for number, page in enumerate(document, 1):
             text = "".join(span["text"] for span in spans).strip()
             first = next((span for span in spans if span["text"].strip()), None)
             if text:
-                lines.append({"text": text, "bold": bool(first and "Bold" in first["font"])})
+                lines.append({"text": text, "bold": bool(first and "Bold" in first["font"]),
+                              "bbox": line["bbox"],
+                              "spans": [{k: s[k] for k in ("text", "font", "size", "color", "flags", "bbox", "origin")} for s in spans]})
     pages.append({"page": number, "lines": lines})
-result = {"sha256": hashlib.sha256(source.read_bytes()).hexdigest(), "pages": pages}
+result = {"version": 2, "sha256": hashlib.sha256(source.read_bytes()).hexdigest(), "pages": pages}
 target = source.with_suffix(".extracted.json")
 target.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
 print(json.dumps({"pages": len(pages), "output": str(target), "sha256": result["sha256"]}))

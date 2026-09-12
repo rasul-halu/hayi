@@ -184,6 +184,28 @@ model DictionaryWord {
   @@index([category, order])
 }
 
+model DictionaryEntry {
+  id                 String   @id @default(cuid())
+  source             String
+  sourceKey          String
+  sourceDigest       String
+  headword           String
+  rawHeadword        String
+  headwordNormalized String
+  homonymIndex       Int?
+  rawBody            String
+  searchText         String
+  sourcePage         Int
+  sourceEndPage      Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([source, sourceKey])
+  @@index([headwordNormalized])
+  @@index([headwordNormalized(ops: raw("gin_trgm_ops"))], type: Gin, map: "DictionaryEntry_headword_trgm")
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "DictionaryEntry_body_trgm")
+}
+
 model AlphabetLetter {
   id             String   @id @default(cuid())
   letter         String   @unique

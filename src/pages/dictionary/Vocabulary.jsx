@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, RefreshCw, Search } from "lucide-react";
 import { getPublicDictionary } from "../../api/apiClient";
 import WordCard from "../../components/dictionary/WordCard";
+import ReferenceDictionary from "../../components/dictionary/ReferenceDictionary";
 import BottomNav from "../../components/layout/BottomNav";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
@@ -27,6 +28,7 @@ function getSearchText(word) {
 }
 
 export default function Vocabulary() {
+  const [tab, setTab] = useState("reference");
   const [search, setSearch] = useState("");
   const [words, setWords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,8 +97,15 @@ export default function Vocabulary() {
 
       <SectionTitle
         title="Словарь"
-        subtitle="Ищи слова по-русски или по-лезгински"
+        subtitle="Справочник и слова уроков"
       />
+
+      <div className="dictionary-tabs" role="tablist" aria-label="Раздел словаря">
+        <button role="tab" id="reference-tab" aria-controls="reference-panel" aria-selected={tab === "reference"} onClick={() => setTab("reference")}>Справочник</button>
+        <button role="tab" id="words-tab" aria-controls="words-panel" aria-selected={tab === "words"} onClick={() => setTab("words")}>Слова уроков</button>
+      </div>
+      <div role="tabpanel" id="reference-panel" aria-labelledby="reference-tab" hidden={tab !== "reference"}>{tab === "reference" && <ReferenceDictionary />}</div>
+      <div role="tabpanel" id="words-panel" aria-labelledby="words-tab" hidden={tab !== "words"}>
 
       <AppCard
         style={{
@@ -233,6 +242,7 @@ export default function Vocabulary() {
         ))}
       </div>
 
+      </div>
       <BottomNav />
     </PageContainer>
   );

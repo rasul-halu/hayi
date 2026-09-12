@@ -60,6 +60,7 @@ export const ModelName = {
   Lesson: 'Lesson',
   Question: 'Question',
   DictionaryWord: 'DictionaryWord',
+  DictionaryEntry: 'DictionaryEntry',
   AlphabetLetter: 'AlphabetLetter'
 } as const
 
@@ -229,6 +230,26 @@ export const DictionaryWordScalarFieldEnum = {
 } as const
 
 export type DictionaryWordScalarFieldEnum = (typeof DictionaryWordScalarFieldEnum)[keyof typeof DictionaryWordScalarFieldEnum]
+
+
+export const DictionaryEntryScalarFieldEnum = {
+  id: 'id',
+  source: 'source',
+  sourceKey: 'sourceKey',
+  sourceDigest: 'sourceDigest',
+  headword: 'headword',
+  rawHeadword: 'rawHeadword',
+  headwordNormalized: 'headwordNormalized',
+  homonymIndex: 'homonymIndex',
+  rawBody: 'rawBody',
+  searchText: 'searchText',
+  sourcePage: 'sourcePage',
+  sourceEndPage: 'sourceEndPage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DictionaryEntryScalarFieldEnum = (typeof DictionaryEntryScalarFieldEnum)[keyof typeof DictionaryEntryScalarFieldEnum]
 
 
 export const AlphabetLetterScalarFieldEnum = {
