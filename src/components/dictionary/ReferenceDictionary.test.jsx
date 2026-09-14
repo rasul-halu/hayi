@@ -15,6 +15,7 @@ test("search, full article, return and pagination", async () => {
   await waitFor(() => expect(searchReferenceDictionary).toHaveBeenLastCalledWith(expect.objectContaining({ q: "стха", page: 1 })));
   fireEvent.click(await screen.findByRole("button", { name: /БРАТ/ }));
   expect(await screen.findByText(/двоюродный брат/)).not.toBeNull();
+  expect(screen.queryByText(/Русско-лезгинский словарь|М\. Гаджиев|Страница PDF/u)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /К результатам/ }));
   fireEvent.click(await screen.findByRole("button", { name: "Следующая страница" }));
   await waitFor(() => expect(searchReferenceDictionary).toHaveBeenLastCalledWith(expect.objectContaining({ q: "стха", page: 2 })));

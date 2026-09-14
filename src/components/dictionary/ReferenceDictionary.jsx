@@ -30,8 +30,7 @@ export default function ReferenceDictionary() {
 
   const busy = () => { setLoading(true); setError(""); };
   return (
-    <section className="reference-dictionary" aria-label="Русско-лезгинский словарь">
-      <p className="reference-source">Русско-лезгинский словарь<br />М. Гаджиев, 1950</p>
+    <section className="reference-dictionary" aria-label="Словарь">
       {selected ? <button className="reference-back" onClick={() => { busy(); setSelected(null); }}><ArrowLeft size={20} /> К результатам</button> : (
         <label className="reference-search"><Search size={20} aria-hidden="true" />
           <input aria-label="Найти слово" placeholder="Найти слово" value={query} maxLength={120}
@@ -43,7 +42,6 @@ export default function ReferenceDictionary() {
       {!loading && !error && selected && entry && <article>
         <h2>{entry.headword}{entry.homonymIndex && <sup>{entry.homonymIndex}</sup>}</h2>
         <p className="reference-body">{entry.rawBody || "В источнике текст статьи отсутствует."}</p>
-        <p className="reference-source">Страница PDF: {entry.sourcePage}</p>
       </article>}
       {!loading && !error && !selected && result && <>
         {result.entries.length === 0 ? <p className="reference-loading">Ничего не найдено</p> : <ul className="reference-results">
